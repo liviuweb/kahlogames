@@ -1,6 +1,6 @@
 # KahloGames – Punkte & Statistiken für den Spieleabend
 
-Spiele: **Floriferous**, **Skyjo**, **Flip 7**, **13 Feuilles**, **Virus!**, **Dog** (Dog Royal, Backdog, Agent Dog), **Wizard**, **Dominion**, **Catan** (Normal, Catan Energie, Raumfahrer).
+Spiele: **Floriferous**, **Skyjo**, **Flip 7**, **13 Feuilles**, **Virus!**, **Dogs** (Dog Royal, Backdog, Agent Dog), **Wizard**, **Dominion**, **Catan** (Normal, Catan Energie, Raumfahrer).
 Die Seite ist ein reines HTML/JS-Projekt. Sie läuft auf GitHub Pages und auch direkt per Doppelklick auf `index.html`. Gespeichert wird in einem Google Sheet.
 
 ---
@@ -42,7 +42,9 @@ Solange `API_URL` leer ist, läuft alles im **Demo-Modus**: Daten werden nur im 
 
 ## Bedienung
 
-- **Start:** Passwort eingeben → Spiel wählen. Das Zahnrad öffnet die **Einstellungen** (Spieler anlegen, umbenennen, Floriferous-Look wählen, löschen).
+- **Start:** Passwort eingeben → Spiel wählen. Das Zahnrad auf der Startseite öffnet die **Einstellungen** (Spieler anlegen, umbenennen, löschen).
+- **Spieler-Symbole** stellt man im jeweiligen Spiel über das Zahnrad neben „Spiele“ ein – jedes Spiel hat eigene Symbole.
+- **Catan:** Wählt man oben die Variante Catan Energie oder Raumfahrer, wechselt das Design.
 - **Spieler löschen** braucht das Lösch-Passwort (Livius fragen). Alte Partien bleiben im Verlauf erhalten.
 - Jedes Spiel hat **Dashboard · Neues Spiel · Statistik · Verlauf**. Unter Statistik gibt es den Bereich **„Mehr Statistiken“** zum Ausklappen.
 - **Rundenspiele** (Skyjo, Flip 7, 13 Feuilles): Runde für Runde eintragen; ein laufendes Spiel bleibt auf dem Gerät gespeichert, auch wenn man die Seite schließt. Erst „Spiel beenden & speichern“ schreibt es in die Tabelle.

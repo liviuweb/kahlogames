@@ -1251,7 +1251,33 @@
     const i = ps.findIndex((p) => p.id === id);
     return i >= 0 ? i : Math.abs([...String(id)].reduce((h, c) => h * 31 + c.charCodeAt(0) | 0, 7));
   }
-  var pick = (pal, id) => pal[idx(id) % pal.length];
+  var cache = {};
+  function pickFor(game, pal, id) {
+    const key = pal.length + "|" + store.players.map((p) => `${p.id}:${p.looks?.[game]?.i ?? ""}`).join(",");
+    let c = cache[game];
+    if (!c || c.key !== key) {
+      const map = /* @__PURE__ */ new Map(), used = /* @__PURE__ */ new Set(), ps = playersByCreated();
+      ps.forEach((p) => {
+        const i2 = p.looks?.[game]?.i;
+        if (i2 != null && i2 < pal.length) {
+          map.set(p.id, i2);
+          used.add(i2);
+        }
+      });
+      let k = 0;
+      ps.forEach((p) => {
+        if (map.has(p.id)) return;
+        if (used.size >= pal.length) used.clear();
+        while (used.has(k % pal.length)) k++;
+        map.set(p.id, k % pal.length);
+        used.add(k % pal.length);
+        k++;
+      });
+      c = cache[game] = { key, map };
+    }
+    const i = c.map.get(id);
+    return pal[i != null ? i : idx(id) % pal.length];
+  }
 
   // js/games/skyjo.js
   var PAL = [
@@ -1281,15 +1307,16 @@
     max: 8,
     labels: { startHint: "Ihr spielt so viele Runden, wie ihr wollt \u2013 beendet das Spiel, wenn ihr fertig seid. Wenig Punkte gewinnen.", roundHint: "Wer die Runde beendet hat und nicht die wenigsten Punkte hat, bekommt seine Punkte verdoppelt (nur bei positiven Punkten)." },
     avatar: (p, size = "dot") => {
-      const x = pick(PAL, p.id);
+      const x = pickFor("skyjo", PAL, p.id);
       return `<span class="av av-${size}" aria-hidden="true">${card(x.n, x.c)}</span>`;
     },
-    colorOf: (id) => pick(PAL, id).c,
+    icons: { pal: PAL, current: (p) => pickFor("skyjo", PAL, p.id), render: (x) => card(x.n, x.c) },
+    colorOf: (id) => pickFor("skyjo", PAL, id).c,
     logo: () => `<div class="lg-skyjo">${card(-2, "#2E3F94", "f1")}${card(5, "#E8B90F", "f2")}${card(12, "#D93A3A", "f3")}<span>Skyjo</span></div>`,
     header: () => `<div class="sk-fan" aria-hidden="true">${card(-2, "#2E3F94", "f1")}${card(0, "#45A9DD", "f2")}${card(4, "#3FA34D", "f3")}${card(8, "#E8B90F", "f4")}${card(12, "#D93A3A", "f5")}</div><h1 class="g-title">Skyjo</h1><p class="g-sub">Wenig Punkte, viel Freude</p>`,
     extraTiles: (st, T) => [T("Pechvogel", "doubled", (v) => `${v}\xD7 verdoppelt`, { filter: (s) => s.doubled > 0 })],
     extraCols: [{ key: "bestRound", label: "Beste Runde" }],
-    moreStats: (st) => `<h3 class="sub-h">Runden beendet & verdoppelt</h3>${barChart(st.filter((s) => s.closes).sort((a, b) => b.closes - a.closes).map((s) => ({ label: s.name, value: s.closes, note: `${plural(s.doubled, "Mal", "Mal")} verdoppelt`, color: pick(PAL, s.id).c })), { digits: 0 })}`
+    moreStats: (st) => `<h3 class="sub-h">Runden beendet & verdoppelt</h3>${barChart(st.filter((s) => s.closes).sort((a, b) => b.closes - a.closes).map((s) => ({ label: s.name, value: s.closes, note: `${plural(s.doubled, "Mal", "Mal")} verdoppelt`, color: pickFor("skyjo", PAL, s.id).c })), { digits: 0 })}`
   });
 
   // js/games/flip7.js
@@ -1317,15 +1344,16 @@
     max: 12,
     labels: { startHint: "Das Spiel endet nach der Runde, in der jemand 200 Punkte erreicht. Viele Punkte gewinnen.", roundHint: "Ausgeschieden (Doppelte gezogen)? Einfach 0 eintragen. \u201EFlip 7!\u201C ankreuzen, wenn jemand sieben verschiedene Zahlen hatte \u2013 die 15 Bonuspunkte gleich mit eintragen." },
     avatar: (p, size = "dot") => {
-      const x = pick(PAL2, p.id);
+      const x = pickFor("flip7", PAL2, p.id);
       return `<span class="av av-${size}" aria-hidden="true">${tk(x.n, x.c)}</span>`;
     },
-    colorOf: (id) => pick(PAL2, id).c,
+    icons: { pal: PAL2, current: (p) => pickFor("flip7", PAL2, p.id), render: (x) => tk(x.n, x.c) },
+    colorOf: (id) => pickFor("flip7", PAL2, id).c,
     logo: () => `<div class="lg-flip7">${tk(7, "#E63946", "big")}<span>Flip&nbsp;7</span></div>`,
     header: () => `<div class="f7-hero" aria-hidden="true">${tk(1, "#2B2D42", "h1")}${tk(4, "#1C7ED6", "h2")}${tk(7, "#E63946", "h3")}${tk(10, "#C2A100", "h4")}${tk(12, "#1F8A70", "h5")}</div><h1 class="g-title">Flip 7</h1><p class="g-sub">Wer zuerst 200 Punkte hat, beendet das Spiel</p>`,
     extraTiles: (st, T) => [T("Meiste \u201EFlip 7!\u201C", "f7", (v) => `${v}\xD7`, { filter: (s) => s.f7 > 0 }), T("Meiste Nullrunden", "busts", (v) => `${v}\xD7`, { filter: (s) => s.busts > 0, note: "Runden mit 0 Punkten" })],
     extraCols: [{ key: "f7", label: "Flip 7!" }],
-    moreStats: (st) => `<h3 class="sub-h">Nullrunden (ausgeschieden)</h3>${barChart(st.filter((s) => s.rounds).sort((a, b) => b.busts / b.rounds - a.busts / a.rounds).map((s) => ({ label: s.name, value: s.busts / s.rounds * 100, note: `${s.busts} von ${s.rounds} Runden`, color: pick(PAL2, s.id).c })), { unit: " %", digits: 0 })}`
+    moreStats: (st) => `<h3 class="sub-h">Nullrunden (ausgeschieden)</h3>${barChart(st.filter((s) => s.rounds).sort((a, b) => b.busts / b.rounds - a.busts / a.rounds).map((s) => ({ label: s.name, value: s.busts / s.rounds * 100, note: `${s.busts} von ${s.rounds} Runden`, color: pickFor("flip7", PAL2, s.id).c })), { unit: " %", digits: 0 })}`
   });
 
   // js/games/feuilles.js
@@ -1353,15 +1381,16 @@
     max: 6,
     labels: { startHint: "Pro Runde: Wer alle Karten los ist, gewinnt die Runde. Die anderen z\xE4hlen die Zahlen auf ihren Restkarten. Am Ende gewinnt die niedrigste Summe.", roundHint: "Der Rundensieger bekommt automatisch 0 Punkte." },
     avatar: (p, size = "dot") => {
-      const x = pick(PAL3, p.id);
+      const x = pickFor("feuilles", PAL3, p.id);
       return `<span class="av av-${size}" aria-hidden="true">${leaf(x.n, x.c)}</span>`;
     },
-    colorOf: (id) => pick(PAL3, id).c,
+    icons: { pal: PAL3, current: (p) => pickFor("feuilles", PAL3, p.id), render: (x) => leaf(x.n, x.c) },
+    colorOf: (id) => pickFor("feuilles", PAL3, id).c,
     logo: () => `<div class="lg-feuilles"><span class="n13">13</span>${leaf("", "#4F7A3A", "l1")}${leaf("", "#C4572A", "l2")}<span class="nm">Feuilles</span></div>`,
     header: () => `<div class="fe-leaves" aria-hidden="true">${[1, 4, 7, 10, 13].map((n, i) => leaf(n, PAL3[i].c, `fl${i}`)).join("")}</div><h1 class="g-title"><span>13</span> Feuilles</h1><p class="g-sub">Werde deine Karten los</p>`,
     extraTiles: (st, T) => [T("Meiste Rundensiege", "rwins", (v) => v, { filter: (s) => s.rwins > 0 }), T("Beste Rundensieg-Quote", "rwRate", fmtPct, { filter: (s) => s.rounds >= 5, note: "ab 5 Runden" })],
     extraCols: [{ key: "rwins", label: "Rundensiege" }],
-    moreStats: (st) => `<h3 class="sub-h">Rundensieg-Quote</h3>${barChart(st.filter((s) => s.rounds).sort((a, b) => b.rwRate - a.rwRate).map((s) => ({ label: s.name, value: s.rwRate * 100, note: `${s.rwins} von ${s.rounds} Runden`, color: pick(PAL3, s.id).c })), { unit: " %", digits: 0 })}`
+    moreStats: (st) => `<h3 class="sub-h">Rundensieg-Quote</h3>${barChart(st.filter((s) => s.rounds).sort((a, b) => b.rwRate - a.rwRate).map((s) => ({ label: s.name, value: s.rwRate * 100, note: `${s.rwins} von ${s.rounds} Runden`, color: pickFor("feuilles", PAL3, s.id).c })), { unit: " %", digits: 0 })}`
   });
 
   // js/games/wins.js
@@ -1668,10 +1697,11 @@
     min: 2,
     max: 6,
     avatar: (p, size = "dot") => {
-      const x = pick(PAL4, p.id);
+      const x = pickFor("virus", PAL4, p.id);
       return `<span class="av av-${size}" aria-hidden="true">${blob(x.c, x.e)}</span>`;
     },
-    colorOf: (id) => pick(PAL4, id).c,
+    icons: { pal: PAL4, current: (p) => pickFor("virus", PAL4, p.id), render: (x) => blob(x.c, x.e) },
+    colorOf: (id) => pickFor("virus", PAL4, id).c,
     winIconSmall: "\u{1F9A0}",
     winIcon: () => blob("#22A45D", "grin", "toast-ic"),
     logo: () => `<div class="lg-virus">${blob("#E63946", "grin", "b1")}${blob("#2F7DF6", "wink", "b2")}${blob("#22A45D", "o", "b3")}${blob("#F5B700", "grin", "b4")}<span>Virus!</span></div>`,
@@ -1693,7 +1723,7 @@
   var paw = `<svg viewBox="0 0 32 32" aria-hidden="true" class="paw"><ellipse cx="16" cy="21" rx="7" ry="6"/><ellipse cx="8" cy="13" rx="3" ry="4"/><ellipse cx="13.5" cy="8.5" rx="3" ry="4"/><ellipse cx="18.5" cy="8.5" rx="3" ry="4"/><ellipse cx="24" cy="13" rx="3" ry="4"/></svg>`;
   var dog_default = makeWinsGame({
     id: "dog",
-    name: "Dog",
+    name: "Dogs",
     theme: "theme-dog",
     themeColor: "#EBDCC3",
     dot: "#1D4ED8",
@@ -1701,15 +1731,16 @@
     max: 6,
     teams: true,
     variants: [["royal", "Dog Royal"], ["backdog", "Backdog"], ["agent", "Agent Dog"]],
-    avatar: (p, size = "dot") => `<span class="av av-${size}" aria-hidden="true">${marble(pick(PAL5, p.id).c)}</span>`,
+    avatar: (p, size = "dot") => `<span class="av av-${size}" aria-hidden="true">${marble(pickFor("dog", PAL5, p.id).c)}</span>`,
+    icons: { pal: PAL5, current: (p) => pickFor("dog", PAL5, p.id), render: (x) => marble(x.c) },
     colorOf: (id) => {
-      const c = pick(PAL5, id).c;
+      const c = pickFor("dog", PAL5, id).c;
       return c === "#F1EFEA" ? "#A8A29E" : c;
     },
     winIconSmall: "\u{1F43E}",
     winIcon: () => paw,
-    logo: () => `<div class="lg-dog"><div class="track">${["#D62828", "#1D4ED8", "#15803D", "#EAB308"].map((c) => marble(c)).join("")}</div>${paw}<span>Dog</span></div>`,
-    header: () => `<div class="dg-board" aria-hidden="true">${Array.from({ length: 14 }, (_, i) => `<i class="hole ${i % 4 === 1 ? "on" : ""}" style="${i % 4 === 1 ? `--c:${PAL5[(i >> 2) % 4].c}` : ""}"></i>`).join("")}</div><h1 class="g-title">Dog</h1><p class="g-sub">Dog Royal \xB7 Backdog \xB7 Agent Dog</p>`
+    logo: () => `<div class="lg-dog"><div class="track">${["#D62828", "#1D4ED8", "#15803D", "#EAB308"].map((c) => marble(c)).join("")}</div>${paw}<span>Dogs</span></div>`,
+    header: () => `<div class="dg-board" aria-hidden="true">${Array.from({ length: 14 }, (_, i) => `<i class="hole ${i % 4 === 1 ? "on" : ""}" style="${i % 4 === 1 ? `--c:${PAL5[(i >> 2) % 4].c}` : ""}"></i>`).join("")}</div><h1 class="g-title">Dogs</h1><p class="g-sub">Dog Royal \xB7 Backdog \xB7 Agent Dog</p>`
   });
 
   // js/games/wizard.js
@@ -1738,15 +1769,16 @@
     max: 6,
     maxRounds: (n) => Math.floor(60 / n),
     labels: { startHint: "Gespielt wird mit 60 Karten: bei 3 Spielern 20 Runden, bei 4 Spielern 15, bei 5 Spielern 12, bei 6 Spielern 10. Pro Runde Ansage und Stiche eintragen \u2013 die Punkte rechnet die App.", roundHint: "Richtig angesagt: 20 Punkte + 10 je Stich. Daneben: \u221210 je Stich Abweichung." },
-    avatar: (p, size = "dot") => `<span class="av av-${size}" aria-hidden="true">${hat(pick(PAL6, p.id).c)}</span>`,
-    colorOf: (id) => pick(PAL6, id).c,
+    avatar: (p, size = "dot") => `<span class="av av-${size}" aria-hidden="true">${hat(pickFor("wizard", PAL6, p.id).c)}</span>`,
+    icons: { pal: PAL6, current: (p) => pickFor("wizard", PAL6, p.id), render: (x) => hat(x.c) },
+    colorOf: (id) => pickFor("wizard", PAL6, id).c,
     logo: () => `<div class="lg-wizard"><span class="moon"></span>${card2("#D7263D", "\u2605", "c1")}${card2("#2F7DE1", "Z", "c2")}${card2("#22A05A", "\u2605", "c3")}<span class="nm">Wizard</span></div>`,
     header: () => `<div class="wz-sky" aria-hidden="true"></div><div class="wz-fan" aria-hidden="true">${card2("#D7263D", "\u2605", "f1")}${card2("#2F7DE1", "Z", "f2")}${card2("#E8B008", "N", "f3")}${card2("#22A05A", "\u2605", "f4")}</div><h1 class="g-title">Wizard</h1><p class="g-sub">Sag an, wie viele Stiche du machst</p>`,
     winIcon: () => hat("#E8C46A", "toast-ic"),
     extraTiles: (st, T) => [T("Beste Trefferquote", "hitRate", fmtPct, { filter: (s) => s.rounds >= 10, note: "richtige Ansagen, ab 10 Runden" }), T("L\xE4ngste Trefferserie", "hitBest", (v) => `${v} Runden`, { filter: (s) => s.hitBest > 0 })],
     extraCols: [{ key: "hitRate", label: "Treffer", fmt: fmtPct }],
-    moreStats: (st) => `<h3 class="sub-h">Trefferquote (richtige Ansagen)</h3>${barChart(st.filter((s) => s.hitRate != null).sort((a, b) => b.hitRate - a.hitRate).map((s) => ({ label: s.name, value: s.hitRate * 100, note: `${s.hits} von ${s.rounds} Runden`, color: pick(PAL6, s.id).c })), { unit: " %", digits: 0, max: 100 })}
-    <h3 class="sub-h">\xD8 Ansage pro Runde</h3>${barChart(st.filter((s) => s.avgBid != null).sort((a, b) => b.avgBid - a.avgBid).map((s) => ({ label: s.name, value: s.avgBid, note: "wer mutig ansagt", color: pick(PAL6, s.id).c })))}`
+    moreStats: (st) => `<h3 class="sub-h">Trefferquote (richtige Ansagen)</h3>${barChart(st.filter((s) => s.hitRate != null).sort((a, b) => b.hitRate - a.hitRate).map((s) => ({ label: s.name, value: s.hitRate * 100, note: `${s.hits} von ${s.rounds} Runden`, color: pickFor("wizard", PAL6, s.id).c })), { unit: " %", digits: 0, max: 100 })}
+    <h3 class="sub-h">\xD8 Ansage pro Runde</h3>${barChart(st.filter((s) => s.avgBid != null).sort((a, b) => b.avgBid - a.avgBid).map((s) => ({ label: s.name, value: s.avgBid, note: "wer mutig ansagt", color: pickFor("wizard", PAL6, s.id).c })))}`
   });
 
   // js/games/scores.js
@@ -1765,6 +1797,12 @@
     }));
     const list = () => matchesOf(def.id, (m) => view2.variant === "all" || m.variant === view2.variant);
     const unit = def.unit || "Punkte";
+    const theme = (v) => {
+      if (def.variantTheme) {
+        if (v && v !== "all") document.body.dataset.variant = v;
+        else delete document.body.dataset.variant;
+      }
+    };
     function stats(ms) {
       const st = perPlayer(ms);
       for (const s of st) {
@@ -1777,6 +1815,7 @@
       return st;
     }
     function dashboard2(el, ctx) {
+      theme(view2.variant);
       const ms = list(), st = stats(ms);
       if (!ms.length) {
         el.innerHTML = `${filterBar2()}<div class="empty-state panel"><p>Noch keine Partie${view2.variant !== "all" ? ` in ${esc(vName(view2.variant))}` : ""}.</p><button class="btn btn-primary" type="button" data-new>Partie eintragen</button></div>`;
@@ -1817,6 +1856,7 @@
         awards: { ...e?.awards || {} },
         tie: e?.winners?.length > 1 ? "shared" : e?.winners?.[0] || null
       };
+      theme(S.variant);
       el.innerHTML = `<section class="panel"><div class="setup-grid">
         <label class="field"><span>Gespielt am</span><input type="date" id="sDate" value="${S.date}"></label>
         ${def.variants ? `<div><span class="field-label">Variante</span>${seg("sv", def.variants, S.variant)}</div>` : ""}
@@ -1829,6 +1869,7 @@
         const b = ev.target.closest("button");
         if (!b) return;
         S.variant = b.dataset.v;
+        theme(S.variant);
         $$('[data-seg="sv"] button', el).forEach((x) => x.setAttribute("aria-pressed", x === b));
         draw();
       });
@@ -1926,6 +1967,7 @@
       };
     }
     function statistik2(el, ctx) {
+      theme(view2.variant);
       const ms = list(), st = stats(ms);
       if (!ms.length) {
         el.innerHTML = `${filterBar2()}<div class="empty-state panel"><p>Noch keine Partien in dieser Auswahl.</p></div>`;
@@ -1962,6 +2004,7 @@
       }).join("")}</tr>`).join("")}</tbody></table></div>`;
     }
     function verlauf2(el, ctx) {
+      theme(view2.variant);
       historyList(el, ctx, { matches: matchesOf(def.id), line: (m) => rankedLine(g, m) + (m.awards ? `<p class="others">${Object.entries(m.awards).map(([a, p]) => `${esc(a)}: <b>${esc(playerName(p, m))}</b>`).join(" \xB7 ")}</p>` : ""), onEdit: (m) => {
         editing2 = m;
         ctx.go("neu");
@@ -1996,8 +2039,9 @@
     unit: "Siegpunkte",
     hint: () => "Siegpunkte am Ende zusammenz\xE4hlen \u2013 Fl\xFCche als Minuspunkte (\xB1 dr\xFCcken).",
     tieHint: "Laut Regel gewinnt bei Gleichstand, wer weniger Z\xFCge hatte \u2013 sonst ist es ein geteilter Sieg.",
-    avatar: (p, size = "dot") => `<span class="av av-${size}" aria-hidden="true">${shield(pick(PAL7, p.id).c)}</span>`,
-    colorOf: (id) => pick(PAL7, id).c,
+    avatar: (p, size = "dot") => `<span class="av av-${size}" aria-hidden="true">${shield(pickFor("dominion", PAL7, p.id).c)}</span>`,
+    icons: { pal: PAL7, current: (p) => pickFor("dominion", PAL7, p.id), render: (x) => shield(x.c) },
+    colorOf: (id) => pickFor("dominion", PAL7, id).c,
     winIcon: () => shield("#C9A227", "toast-ic"),
     logo: () => `<div class="lg-dominion">${coin("#B8733C", 1, "c1")}${coin("#8E9399", 2, "c2")}${coin("#C9A227", 3, "c3")}<span class="nm">Dominion</span></div>`,
     header: () => `<div class="dm-coins" aria-hidden="true">${coin("#B8733C", 1, "k1")}${coin("#8E9399", 2, "k2")}${coin("#C9A227", 3, "k3")}${shield("#2F5D2B", "k4")}</div><h1 class="g-title">Dominion</h1><p class="g-sub">Wer baut das gr\xF6\xDFte K\xF6nigreich?</p>`
@@ -2016,6 +2060,9 @@
   ];
   var house = (c, cls = "") => `<svg class="ct-house ${cls}" viewBox="0 0 40 40" aria-hidden="true"><path d="M8 20 L20 8 L32 20 V34 H8 Z" fill="${c}" stroke="#3B2A1A" stroke-width="2.4" stroke-linejoin="round"/><rect x="17" y="24" width="6" height="10" fill="rgba(0,0,0,.25)"/></svg>`;
   var HEX = { wood: "#2F7D32", brick: "#C1440E", wheat: "#E9B824", sheep: "#8BC34A", ore: "#78909C", desert: "#E6CF97" };
+  var EICON = { "wind": '<svg viewBox="0 0 40 40"><path d="M20 21 L19 38 H21 Z" fill="#fff"/><circle cx="20" cy="18" r="2.4" fill="#fff"/><path d="M20 18 L20 4 Q23 10 20.8 18Z M20 18 L32 25 Q26 25 19.6 18.8Z M20 18 L8 25 Q12 20 19.6 17.4Z" fill="#fff"/></svg>', "sun": '<svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="7" fill="#fff"/><g stroke="#fff" stroke-width="2.6" stroke-linecap="round"><path d="M20 5v5M20 30v5M5 20h5M30 20h5M9.5 9.5l3.5 3.5M27 27l3.5 3.5M9.5 30.5l3.5-3.5M27 13l3.5-3.5"/></g></svg>', "bolt": '<svg viewBox="0 0 40 40"><path d="M23 4 L10 23 H19 L16 36 L30 16 H21 Z" fill="#fff"/></svg>', "leaf": '<svg viewBox="0 0 40 40"><path d="M32 8 C14 8 8 18 9 31 C22 32 32 24 32 8Z" fill="#fff"/><path d="M10 30 L24 16" stroke="rgba(0,0,0,.25)" stroke-width="2"/></svg>' };
+  var ehex = (c, cls, ic) => `<span class="ct-hex ${cls}" style="--c:${c}"><i class="eic">${EICON[ic]}</i></span>`;
+  var ROCKET = '<svg class="rocket" viewBox="0 0 60 60"><path d="M30 4 C40 12 42 26 38 40 H22 C18 26 20 12 30 4Z" fill="#E8EEFF"/><circle cx="30" cy="22" r="5" fill="#2C64B5" stroke="#9AA7CF" stroke-width="2"/><path d="M22 34 L13 44 L22 42Z M38 34 L47 44 L38 42Z" fill="#FF6B3D"/><path d="M25 40 Q30 56 35 40Z" fill="#FFB13D"/></svg>';
   var hex = (c, cls = "", n = "") => `<span class="ct-hex ${cls}" style="--c:${c}">${n ? `<b>${n}</b>` : ""}</span>`;
   var catan_default = makeScoreGame({
     id: "catan",
@@ -2029,14 +2076,19 @@
     variants: [["normal", "Normal"], ["energie", "Catan Energie"], ["raumfahrer", "Raumfahrer"]],
     awards: { normal: ["L\xE4ngste Handelsstra\xDFe", "Gr\xF6\xDFte Rittermacht"] },
     hint: (v) => v === "normal" ? "Siegpunkte am Ende inkl. Siegpunktkarten. Unten optional: wer die Handelsstra\xDFe und die Rittermacht hatte." : "Siegpunkte am Spielende eintragen.",
-    avatar: (p, size = "dot") => `<span class="av av-${size}" aria-hidden="true">${house(pick(PAL8, p.id).c)}</span>`,
+    avatar: (p, size = "dot") => `<span class="av av-${size}" aria-hidden="true">${house(pickFor("catan", PAL8, p.id).c)}</span>`,
+    icons: { pal: PAL8, current: (p) => pickFor("catan", PAL8, p.id), render: (x) => house(x.c) },
     colorOf: (id) => {
-      const c = pick(PAL8, id).c;
+      const c = pickFor("catan", PAL8, id).c;
       return c === "#F4F1EA" ? "#A8A29E" : c;
     },
     winIcon: () => house("#C0392B", "toast-ic"),
     logo: () => `<div class="lg-catan">${hex(HEX.wood, "h1")}${hex(HEX.wheat, "h2", 8)}${hex(HEX.brick, "h3")}${hex(HEX.sheep, "h4", 6)}${hex(HEX.ore, "h5")}<span class="nm">Catan</span></div>`,
-    header: () => `<div class="ct-board" aria-hidden="true">${hex(HEX.wood, "b1")}${hex(HEX.wheat, "b2", 9)}${hex(HEX.brick, "b3", 5)}${hex(HEX.sheep, "b4")}${hex(HEX.desert, "b5")}${hex(HEX.ore, "b6", 8)}${hex(HEX.wood, "b7", 4)}${house("#C0392B", "s1")}${house("#2C64B5", "s2")}</div><h1 class="g-title">Catan</h1><p class="g-sub">Normal \xB7 Catan Energie \xB7 Raumfahrer</p>`
+    variantTheme: true,
+    header: () => `<div class="ct-board v-normal" aria-hidden="true">${hex(HEX.wood, "b1")}${hex(HEX.wheat, "b2", 9)}${hex(HEX.brick, "b3", 5)}${hex(HEX.sheep, "b4")}${hex(HEX.desert, "b5")}${hex(HEX.ore, "b6", 8)}${hex(HEX.wood, "b7", 4)}${house("#C0392B", "s1")}${house("#2C64B5", "s2")}</div>
+    <div class="ct-board ct-energy v-energie" aria-hidden="true">${ehex("#0E8F6E", "b1", "wind")}${ehex("#F2B705", "b2", "sun")}${ehex("#2E7D32", "b3", "leaf")}${ehex("#1E88C8", "b4", "bolt")}${ehex("#7CB342", "b5", "wind")}${ehex("#F2B705", "b6", "sun")}${ehex("#0E8F6E", "b7", "bolt")}</div>
+    <div class="ct-space v-raumfahrer" aria-hidden="true"><span class="planet p1"></span><span class="planet p2"></span><span class="planet p3"></span>${ROCKET}</div>
+    <h1 class="g-title">Catan</h1><p class="g-sub"><span class="v-normal">Normal \xB7 Catan Energie \xB7 Raumfahrer</span><span class="v-energie">Catan Energie \u2013 Wind, Sonne, Strom</span><span class="v-raumfahrer">Raumfahrer \u2013 auf zu neuen Sternen</span></p>`
   });
 
   // js/games/registry.js
@@ -2049,7 +2101,7 @@
   var current = null;
   function parse() {
     const h = location.hash.replace(/^#\/?/, "").split("/").filter(Boolean);
-    if (h[0] === "g" && gameById(h[1])) return { view: "game", game: h[1], tab: TABS.some(([t]) => t === h[2]) ? h[2] : "dashboard" };
+    if (h[0] === "g" && gameById(h[1])) return { view: "game", game: h[1], tab: h[2] === "einstellungen" || TABS.some(([t]) => t === h[2]) ? h[2] : "dashboard" };
     if (h[0] === "einstellungen") return { view: "settings" };
     return { view: "hub" };
   }
@@ -2082,6 +2134,7 @@
   }
   function setTheme(game) {
     document.body.className = game ? `theme ${game.theme}` : "hub";
+    delete document.body.dataset.variant;
     document.title = game ? `${game.name} \xB7 KahloGames` : "KahloGames";
     const meta = $('meta[name="theme-color"]');
     if (meta) meta.content = game?.themeColor || "#ECE9E2";
@@ -2163,9 +2216,7 @@
     }).join("")}</ul>` : '<p class="empty">Noch keine Spieler. Leg oben den ersten an.</p>'}
     </section>
     <section class="s-block">
-      <h2>Konto</h2>
-      <p class="muted">${demo ? "Demo-Modus: Die Daten liegen nur in diesem Browser." : "Verbunden mit Google Sheets."}</p>
-      <button class="btn btn-ghost" type="button" id="logout">Abmelden</button>
+      <p class="muted small">${demo ? "Demo-Modus: Die Daten liegen nur in diesem Browser." : "Verbunden mit Google Sheets."} Die Symbole der Spieler stellst du im jeweiligen Spiel \xFCber das Zahnrad ein.</p>
     </section>
   </main>`;
     $("#addP").addEventListener("submit", async (e) => {
@@ -2181,22 +2232,13 @@
       }
     });
     $$(".prow").forEach((b) => b.addEventListener("click", () => editPlayer(b.dataset.id)));
-    $("#logout").addEventListener("click", () => {
-      forget();
-      store.loaded = false;
-      renderLogin();
-    });
   }
   async function editPlayer(id) {
     const p = store.players.find((x) => x.id === id);
     if (!p) return;
-    const extras = GAMES.filter((g) => g.lookEditor);
-    let looks = JSON.parse(JSON.stringify(p.looks || {}));
     await modal({
       title: p.name,
-      body: `<label class="field"><span>Name</span><input id="pName" value="${esc(p.name)}" maxlength="24"></label>
-      ${extras.map((g) => `<div class="look-block" data-game="${g.id}"><h3>Look in ${esc(g.name)}</h3><div class="look-ed"></div></div>`).join("")}`,
-      onMount: (w) => extras.forEach((g) => g.lookEditor($(".look-ed", w.querySelector(`[data-game="${g.id}"]`)), p, looks, (l) => looks = l)),
+      body: `<label class="field"><span>Name</span><input id="pName" value="${esc(p.name)}" maxlength="24"></label>`,
       actions: [
         { label: "L\xF6schen", danger: true, handler: async () => {
           await removePlayer(p);
@@ -2207,7 +2249,7 @@
           const name = $("#pName", w).value.trim();
           if (!name) return false;
           try {
-            await updatePlayer({ id: p.id, name, looks });
+            await updatePlayer({ id: p.id, name });
             toast("Gespeichert.");
           } catch (e) {
             toast(esc(e.message));
@@ -2243,7 +2285,7 @@
   <div class="g-shell">
     ${g.decor ? g.decor() : ""}
     <header class="g-top">
-      <a class="g-back" href="#/" aria-label="Zur Spielauswahl">${gridIcon}<span>Spiele</span></a>
+      <div class="g-actions"><a class="g-back" href="#/" aria-label="Zur Spielauswahl">${gridIcon}<span>Spiele</span></a><a class="g-gear" href="#/g/${id}/einstellungen" aria-label="Einstellungen f\xFCr ${esc(g.name)}" ${tab === "einstellungen" ? 'aria-current="page"' : ""}>${gearIcon}</a></div>
       ${g.header()}
     </header>
     <nav class="g-tabs" aria-label="Bereiche">${TABS.map(([t, l]) => `<a class="g-tab" href="#/g/${id}/${t}" ${t === tab ? 'aria-current="page"' : ""}>${g.tabIcon ? g.tabIcon(t) : ""}<span>${l}</span></a>`).join("")}</nav>
@@ -2254,7 +2296,57 @@
       o.replaceWith(n);
       g.tabs[tab](n, ctx);
     } };
+    if (tab === "einstellungen") return gameSettings($("#gMain"), g);
     g.tabs[tab]($("#gMain"), ctx);
+  }
+  function gameSettings(el, g) {
+    const ps = playersByCreated();
+    el.innerHTML = `<section class="panel"><h2 class="panel-title">Spieler-Symbole in ${esc(g.name)}</h2>
+    <p class="hint">Tippe auf einen Spieler, um sein Symbol f\xFCr dieses Spiel zu \xE4ndern. Neue Spieler legst du \xFCber das Zahnrad auf der Startseite an.</p>
+    ${ps.length ? `<ul class="icon-list">${ps.map((p) => `<li><button type="button" class="icon-row" data-id="${p.id}">${g.avatar(p, "big")}<span class="pname">${esc(p.name)}</span><span class="chev">${backIcon}</span></button></li>`).join("")}</ul>` : '<p class="empty">Noch keine Spieler angelegt.</p>'}
+  </section>`;
+    $$(".icon-row", el).forEach((b) => b.addEventListener("click", () => pickIcon(g, b.dataset.id, el)));
+  }
+  async function pickIcon(g, id, el) {
+    const p = store.players.find((x) => x.id === id);
+    if (!p) return;
+    let looks = JSON.parse(JSON.stringify(p.looks || {}));
+    const others = store.players.filter((x) => x.id !== id);
+    await modal({
+      title: `${p.name} in ${g.name}`,
+      cls: "icon-modal",
+      body: '<div class="look-ed"></div>',
+      onMount: (w) => {
+        const box = $(".look-ed", w);
+        if (g.lookEditor) return g.lookEditor(box, p, looks, (l) => looks = l);
+        const pal = g.icons.pal;
+        const draw = () => {
+          const cur = looks[g.id]?.i ?? pal.indexOf(g.icons.current(p));
+          box.innerHTML = `<div class="icon-grid">${pal.map((x, i) => {
+            const taken = others.filter((o) => pal.indexOf(g.icons.current(o)) === i).map((o) => o.name);
+            return `<button type="button" class="icon-opt ${i === cur ? "on" : ""}" data-i="${i}" title="${esc(x.n != null && typeof x.n === "string" ? x.n : "")}"><span class="av av-big">${g.icons.render(x)}</span>${taken.length ? `<small>${esc(taken.join(", "))}</small>` : "<small>&nbsp;</small>"}</button>`;
+          }).join("")}</div><p class="hint">Unter einem Symbol steht, wer es gerade hat.</p>`;
+        };
+        draw();
+        box.addEventListener("click", (e) => {
+          const b = e.target.closest(".icon-opt");
+          if (!b) return;
+          looks = { ...looks, [g.id]: { i: +b.dataset.i } };
+          draw();
+        });
+      },
+      actions: [{ label: "Abbrechen", value: false }, { label: "Speichern", primary: true, handler: async () => {
+        try {
+          await updatePlayer({ id: p.id, looks });
+          toast("Symbol gespeichert.");
+        } catch (e) {
+          toast(esc(e.message));
+          return false;
+        }
+        return true;
+      } }]
+    });
+    gameSettings(el, g);
   }
   var gridIcon = `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2.5" y="2.5" width="6" height="6" rx="1.5"/><rect x="11.5" y="2.5" width="6" height="6" rx="1.5"/><rect x="2.5" y="11.5" width="6" height="6" rx="1.5"/><rect x="11.5" y="11.5" width="6" height="6" rx="1.5"/></svg>`;
   onChange(() => {

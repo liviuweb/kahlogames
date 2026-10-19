@@ -214,3 +214,60 @@ body.theme-catan {
 .award { margin-top: 14px; }
 .tie { margin-top: 16px; padding: 12px; border-radius: 12px; background: var(--accent-soft); }
 @media (max-width: 420px) { .wz-fan, .dm-coins, .ct-board { transform: scale(.72); transform-origin: top right; } }
+
+/* ---- Catan-Varianten ---- */
+.theme-catan .v-energie, .theme-catan .v-raumfahrer { display: none; }
+body.theme-catan[data-variant="energie"] .v-normal, body.theme-catan[data-variant="raumfahrer"] .v-normal { display: none; }
+body.theme-catan[data-variant="energie"] .v-energie, body.theme-catan[data-variant="raumfahrer"] .v-raumfahrer { display: block; }
+body.theme-catan[data-variant="energie"] .g-sub .v-energie, body.theme-catan[data-variant="raumfahrer"] .g-sub .v-raumfahrer { display: inline; }
+.ct-hex .eic { display: grid; place-items: center; width: 56%; height: 56%; }
+.ct-hex .eic svg { width: 100%; height: 100%; }
+
+/* Catan Energie: frisch, grün, sonnig */
+body.theme-catan[data-variant="energie"] {
+  --bg: #E4F3E8; --ink: #12352A; --muted: #4E6E61; --line: rgba(18, 53, 42, .15); --card: #F7FCF8; --field: #FFFFFF;
+  --accent: #0E8F6E; --accent-ink: #fff; --accent-soft: #CFE8D9;
+  background: radial-gradient(50% 35% at 100% 0, rgba(242, 183, 5, .35), transparent 70%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='97'%3E%3Cpath d='M28 0l28 16v32L28 64 0 48V16zM28 64v33' fill='none' stroke='%230E8F6E' stroke-opacity='.16' stroke-width='1.5'/%3E%3C/svg%3E"),
+    linear-gradient(180deg, #DDF0F7 0, #E4F3E8 40%);
+  background-attachment: fixed !important;
+}
+body.theme-catan[data-variant="energie"] .g-title { color: #0E8F6E; }
+
+/* Catan Raumfahrer: Weltraum */
+body.theme-catan[data-variant="raumfahrer"] {
+  --bg: #0D1330; --ink: #E8EEFF; --muted: #9AA7CF; --line: rgba(232, 238, 255, .15); --card: #172048; --field: #1F2A5A;
+  --accent: #FF8A3D; --accent-ink: #1A0E05; --accent-soft: #28335F;
+  --shadow: 0 10px 26px -12px rgba(0, 0, 0, .7);
+  background:
+    radial-gradient(1.4px 1.4px at 10% 20%, #fff 50%, transparent 51%), radial-gradient(1px 1px at 30% 70%, #fff 50%, transparent 51%), radial-gradient(1.2px 1.2px at 55% 15%, #fff 50%, transparent 51%),
+    radial-gradient(1px 1px at 75% 45%, #fff 50%, transparent 51%), radial-gradient(1.6px 1.6px at 90% 80%, #CFE3FF 50%, transparent 51%), radial-gradient(1px 1px at 45% 92%, #fff 50%, transparent 51%),
+    radial-gradient(60% 40% at 15% 10%, rgba(120, 80, 220, .35), transparent 70%), radial-gradient(50% 40% at 95% 60%, rgba(40, 140, 220, .25), transparent 70%), #0D1330;
+  background-attachment: fixed !important;
+}
+body.theme-catan[data-variant="raumfahrer"] .g-title { color: #8FD3FF; font-family: Orbitron, Bitter, sans-serif; letter-spacing: .06em; text-transform: uppercase; font-size: clamp(38px, 10vw, 60px); }
+body.theme-catan[data-variant="raumfahrer"] input, body.theme-catan[data-variant="raumfahrer"] select { color: var(--ink); }
+body.theme-catan[data-variant="raumfahrer"] input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); }
+body.theme-catan[data-variant="raumfahrer"] .chart-tip { background: #E8EEFF; color: #0D1330; }
+.ct-space { position: absolute; right: 14px; top: 14px; width: 180px; height: 140px; z-index: 1; }
+.ct-space .planet { position: absolute; border-radius: 50%; }
+.ct-space .p1 { width: 64px; height: 64px; left: 10px; top: 46px; background: radial-gradient(circle at 35% 30%, #FFD39B, #E0782F 60%, #8A3A12); box-shadow: 0 0 22px rgba(255, 140, 60, .35); }
+.ct-space .p1::after { content: ''; position: absolute; left: -16px; right: -16px; top: 26px; height: 12px; border-radius: 50%; border: 3px solid rgba(255, 220, 170, .75); transform: rotate(-14deg); }
+.ct-space .p2 { width: 30px; height: 30px; left: 96px; top: 4px; background: radial-gradient(circle at 35% 30%, #BDEBFF, #2C64B5 65%, #172E66); }
+.ct-space .p3 { width: 16px; height: 16px; left: 150px; top: 100px; background: radial-gradient(circle at 35% 30%, #D8F5D0, #4CAF50 70%); }
+.ct-space .rocket { position: absolute; width: 56px; height: 56px; left: 110px; top: 40px; transform: rotate(28deg); filter: drop-shadow(0 0 8px rgba(255, 170, 80, .5)); }
+@media (max-width: 420px) { .ct-space { transform: scale(.72); transform-origin: top right; } }
+
+/* Spiel-Einstellungen: Symbole */
+.g-actions { display: flex; gap: 8px; align-items: center; position: relative; z-index: 3; }
+.g-gear { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%; background: color-mix(in srgb, var(--card) 85%, transparent); box-shadow: var(--shadow); color: var(--ink); }
+.g-gear svg { width: 20px; height: 20px; }
+.g-gear[aria-current="page"] { background: var(--accent); color: var(--accent-ink); }
+.icon-list { list-style: none; margin: 10px 0 0; padding: 0; }
+.icon-row { width: 100%; display: flex; align-items: center; gap: 14px; padding: 10px 4px; border: 0; border-bottom: 1px solid var(--line); background: none; cursor: pointer; text-align: left; color: var(--ink); }
+.icon-row .pname { flex: 1; font-weight: 600; font-size: 18px; }
+.icon-row .chev svg { width: 18px; height: 18px; transform: rotate(180deg); color: var(--muted); }
+.icon-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); gap: 8px; }
+.icon-opt { display: grid; justify-items: center; gap: 4px; padding: 10px 4px 6px; border-radius: 14px; border: 2px solid var(--line); background: var(--field); cursor: pointer; color: var(--ink); }
+.icon-opt small { font-size: 11px; color: var(--muted); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.icon-opt.on { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
