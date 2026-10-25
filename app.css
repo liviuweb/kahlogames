@@ -304,3 +304,10 @@ body.theme { background: var(--bg); padding-bottom: calc(86px + env(safe-area-in
 .rin:has(.rin-wz) { grid-template-columns: 1fr auto; }
 .mk.wz { color: var(--muted); font-weight: 500; }
 .mk.wz.hit { color: var(--accent); font-weight: 700; }
+.hub-right { display: flex; align-items: center; gap: 4px; }
+.ver { font-size: 11px; font-weight: 600; color: var(--muted); letter-spacing: .02em; opacity: .8; }
+.hub-sort { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: -6px 0 16px; }
+.hub-sort span { font-size: 13px; color: var(--muted); font-weight: 600; margin-right: 2px; }
+.hub-sort button { border: 1.5px solid var(--line); background: transparent; color: var(--ink); border-radius: 999px; padding: 6px 12px; min-height: 34px; font: 600 14px/1 var(--font); cursor: pointer; }
+.hub-sort button[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+@media (max-width: 440px) { .hub-sort span { display: none; } .hub-sort button { padding: 6px 11px; font-size: 13px; } }

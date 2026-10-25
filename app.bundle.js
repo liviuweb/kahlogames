@@ -2546,7 +2546,7 @@
 
   // js/app.js
   var app;
-  var APP_VERSION = "1.6";
+  var APP_VERSION = "1.7";
   var TABS = [["dashboard", "Dashboard"], ["neu", "Neues Spiel"], ["statistik", "Statistik"], ["verlauf", "Verlauf"]];
   var current = null;
   function parse() {
@@ -2622,7 +2622,36 @@
   }
   var loadingScreen = () => `<main class="login"><h1 class="wordmark">Kahlo<span>Games</span></h1><p class="loading">Lade Daten \u2026</p></main>`;
   var errorScreen = (m) => `<main class="login"><h1 class="wordmark">Kahlo<span>Games</span></h1><p class="login-msg">${esc(m)}</p><button class="btn btn-ink" onclick="location.reload()">Erneut versuchen</button></main>`;
+  var SORTS = [["partien", "Partien"], ["spieler", "Spieler"], ["zuletzt", "Zuletzt"], ["az", "A\u2013Z"]];
+  var SORT_KEY = "kg.hubSort";
+  var getSort = () => {
+    try {
+      const v = localStorage.getItem(SORT_KEY);
+      if (SORTS.some(([k]) => k === v)) return v;
+    } catch {
+    }
+    return "partien";
+  };
   function renderHub() {
+    const sort = getSort();
+    const info = GAMES.map((g2) => {
+      const ms = matchesOf(g2.id);
+      return { g: g2, ms, n: ms.length, players: new Set(ms.flatMap((m) => m.players || [])).size, last: ms.length ? String(ms[ms.length - 1].date) : "" };
+    });
+    const byName = (a, b) => a.g.name.localeCompare(b.g.name, "de");
+    const cmp = {
+      partien: (a, b) => b.n - a.n || byName(a, b),
+      spieler: (a, b) => b.players - a.players || b.n - a.n || byName(a, b),
+      zuletzt: (a, b) => b.last.localeCompare(a.last) || byName(a, b),
+      az: byName
+    }[sort];
+    info.sort(cmp);
+    const meta = (x) => {
+      if (!x.n) return "Noch keine Partie";
+      const last = `zuletzt ${fmtDate(x.last, { day: "2-digit", month: "2-digit" })}`;
+      if (sort === "spieler") return `${plural(x.players, "Spieler", "Spieler")} \xB7 ${plural(x.n, "Partie", "Partien")}`;
+      return `${plural(x.n, "Partie", "Partien")} \xB7 ${last}`;
+    };
     app.innerHTML = `
   <header class="hub-top">
     <h1 class="wordmark small">Kahlo<span>Games</span></h1>
@@ -2630,18 +2659,22 @@
   </header>
   <main class="hub-main">
     <h2 class="hub-q">Was habt ihr gespielt?</h2>
+    <div class="hub-sort" role="group" aria-label="Sortieren nach"><span>Sortiert nach</span>${SORTS.map(([k, l]) => `<button type="button" data-sort="${k}" aria-pressed="${k === sort}">${l}</button>`).join("")}</div>
     <div class="tiles">
-      ${GAMES.map((g2) => {
-      const ms = matchesOf(g2.id);
-      const last = ms[ms.length - 1];
-      return `<a class="tile tile-${g2.id}" href="#/g/${g2.id}">
-          <div class="tile-logo">${g2.logo()}</div>
-          <div class="tile-meta"><b>${esc(g2.name)}</b><span>${ms.length ? `${plural(ms.length, "Partie", "Partien")} \xB7 zuletzt ${fmtDate(last.date, { day: "2-digit", month: "2-digit" })}` : "Noch keine Partie"}</span></div>
-        </a>`;
-    }).join("")}
+      ${info.map((x) => `<a class="tile tile-${x.g.id}" href="#/g/${x.g.id}">
+          <div class="tile-logo">${x.g.logo()}</div>
+          <div class="tile-meta"><b>${esc(x.g.name)}</b><span>${meta(x)}</span></div>
+        </a>`).join("")}
     </div>
     ${demo ? '<p class="demo-note">Demo-Modus \u2013 noch nicht mit Google Sheets verbunden.</p>' : ""}
   </main>`;
+    $$("[data-sort]").forEach((b) => b.addEventListener("click", () => {
+      try {
+        localStorage.setItem(SORT_KEY, b.dataset.sort);
+      } catch {
+      }
+      renderHub();
+    }));
   }
   var gearIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>`;
   var backIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>`;
