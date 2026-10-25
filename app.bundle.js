@@ -197,8 +197,8 @@
     for (let i = results.length - 1; i >= 0 && results[i].won; i--) cur++;
     return cur;
   }
-  var top = (list, key, { min = 1, low = false, filter = (s) => s.games >= min } = {}) => {
-    const l = list.filter((s) => filter(s) && s[key] != null);
+  var top = (list2, key, { min = 1, low = false, filter = (s) => s.games >= min } = {}) => {
+    const l = list2.filter((s) => filter(s) && s[key] != null);
     if (!l.length) return null;
     const v = low ? Math.min(...l.map((s) => s[key])) : Math.max(...l.map((s) => s[key]));
     return { value: v, who: l.filter((s) => s[key] === v) };
@@ -212,24 +212,24 @@
     });
     return out;
   }
-  var DKEY = (g) => `kg.draft.${g}`;
+  var DKEY = (g2) => `kg.draft.${g2}`;
   var draft = {
-    get(g) {
+    get(g2) {
       try {
-        return JSON.parse(localStorage.getItem(DKEY(g)));
+        return JSON.parse(localStorage.getItem(DKEY(g2)));
       } catch {
         return null;
       }
     },
-    set(g, v) {
+    set(g2, v) {
       try {
-        localStorage.setItem(DKEY(g), JSON.stringify(v));
+        localStorage.setItem(DKEY(g2), JSON.stringify(v));
       } catch {
       }
     },
-    clear(g) {
+    clear(g2) {
       try {
-        localStorage.removeItem(DKEY(g));
+        localStorage.removeItem(DKEY(g2));
       } catch {
       }
     }
@@ -436,26 +436,26 @@
   function statTile(title, value, who, note = "", cls = "") {
     return `<article class="stat ${cls}"><h3>${esc(title)}</h3><p class="stat-val">${value}</p>${who ? `<p class="stat-who">${who}</p>` : ""}${note ? `<p class="stat-note">${note}</p>` : ""}</article>`;
   }
-  var whoList = (game, list) => list.map((s) => `<span class="who">${game.avatar(s.player || { id: s.id, name: s.name }, "mini")}${esc(s.name)}</span>`).join("");
-  function leaderboard(game, stats, cols, { sort = "wins" } = {}) {
-    if (!stats.length) return '<p class="empty">Noch keine Partien in dieser Auswahl.</p>';
-    const sorted = [...stats].sort((a, b) => (b[sort] ?? -1e9) - (a[sort] ?? -1e9) || b.rate - a.rate || (b.avg ?? 0) - (a.avg ?? 0));
+  var whoList = (game, list2) => list2.map((s) => `<span class="who">${game.avatar(s.player || { id: s.id, name: s.name }, "mini")}${esc(s.name)}</span>`).join("");
+  function leaderboard(game, stats2, cols, { sort = "wins" } = {}) {
+    if (!stats2.length) return '<p class="empty">Noch keine Partien in dieser Auswahl.</p>';
+    const sorted = [...stats2].sort((a, b) => (b[sort] ?? -1e9) - (a[sort] ?? -1e9) || b.rate - a.rate || (b.avg ?? 0) - (a.avg ?? 0));
     return `<div class="table-wrap"><table class="lb">
     <thead><tr><th class="l">Spieler</th>${cols.map((c) => `<th>${esc(c.label)}</th>`).join("")}</tr></thead>
     <tbody>${sorted.map((s, i) => `<tr><td class="l"><span class="rank">${i + 1}</span>${game.avatar({ id: s.id, name: s.name }, "mini")}<span class="nm">${esc(s.name)}</span></td>${cols.map((c) => `<td>${c.fmt ? c.fmt(s[c.key], s) : s[c.key] ?? "\u2013"}</td>`).join("")}</tr>`).join("")}</tbody>
   </table></div>`;
   }
-  function historyList(el, ctx, { matches, line, onEdit }) {
-    const g = ctx.game;
-    const list = [...matches].reverse();
-    if (!list.length) {
+  function historyList(el, ctx, { matches, line: line2, onEdit }) {
+    const g2 = ctx.game;
+    const list2 = [...matches].reverse();
+    if (!list2.length) {
       el.innerHTML = `<div class="empty-state"><p>Noch keine Partie eingetragen.</p><button class="btn btn-primary" type="button" data-new>Erste Partie eintragen</button></div>`;
       $("[data-new]", el).onclick = () => ctx.go("neu");
       return;
     }
-    el.innerHTML = `<ul class="hist">${list.map((m) => `<li class="hist-item" data-id="${m.id}">
+    el.innerHTML = `<ul class="hist">${list2.map((m) => `<li class="hist-item" data-id="${m.id}">
       <div class="hist-head"><span class="hist-date">${fmtDate(m.date)}</span><span class="hist-tags">${(m.tags || []).map((t) => `<span class="tag">${esc(t)}</span>`).join("")}</span></div>
-      <div class="hist-body">${line(m)}</div>
+      <div class="hist-body">${line2(m)}</div>
       <div class="hist-actions">${onEdit ? '<button class="btn btn-ghost sm" type="button" data-edit>Bearbeiten</button>' : ""}<button class="btn btn-ghost sm" type="button" data-del>L\xF6schen</button></div>
     </li>`).join("")}</ul>`;
     el.addEventListener("click", async (e) => {
@@ -558,7 +558,7 @@
       return cfg.target != null && Object.values(totals).some((v) => v >= cfg.target) || dd && maxR(dd.players.length) != null && dd.rounds.length >= maxR(dd.players.length);
     }
     function newTab(el, ctx) {
-      const g = ctx.game;
+      const g2 = ctx.game;
       let d = draft.get(cfg.id);
       if (!d) return setup();
       live();
@@ -571,7 +571,7 @@
           <p class="hint">${cfg.labels.startHint}</p>
         </section>`;
         const btn = $("#rStart", el);
-        playerPicker($("#rPick", el), { game: g, selected: sel, min: cfg.min, max: cfg.max, onChange: () => btn.disabled = sel.size < cfg.min });
+        playerPicker($("#rPick", el), { game: g2, selected: sel, min: cfg.min, max: cfg.max, onChange: () => btn.disabled = sel.size < cfg.min });
         btn.onclick = () => {
           d = { date: $("#rDate", el).value || today(), players: [...sel], rounds: [] };
           draft.set(cfg.id, d);
@@ -586,7 +586,7 @@
         <section class="panel score-head">
           <div class="sh-top"><span>${fmtDate(d.date)}</span><span>${mr ? `Runde ${Math.min(d.rounds.length, mr)} von ${mr}` : plural(d.rounds.length, "Runde", "Runden")}${cfg.target ? ` \xB7 Ziel ${cfg.target}` : ""}</span></div>
           <ol class="standings">${order.map((p) => `<li class="${pl[p] === 1 && d.rounds.length ? "lead" : ""}">
-            <span class="st-place">${pl[p]}.</span>${g.avatar({ id: p, name: playerName(p) }, "dot")}<span class="nm">${esc(playerName(p))}</span><b>${fmtNum(totals[p], 0)}</b>
+            <span class="st-place">${pl[p]}.</span>${g2.avatar({ id: p, name: playerName(p) }, "dot")}<span class="nm">${esc(playerName(p))}</span><b>${fmtNum(totals[p], 0)}</b>
             ${cfg.target ? `<span class="prog"><i style="width:${Math.min(100, Math.max(0, totals[p] / cfg.target * 100))}%"></i></span>` : ""}</li>`).join("")}</ol>
         </section>
         ${isEnd ? `<section class="panel end-note"><p><b>${esc(order.filter((p) => pl[p] === 1).map((p) => playerName(p)).join(" & "))}</b> ${cfg.target != null && !mr ? `hat ${cfg.target} Punkte geknackt` : "liegt vorne \u2013 alle Runden sind gespielt"}. Jetzt speichern!</p></section>` : roundForm()}
@@ -615,9 +615,9 @@
         const P = d.players, n = d.rounds.length + 1;
         return `<section class="panel round-form">
         <h2 class="panel-title">Runde ${n}${cfg.extra === "wizard" ? ` <small class="muted">\xB7 ${plural(n, "Karte", "Karten")} je Spieler</small>` : ""}</h2>
-        ${cfg.extra === "roundWinner" ? `<span class="field-label">Wer hat die Runde gewonnen?</span><div class="chips" data-rw>${P.map((p) => `<button class="chip" type="button" data-id="${p}" aria-pressed="false">${g.avatar({ id: p, name: playerName(p) }, "dot")}<span>${esc(playerName(p))}</span></button>`).join("")}</div>` : ""}
+        ${cfg.extra === "roundWinner" ? `<span class="field-label">Wer hat die Runde gewonnen?</span><div class="chips" data-rw>${P.map((p) => `<button class="chip" type="button" data-id="${p}" aria-pressed="false">${g2.avatar({ id: p, name: playerName(p) }, "dot")}<span>${esc(playerName(p))}</span></button>`).join("")}</div>` : ""}
         <div class="rinputs">${P.map((p) => `<div class="rin" data-p="${p}">
-            <span class="rin-name">${g.avatar({ id: p, name: playerName(p) }, "dot")}${esc(playerName(p))}</span>
+            <span class="rin-name">${g2.avatar({ id: p, name: playerName(p) }, "dot")}${esc(playerName(p))}</span>
             ${cfg.extra === "wizard" ? `<span class="rin-wz"><label><small>Ansage</small><input type="number" inputmode="numeric" min="0" max="${n}" data-bid="${p}" placeholder="0" aria-label="Ansage ${esc(playerName(p))}"></label><label><small>Stiche</small><input type="number" inputmode="numeric" min="0" max="${n}" data-tricks="${p}" placeholder="0" aria-label="Stiche ${esc(playerName(p))}"></label></span>` : `<span class="rin-num">${cfg.negative ? `<button type="button" class="pm" data-pm="${p}" aria-label="Vorzeichen umdrehen">\xB1</button>` : ""}<input type="${cfg.negative ? "text" : "number"}" inputmode="numeric" pattern="-?[0-9]*" step="1" data-score="${p}" placeholder="0" aria-label="Punkte ${esc(playerName(p))}"></span>`}
             ${cfg.extra === "closer" ? `<label class="tick"><input type="radio" name="closer" value="${p}"><span>hat beendet</span></label>` : ""}
             ${cfg.extra === "flip7" ? `<label class="tick"><input type="checkbox" data-f7="${p}"><span>Flip 7!</span></label>` : ""}
@@ -699,14 +699,14 @@
         try {
           await saveMatch(m);
           draft.clear(cfg.id);
-          toast(`<b>Gespeichert.</b> ${esc(winners.map((p) => playerName(p)).join(" & "))} ${winners.length > 1 ? "gewinnen" : "gewinnt"} mit ${fmtNum(totals[winners[0]], 0)} Punkten.`, { icon: g.winIcon?.() || "" });
+          toast(`<b>Gespeichert.</b> ${esc(winners.map((p) => playerName(p)).join(" & "))} ${winners.length > 1 ? "gewinnen" : "gewinnt"} mit ${fmtNum(totals[winners[0]], 0)} Punkten.`, { icon: g2.winIcon?.() || "" });
           ctx.go("verlauf");
         } catch (err) {
           toast(esc(err.message));
         }
       }
     }
-    function stats(matches) {
+    function stats2(matches) {
       const base = perPlayer(matches, { lowWins: cfg.lowWins });
       for (const s of base) {
         const rs = [];
@@ -750,7 +750,7 @@
       }
       return base;
     }
-    return { newTab, stats, totalsOf };
+    return { newTab, stats: stats2, totalsOf };
   }
 
   // js/games/floriferous.js
@@ -882,7 +882,7 @@
     }));
   }
   function dashboard(el, ctx) {
-    const g = ctx.game;
+    const g2 = ctx.game;
     const all = matchesOf("floriferous");
     const ms = all.filter(filt(view.mode, view.size));
     const st = floriStats(ms);
@@ -890,7 +890,7 @@
     const tiles = [];
     const t = (title, key, fmt, opts) => {
       const r = top(st, key, opts);
-      tiles.push(statTile(title, r ? fmt(r.value) : "\u2013", r ? whoList(g, r.who) : '<span class="muted">noch niemand</span>', opts?.note || ""));
+      tiles.push(statTile(title, r ? fmt(r.value) : "\u2013", r ? whoList(g2, r.who) : '<span class="muted">noch niemand</span>', opts?.note || ""));
     };
     t(solo ? "Meiste Solo-Partien" : "Meiste Partien", "games", (v) => v);
     if (!solo) {
@@ -912,7 +912,7 @@
     ${ms.length ? `
     <div class="stats-grid">${tiles.join("")}</div>
     <section class="panel"><h2 class="ribbon">Kategorie-K\xF6nige</h2><ul class="kings">${kings}</ul></section>
-    <section class="panel"><h2 class="ribbon">Zuletzt gespielt</h2>${recent.map((m) => histLine(g, m, true)).join("")}
+    <section class="panel"><h2 class="ribbon">Zuletzt gespielt</h2>${recent.map((m) => histLine(g2, m, true)).join("")}
       <button class="btn btn-ghost wide" type="button" data-all>Alle Partien</button></section>` : `<div class="empty-state panel"><p>Noch keine ${solo ? "Solo-" : ""}Partie im ${view.size === "extended" ? "Extended" : "Standard"}-Spiel.</p><button class="btn btn-primary" type="button" data-new>Partie eintragen</button></div>`}`;
     bindFilters(el, () => dashboard(el, ctx));
     $("[data-new]", el)?.addEventListener("click", () => ctx.go("neu"));
@@ -920,7 +920,7 @@
   }
   var editing = null;
   function newGame(el, ctx) {
-    const g = ctx.game;
+    const g2 = ctx.game;
     const e = editing;
     editing = null;
     const S = {
@@ -953,11 +953,11 @@
     <section class="panel" id="fPick">${img("splash_green", "deco deco-bl", "")}<div></div></section>
     <div class="cards" id="fCards"></div>
     <div class="save-wrap">${img("splash_blue", "deco deco-save", "")}<button class="save" type="button" id="fSave">${img("bee")}${S.id ? "\xC4nderungen speichern" : "Spiel speichern"}</button></div>`;
-    const picker = playerPicker($("#fPick > div", el), { game: g, selected: S.selected, min: S.mode === "solo" ? 1 : 2, max: S.mode === "solo" ? 1 : 4, single: S.mode === "solo", label: S.mode === "solo" ? "Wer hat gespielt?" : "Wer hat mitgespielt?", onChange: () => cards() });
+    const picker = playerPicker($("#fPick > div", el), { game: g2, selected: S.selected, min: S.mode === "solo" ? 1 : 2, max: S.mode === "solo" ? 1 : 4, single: S.mode === "solo", label: S.mode === "solo" ? "Wer hat gespielt?" : "Wer hat mitgespielt?", onChange: () => cards() });
     function cards() {
-      const list = playersByCreated().filter((p) => S.selected.has(p.id));
-      [...S.selected].filter((id) => !list.some((p) => p.id === id)).forEach((id) => list.push({ id, name: playerName(id, e) }));
-      $("#fCards", el).innerHTML = list.map((p) => {
+      const list2 = playersByCreated().filter((p) => S.selected.has(p.id));
+      [...S.selected].filter((id) => !list2.some((p) => p.id === id)).forEach((id) => list2.push({ id, name: playerName(id, e) }));
+      $("#fCards", el).innerHTML = list2.map((p) => {
         const l = lookOf(p), s = sc(p.id);
         return `<article class="pcard" data-id="${p.id}">
         <div class="pcard-art">${cardArt(l)}
@@ -972,7 +972,7 @@
         <div class="mood"><div class="mood-txt"><small>Stimmung</small><span class="mt">\u2013</span></div><div class="mood-scale">${MOODS.map(() => "<i></i>").join("")}</div></div>
       </article>`;
       }).join("") || '<p class="empty">W\xE4hle oben, wer gespielt hat.</p>';
-      list.forEach((p) => update(p.id, false));
+      list2.forEach((p) => update(p.id, false));
       leader();
     }
     function update(id, bump = true) {
@@ -1019,7 +1019,7 @@
         const holder = $("#fPick > div", el);
         const fresh = holder.cloneNode(false);
         holder.replaceWith(fresh);
-        playerPicker(fresh, { game: g, selected: S.selected, min: S.mode === "solo" ? 1 : 2, max: S.mode === "solo" ? 1 : 4, single: S.mode === "solo", label: S.mode === "solo" ? "Wer hat gespielt?" : "Wer hat mitgespielt?", onChange: () => cards() });
+        playerPicker(fresh, { game: g2, selected: S.selected, min: S.mode === "solo" ? 1 : 2, max: S.mode === "solo" ? 1 : 4, single: S.mode === "solo", label: S.mode === "solo" ? "Wer hat gespielt?" : "Wer hat mitgespielt?", onChange: () => cards() });
         cards();
         return;
       }
@@ -1098,7 +1098,7 @@
     setTimeout(() => f.remove(), 2400);
   }
   function statistik(el, ctx) {
-    const g = ctx.game;
+    const g2 = ctx.game;
     const ms = matchesOf("floriferous").filter(filt(view.mode, view.size));
     const st = floriStats(ms).sort((a, b) => (b.moodAvg ?? 0) - (a.moodAvg ?? 0));
     const solo = view.mode === "solo";
@@ -1116,7 +1116,7 @@
     <tbody>${st.map((s) => `<tr><td class="l">${avatar(s.player, "mini")}<span class="nm">${esc(s.name)}</span></td>${CATS.map((c) => `<td class="${s.cat[c.key] === catMax[c.key] ? "best" : ""}">${fmtNum(s.cat[c.key])}</td>`).join("")}</tr>`).join("")}</tbody></table></div>
     <p class="hint">Durchschnitt pro Partie. Fett = bester Wert der Kategorie.</p>`;
     const more = `
-    <h3 class="sub-h">Punkte-Verlauf</h3>${trendChart(g, ms, (m, id) => m.totals?.[id], { colors: (id) => colorHex(lookOf({ id }).color), label: "Punkte je Partie" })}
+    <h3 class="sub-h">Punkte-Verlauf</h3>${trendChart(g2, ms, (m, id) => m.totals?.[id], { colors: (id) => colorHex(lookOf({ id }).color), label: "Punkte je Partie" })}
     <h3 class="sub-h">St\xE4rkste Kategorie</h3><ul class="kings">${st.map((s) => `<li>${img(s.strong.icon, "ci")}<span class="who">${avatar(s.player, "mini")}${esc(s.name)}</span><span class="k-cat">${s.strong.name}</span><b>\xD8 ${fmtNum(s.cat[s.strong.key])}</b></li>`).join("")}</ul>
     <h3 class="sub-h">Kategorie-Rekorde</h3><ul class="kings">${CATS.map((c) => {
       const b = st.reduce((a, x) => x.catBest[c.key] > a.catBest[c.key] ? x : a);
@@ -1130,12 +1130,12 @@
     el.innerHTML = `${filterBar()}
     <section class="panel"><h2 class="ribbon">Stimmungen</h2><p class="hint">Wie entspannt war der Garten? Verteilung je Spieler, rechts die typische Stimmung.</p><ul class="moods">${moodRows}</ul>
       <div class="legend">${MOODS.map((m, i) => `<span><i style="background:${MOOD_COL[i]}"></i>${m}</span>`).join("")}</div></section>
-    <section class="panel"><h2 class="ribbon">Rangliste</h2>${leaderboard(g, st, cols, { sort: solo ? "avg" : "wins" })}</section>
+    <section class="panel"><h2 class="ribbon">Rangliste</h2>${leaderboard(g2, st, cols, { sort: solo ? "avg" : "wins" })}</section>
     <section class="panel"><h2 class="ribbon">\xD8 je Kategorie</h2>${catBlocks}</section>
     <section class="panel">${details("Mehr Statistiken", more)}</section>`;
     bindFilters(el, () => statistik(el, ctx));
     const h = $("#h2h", el);
-    if (h) h2hBlock(h, g, ms);
+    if (h) h2hBlock(h, g2, ms);
   }
   function byCount(ms) {
     const groups = {};
@@ -1149,7 +1149,7 @@
     return `<div class="table-wrap"><table class="lb mood-t"><thead><tr><th class="l">Your Mood</th><th>Standard</th><th>Extended</th></tr></thead><tbody>
     ${MOODS.map((m, i) => `<tr><td class="l">${moodLabel(i)}</td><td>${moodRange(i, "standard")}</td><td>${moodRange(i, "extended")}</td></tr>`).join("")}</tbody></table></div>`;
   }
-  function histLine(g, m, compact = false) {
+  function histLine(g2, m, compact = false) {
     const ids = [...m.players].sort((a, b) => (m.places?.[a] ?? 9) - (m.places?.[b] ?? 9));
     const size = m.variant || "standard";
     return `<div class="fh ${compact ? "compact" : ""}">${compact ? `<div class="fh-date">${fmtDate(m.date)} \xB7 ${m.mode === "solo" ? "Solo" : "Multiplayer"} \xB7 ${size === "extended" ? "Extended" : "Standard"}</div>` : ""}
@@ -1183,9 +1183,9 @@
   function makeRoundsGame(def) {
     const engine = roundsGame(def);
     const low = def.lowWins;
-    const g = { ...def };
+    const g2 = { ...def };
     const unitBest = low ? "niedrigste" : "h\xF6chste";
-    function dashboard2(el, ctx) {
+    function dashboard3(el, ctx) {
       const ms = matchesOf(def.id), st = engine.stats(ms);
       if (!ms.length) {
         el.innerHTML = `<div class="empty-state panel"><p>Noch keine Partie gespielt.</p><button class="btn btn-primary" type="button" data-new>Spiel starten</button></div>`;
@@ -1194,7 +1194,7 @@
       }
       const T = (title, key, fmt, opts = {}) => {
         const r = top(st, key, opts);
-        return statTile(title, r ? fmt(r.value) : "\u2013", r ? whoList(g, r.who) : '<span class="muted">noch niemand</span>', opts.note || "");
+        return statTile(title, r ? fmt(r.value) : "\u2013", r ? whoList(g2, r.who) : '<span class="muted">noch niemand</span>', opts.note || "");
       };
       const tiles = [
         T("Meiste Siege", "wins", (v) => v),
@@ -1207,11 +1207,11 @@
       ];
       const recent = [...ms].reverse().slice(0, 3);
       el.innerHTML = `<div class="stats-grid">${tiles.join("")}</div>
-      <section class="panel"><h2 class="panel-title">Zuletzt gespielt</h2>${recent.map((m) => `<div class="mini-hist"><span class="hist-date">${new Date(m.date).toLocaleDateString("de-DE")}</span>${rankedLine(g, m)}</div>`).join("")}
+      <section class="panel"><h2 class="panel-title">Zuletzt gespielt</h2>${recent.map((m) => `<div class="mini-hist"><span class="hist-date">${new Date(m.date).toLocaleDateString("de-DE")}</span>${rankedLine(g2, m)}</div>`).join("")}
       <button class="btn btn-ghost wide" type="button" data-all>Alle Partien</button></section>`;
       $("[data-all]", el).onclick = () => ctx.go("verlauf");
     }
-    function statistik2(el, ctx) {
+    function statistik3(el, ctx) {
       const ms = matchesOf(def.id), st = engine.stats(ms);
       if (!ms.length) {
         el.innerHTML = '<div class="empty-state panel"><p>Noch keine Partien \u2013 hier erscheinen bald Ranglisten.</p></div>';
@@ -1227,22 +1227,22 @@
       ];
       const sorted = (key, dir = low ? 1 : -1) => [...st].filter((s) => s[key] != null).sort((a, b) => (a[key] - b[key]) * dir);
       const more = `
-      <h3 class="sub-h">Endst\xE4nde im Verlauf</h3>${trendChart(g, ms, (m, id) => m.totals?.[id], { colors: (id) => def.colorOf(id), label: "Endstand" })}
-      <h3 class="sub-h">\xD8 Punkte pro Runde</h3>${barChart(sorted("avgRound").map((s) => ({ label: s.name, value: s.avgRound, icon: g.avatar(s, "mini"), color: def.colorOf(s.id), note: plural(s.rounds, "Runde", "Runden") })))}
-      <h3 class="sub-h">${low ? "Beste (niedrigste)" : "H\xF6chste"} Runde</h3>${barChart(sorted("bestRound").map((s) => ({ label: s.name, value: s.bestRound, icon: g.avatar(s, "mini"), color: def.colorOf(s.id) })), { digits: 0 })}
-      <h3 class="sub-h">L\xE4ngste Siegesserie</h3>${barChart([...st].filter((s) => s.streak).sort((a, b) => b.streak - a.streak).map((s) => ({ label: s.name, value: s.streak, icon: g.avatar(s, "mini"), color: def.colorOf(s.id), note: s.current ? `aktuell ${s.current}` : "" })), { digits: 0 })}
+      <h3 class="sub-h">Endst\xE4nde im Verlauf</h3>${trendChart(g2, ms, (m, id) => m.totals?.[id], { colors: (id) => def.colorOf(id), label: "Endstand" })}
+      <h3 class="sub-h">\xD8 Punkte pro Runde</h3>${barChart(sorted("avgRound").map((s) => ({ label: s.name, value: s.avgRound, icon: g2.avatar(s, "mini"), color: def.colorOf(s.id), note: plural(s.rounds, "Runde", "Runden") })))}
+      <h3 class="sub-h">${low ? "Beste (niedrigste)" : "H\xF6chste"} Runde</h3>${barChart(sorted("bestRound").map((s) => ({ label: s.name, value: s.bestRound, icon: g2.avatar(s, "mini"), color: def.colorOf(s.id) })), { digits: 0 })}
+      <h3 class="sub-h">L\xE4ngste Siegesserie</h3>${barChart([...st].filter((s) => s.streak).sort((a, b) => b.streak - a.streak).map((s) => ({ label: s.name, value: s.streak, icon: g2.avatar(s, "mini"), color: def.colorOf(s.id), note: s.current ? `aktuell ${s.current}` : "" })), { digits: 0 })}
       ${def.moreStats ? def.moreStats(st, ms) : ""}
       <h3 class="sub-h">Kopf an Kopf</h3><div id="h2h"></div>`;
-      el.innerHTML = `<section class="panel"><h2 class="panel-title">Rangliste</h2>${leaderboard(g, st, cols)}<p class="hint">Sortiert nach Siegen. ${low ? "Weniger Punkte sind besser." : "Mehr Punkte sind besser."}</p></section>
+      el.innerHTML = `<section class="panel"><h2 class="panel-title">Rangliste</h2>${leaderboard(g2, st, cols)}<p class="hint">Sortiert nach Siegen. ${low ? "Weniger Punkte sind besser." : "Mehr Punkte sind besser."}</p></section>
       <section class="panel">${details("Mehr Statistiken", more)}</section>`;
-      h2hBlock($("#h2h", el), g, ms, { lowWins: low });
+      h2hBlock($("#h2h", el), g2, ms, { lowWins: low });
     }
-    function verlauf2(el, ctx) {
-      historyList(el, ctx, { matches: matchesOf(def.id), line: (m) => rankedLine(g, m) });
+    function verlauf3(el, ctx) {
+      historyList(el, ctx, { matches: matchesOf(def.id), line: (m) => rankedLine(g2, m) });
     }
-    g.tabs = { dashboard: dashboard2, neu: engine.newTab, statistik: statistik2, verlauf: verlauf2 };
-    g.unitBest = unitBest;
-    return g;
+    g2.tabs = { dashboard: dashboard3, neu: engine.newTab, statistik: statistik3, verlauf: verlauf3 };
+    g2.unitBest = unitBest;
+    return g2;
   }
 
   // js/games/palette.js
@@ -1395,19 +1395,19 @@
 
   // js/games/wins.js
   function makeWinsGame(def) {
-    const g = { ...def };
-    const view2 = { variant: "all" };
+    const g2 = { ...def };
+    const view3 = { variant: "all" };
     const vName = (k) => (def.variants || []).find(([v]) => v === k)?.[1] || "";
-    const filterBar2 = () => def.variants ? `<div class="filters">${seg("variant", [["all", "Alle"], ...def.variants], view2.variant)}</div>` : "";
-    const bind = (el, redraw) => $$('[data-seg="variant"]', el).forEach((s) => s.addEventListener("click", (e) => {
+    const filterBar3 = () => def.variants ? `<div class="filters">${seg("variant", [["all", "Alle"], ...def.variants], view3.variant)}</div>` : "";
+    const bind2 = (el, redraw) => $$('[data-seg="variant"]', el).forEach((s) => s.addEventListener("click", (e) => {
       const b = e.target.closest("button");
       if (b) {
-        view2.variant = b.dataset.v;
+        view3.variant = b.dataset.v;
         redraw();
       }
     }));
-    const list = () => matchesOf(def.id, (m) => view2.variant === "all" || m.variant === view2.variant);
-    function stats(ms) {
+    const list2 = () => matchesOf(def.id, (m) => view3.variant === "all" || m.variant === view3.variant);
+    function stats2(ms) {
       var _a;
       const st = perPlayer(ms);
       for (const s of st) {
@@ -1432,16 +1432,16 @@
       }
       return st;
     }
-    function dashboard2(el, ctx) {
-      const ms = list(), st = stats(ms);
+    function dashboard3(el, ctx) {
+      const ms = list2(), st = stats2(ms);
       const T = (title, key, fmt, opts = {}) => {
         const r = top(st, key, opts);
-        return statTile(title, r ? fmt(r.value) : "\u2013", r ? whoList(g, r.who) : '<span class="muted">noch niemand</span>', opts.note || "");
+        return statTile(title, r ? fmt(r.value) : "\u2013", r ? whoList(g2, r.who) : '<span class="muted">noch niemand</span>', opts.note || "");
       };
       if (!ms.length) {
-        el.innerHTML = `${filterBar2()}<div class="empty-state panel"><p>Noch keine Partie${view2.variant !== "all" ? ` in ${esc(vName(view2.variant))}` : ""}.</p><button class="btn btn-primary" type="button" data-new>Sieg eintragen</button></div>`;
+        el.innerHTML = `${filterBar3()}<div class="empty-state panel"><p>Noch keine Partie${view3.variant !== "all" ? ` in ${esc(vName(view3.variant))}` : ""}.</p><button class="btn btn-primary" type="button" data-new>Sieg eintragen</button></div>`;
         $("[data-new]", el).onclick = () => ctx.go("neu");
-        bind(el, () => dashboard2(el, ctx));
+        bind2(el, () => dashboard3(el, ctx));
         return;
       }
       const tiles = [
@@ -1452,27 +1452,27 @@
         ...def.teams ? [T("Meiste Teamsiege", "teamWins", (v) => v, { filter: (s) => s.teamWins > 0 }), T("Meiste Einzelsiege", "soloWins", (v) => v, { filter: (s) => s.soloWins > 0 })] : []
       ];
       const recent = [...ms].reverse().slice(0, 4);
-      el.innerHTML = `${filterBar2()}<div class="stats-grid">${tiles.join("")}</div>
-      <section class="panel"><h2 class="panel-title">Zuletzt gewonnen</h2>${recent.map(line).join("")}<button class="btn btn-ghost wide" type="button" data-all>Alle Partien</button></section>`;
+      el.innerHTML = `${filterBar3()}<div class="stats-grid">${tiles.join("")}</div>
+      <section class="panel"><h2 class="panel-title">Zuletzt gewonnen</h2>${recent.map(line2).join("")}<button class="btn btn-ghost wide" type="button" data-all>Alle Partien</button></section>`;
       $("[data-all]", el).onclick = () => ctx.go("verlauf");
-      bind(el, () => dashboard2(el, ctx));
+      bind2(el, () => dashboard3(el, ctx));
     }
-    function line(m) {
+    function line2(m) {
       const w = m.winners || [];
-      const teamTxt = m.mode === "teams" && m.teams?.length ? `<div class="teams-line">${m.teams.map((t) => `<span class="team ${t.every((p) => w.includes(p)) ? "win" : ""}">${t.map((p) => `${g.avatar({ id: p, name: playerName(p, m) }, "mini")}${esc(playerName(p, m))}`).join(" + ")}</span>`).join('<span class="vs">vs</span>')}</div>` : "";
+      const teamTxt = m.mode === "teams" && m.teams?.length ? `<div class="teams-line">${m.teams.map((t) => `<span class="team ${t.every((p) => w.includes(p)) ? "win" : ""}">${t.map((p) => `${g2.avatar({ id: p, name: playerName(p, m) }, "mini")}${esc(playerName(p, m))}`).join(" + ")}</span>`).join('<span class="vs">vs</span>')}</div>` : "";
       return `<div class="mini-hist"><span class="hist-date">${fmtDate(m.date)}${m.variant ? ` \xB7 ${esc(vName(m.variant))}` : ""}</span>
       <p class="winline">${def.winIconSmall || "\u{1F3C6}"} <b>${esc(w.map((p) => playerName(p, m)).join(" & "))}</b> ${w.length > 1 ? "gewinnen" : "gewinnt"}</p>
-      ${teamTxt || `<p class="others">${m.players.filter((p) => !w.includes(p)).map((p) => `${g.avatar({ id: p, name: playerName(p, m) }, "mini")}${esc(playerName(p, m))}`).join(" \xB7 ")}</p>`}</div>`;
+      ${teamTxt || `<p class="others">${m.players.filter((p) => !w.includes(p)).map((p) => `${g2.avatar({ id: p, name: playerName(p, m) }, "mini")}${esc(playerName(p, m))}`).join(" \xB7 ")}</p>`}</div>`;
     }
-    let editing2 = null;
-    function neu(el, ctx) {
-      const e = editing2;
-      editing2 = null;
+    let editing3 = null;
+    function neu2(el, ctx) {
+      const e = editing3;
+      editing3 = null;
       const S = {
         id: e?.id,
         created: e?.created,
         date: e?.date || today(),
-        variant: e?.variant || (def.variants ? view2.variant !== "all" ? view2.variant : def.variants[0][0] : null),
+        variant: e?.variant || (def.variants ? view3.variant !== "all" ? view3.variant : def.variants[0][0] : null),
         sel: new Set(e?.players || []),
         mode: e?.mode || "teams",
         team: {},
@@ -1489,7 +1489,7 @@
       ${def.teams ? '<section class="panel" id="wTeams"></section>' : ""}
       <section class="panel" id="wWin"></section>
       <div class="save-wrap"><button class="btn btn-primary big" type="button" id="wSave">${S.id ? "\xC4nderungen speichern" : "Sieg speichern"}</button></div>`;
-      playerPicker($("#wPick", el), { game: g, selected: S.sel, min: def.min, max: def.max, onChange: () => {
+      playerPicker($("#wPick", el), { game: g2, selected: S.sel, min: def.min, max: def.max, onChange: () => {
         autoTeams();
         drawTeams();
         drawWin();
@@ -1532,7 +1532,7 @@
         }
         box.innerHTML = `<span class="field-label">Spielmodus</span>${seg("wm", [["teams", "Teams"], ["ffa", "Jeder gegen jeden"]], effMode())}
         ${!canTeams() ? `<p class="hint">${ids().length % 2 ? "Ungerade Spielerzahl \u2013 es spielt jeder gegen jeden." : "Teams gibt es ab 4 Spielern."}</p>` : ""}
-        ${effMode() === "teams" ? `<div class="team-grid">${ids().map((p) => `<div class="team-row"><span class="who">${g.avatar({ id: p, name: playerName(p) }, "dot")}${esc(playerName(p))}</span>
+        ${effMode() === "teams" ? `<div class="team-grid">${ids().map((p) => `<div class="team-row"><span class="who">${g2.avatar({ id: p, name: playerName(p) }, "dot")}${esc(playerName(p))}</span>
           <span class="team-btns">${Array.from({ length: nTeams() }, (_, i) => `<button type="button" class="tbtn t${i}" data-p="${p}" data-t="${i}" aria-pressed="${S.team[p] === i}">${"ABC"[i]}</button>`).join("")}</span></div>`).join("")}</div>` : ""}`;
         $('[data-seg="wm"]', box)?.addEventListener("click", (ev) => {
           const b = ev.target.closest("button");
@@ -1560,9 +1560,9 @@
           return;
         }
         if (effMode() === "teams") {
-          box.innerHTML = `<span class="field-label">Welches Team hat gewonnen?</span><div class="win-teams">${teams().map((t, i) => `<button type="button" class="win-team t${i}" data-w="t${i}" aria-pressed="${S.winner === `t${i}`}"><span class="tn">${teamName(i)}</span>${t.map((p) => `<span class="who">${g.avatar({ id: p, name: playerName(p) }, "dot")}${esc(playerName(p))}</span>`).join("")}</button>`).join("")}</div>`;
+          box.innerHTML = `<span class="field-label">Welches Team hat gewonnen?</span><div class="win-teams">${teams().map((t, i) => `<button type="button" class="win-team t${i}" data-w="t${i}" aria-pressed="${S.winner === `t${i}`}"><span class="tn">${teamName(i)}</span>${t.map((p) => `<span class="who">${g2.avatar({ id: p, name: playerName(p) }, "dot")}${esc(playerName(p))}</span>`).join("")}</button>`).join("")}</div>`;
         } else {
-          box.innerHTML = `<span class="field-label">Wer hat gewonnen?</span><div class="chips">${ids().map((p) => `<button type="button" class="chip" data-w="${p}" aria-pressed="${S.winner === p}">${g.avatar({ id: p, name: playerName(p) }, "dot")}<span>${esc(playerName(p))}</span></button>`).join("")}</div>`;
+          box.innerHTML = `<span class="field-label">Wer hat gewonnen?</span><div class="chips">${ids().map((p) => `<button type="button" class="chip" data-w="${p}" aria-pressed="${S.winner === p}">${g2.avatar({ id: p, name: playerName(p) }, "dot")}<span>${esc(playerName(p))}</span></button>`).join("")}</div>`;
         }
         $$("[data-w]", box).forEach((b) => b.addEventListener("click", () => {
           S.winner = b.dataset.w;
@@ -1599,11 +1599,11 @@
         }
       };
     }
-    function statistik2(el, ctx) {
-      const ms = list(), st = stats(ms);
+    function statistik3(el, ctx) {
+      const ms = list2(), st = stats2(ms);
       if (!ms.length) {
-        el.innerHTML = `${filterBar2()}<div class="empty-state panel"><p>Noch keine Partien in dieser Auswahl.</p></div>`;
-        bind(el, () => statistik2(el, ctx));
+        el.innerHTML = `${filterBar3()}<div class="empty-state panel"><p>Noch keine Partien in dieser Auswahl.</p></div>`;
+        bind2(el, () => statistik3(el, ctx));
         return;
       }
       const cols = [
@@ -1637,35 +1637,35 @@
       const more = `
       <h3 class="sub-h">Siege im Zeitverlauf</h3>${lineChart(series, { yLabel: "Siege gesamt", xLabels: ms.map((m) => fmtDate(m.date, { day: "2-digit", month: "2-digit" })) })}
       <h3 class="sub-h">Siegquote nach Spielerzahl</h3><div class="table-wrap"><table class="lb"><thead><tr><th class="l">Spieler</th>${sizes.map((n) => `<th>${n} Sp.</th>`).join("")}</tr></thead>
-        <tbody>${st.map((s) => `<tr><td class="l">${g.avatar(s, "mini")}<span class="nm">${esc(s.name)}</span></td>${sizes.map((n) => {
+        <tbody>${st.map((s) => `<tr><td class="l">${g2.avatar(s, "mini")}<span class="nm">${esc(s.name)}</span></td>${sizes.map((n) => {
         const o = byN[s.id]?.[n];
         return `<td>${o ? `${fmtPct(o.w / o.g)}<small> (${o.g})</small>` : "\u2013"}</td>`;
       }).join("")}</tr>`).join("")}</tbody></table></div>
-      ${def.teams ? `<h3 class="sub-h">Bester Partner</h3><ul class="kings">${st.filter((s) => s.bestPartner).map((s) => `<li><span class="who">${g.avatar(s, "mini")}${esc(s.name)}</span><span class="k-cat">mit</span><span class="who">${g.avatar(s.bestPartner, "mini")}${esc(s.bestPartner.name)}</span><b>${s.bestPartner.wins}/${s.bestPartner.games}</b></li>`).join("") || '<li class="muted">Noch keine Teamspiele.</li>'}</ul>` : ""}
-      ${def.variants && view2.variant === "all" ? `<h3 class="sub-h">Siege je Variante</h3>${variantTable(ms, st)}` : ""}
+      ${def.teams ? `<h3 class="sub-h">Bester Partner</h3><ul class="kings">${st.filter((s) => s.bestPartner).map((s) => `<li><span class="who">${g2.avatar(s, "mini")}${esc(s.name)}</span><span class="k-cat">mit</span><span class="who">${g2.avatar(s.bestPartner, "mini")}${esc(s.bestPartner.name)}</span><b>${s.bestPartner.wins}/${s.bestPartner.games}</b></li>`).join("") || '<li class="muted">Noch keine Teamspiele.</li>'}</ul>` : ""}
+      ${def.variants && view3.variant === "all" ? `<h3 class="sub-h">Siege je Variante</h3>${variantTable(ms, st)}` : ""}
       <h3 class="sub-h">Kopf an Kopf</h3><div id="h2h"></div>`;
-      el.innerHTML = `${filterBar2()}
-      <section class="panel"><h2 class="panel-title">Rangliste</h2>${leaderboard(g, st, cols)}</section>
-      <section class="panel"><h2 class="panel-title">Siegquote</h2>${barChart([...st].sort((a, b) => b.rate - a.rate).map((s) => ({ label: s.name, value: s.rate * 100, icon: g.avatar(s, "mini"), color: def.colorOf(s.id), note: `${s.wins} von ${s.games}` })), { unit: " %", digits: 0, max: 100 })}</section>
+      el.innerHTML = `${filterBar3()}
+      <section class="panel"><h2 class="panel-title">Rangliste</h2>${leaderboard(g2, st, cols)}</section>
+      <section class="panel"><h2 class="panel-title">Siegquote</h2>${barChart([...st].sort((a, b) => b.rate - a.rate).map((s) => ({ label: s.name, value: s.rate * 100, icon: g2.avatar(s, "mini"), color: def.colorOf(s.id), note: `${s.wins} von ${s.games}` })), { unit: " %", digits: 0, max: 100 })}</section>
       <section class="panel">${details("Mehr Statistiken", more)}</section>`;
-      bind(el, () => statistik2(el, ctx));
-      h2hBlock($("#h2h", el), g, ms);
+      bind2(el, () => statistik3(el, ctx));
+      h2hBlock($("#h2h", el), g2, ms);
     }
     function variantTable(ms, st) {
       return `<div class="table-wrap"><table class="lb"><thead><tr><th class="l">Spieler</th>${def.variants.map(([, n]) => `<th>${esc(n)}</th>`).join("")}</tr></thead><tbody>
-      ${st.map((s) => `<tr><td class="l">${g.avatar(s, "mini")}<span class="nm">${esc(s.name)}</span></td>${def.variants.map(([v]) => {
+      ${st.map((s) => `<tr><td class="l">${g2.avatar(s, "mini")}<span class="nm">${esc(s.name)}</span></td>${def.variants.map(([v]) => {
         const mm = ms.filter((m) => m.variant === v && m.players.includes(s.id));
         return `<td>${mm.length ? `${mm.filter((m) => m.winners.includes(s.id)).length}<small> / ${mm.length}</small>` : "\u2013"}</td>`;
       }).join("")}</tr>`).join("")}</tbody></table></div>`;
     }
-    function verlauf2(el, ctx) {
-      historyList(el, ctx, { matches: matchesOf(def.id), line, onEdit: (m) => {
-        editing2 = m;
+    function verlauf3(el, ctx) {
+      historyList(el, ctx, { matches: matchesOf(def.id), line: line2, onEdit: (m) => {
+        editing3 = m;
         ctx.go("neu");
       } });
     }
-    g.tabs = { dashboard: dashboard2, neu, statistik: statistik2, verlauf: verlauf2 };
-    return g;
+    g2.tabs = { dashboard: dashboard3, neu: neu2, statistik: statistik3, verlauf: verlauf3 };
+    return g2;
   }
 
   // js/games/virus.js
@@ -1783,19 +1783,19 @@
 
   // js/games/scores.js
   function makeScoreGame(def) {
-    const g = { ...def };
-    const view2 = { variant: "all" };
+    const g2 = { ...def };
+    const view3 = { variant: "all" };
     const vName = (k) => (def.variants || []).find(([v]) => v === k)?.[1] || "";
     const awardsOf = (v) => def.awards?.[v] || [];
-    const filterBar2 = () => def.variants ? `<div class="filters">${seg("variant", [["all", "Alle"], ...def.variants], view2.variant)}</div>` : "";
-    const bind = (el, redraw) => $$('[data-seg="variant"]', el).forEach((s) => s.addEventListener("click", (e) => {
+    const filterBar3 = () => def.variants ? `<div class="filters">${seg("variant", [["all", "Alle"], ...def.variants], view3.variant)}</div>` : "";
+    const bind2 = (el, redraw) => $$('[data-seg="variant"]', el).forEach((s) => s.addEventListener("click", (e) => {
       const b = e.target.closest("button");
       if (b) {
-        view2.variant = b.dataset.v;
+        view3.variant = b.dataset.v;
         redraw();
       }
     }));
-    const list = () => matchesOf(def.id, (m) => view2.variant === "all" || m.variant === view2.variant);
+    const list2 = () => matchesOf(def.id, (m) => view3.variant === "all" || m.variant === view3.variant);
     const unit = def.unit || "Punkte";
     const theme = (v) => {
       if (def.variantTheme) {
@@ -1803,7 +1803,7 @@
         else delete document.body.dataset.variant;
       }
     };
-    function stats(ms) {
+    function stats2(ms) {
       const st = perPlayer(ms);
       for (const s of st) {
         s.awards = {};
@@ -1814,18 +1814,18 @@
       }
       return st;
     }
-    function dashboard2(el, ctx) {
-      theme(view2.variant);
-      const ms = list(), st = stats(ms);
+    function dashboard3(el, ctx) {
+      theme(view3.variant);
+      const ms = list2(), st = stats2(ms);
       if (!ms.length) {
-        el.innerHTML = `${filterBar2()}<div class="empty-state panel"><p>Noch keine Partie${view2.variant !== "all" ? ` in ${esc(vName(view2.variant))}` : ""}.</p><button class="btn btn-primary" type="button" data-new>Partie eintragen</button></div>`;
+        el.innerHTML = `${filterBar3()}<div class="empty-state panel"><p>Noch keine Partie${view3.variant !== "all" ? ` in ${esc(vName(view3.variant))}` : ""}.</p><button class="btn btn-primary" type="button" data-new>Partie eintragen</button></div>`;
         $("[data-new]", el).onclick = () => ctx.go("neu");
-        bind(el, () => dashboard2(el, ctx));
+        bind2(el, () => dashboard3(el, ctx));
         return;
       }
       const T = (title, key, fmt, opts = {}) => {
         const r = top(st, key, opts);
-        return statTile(title, r ? fmt(r.value) : "\u2013", r ? whoList(g, r.who) : '<span class="muted">noch niemand</span>', opts.note || "");
+        return statTile(title, r ? fmt(r.value) : "\u2013", r ? whoList(g2, r.who) : '<span class="muted">noch niemand</span>', opts.note || "");
       };
       const tiles = [
         T("Meiste Siege", "wins", (v) => v),
@@ -1836,21 +1836,21 @@
         T("L\xE4ngste Siegesserie", "streak", (v) => plural(v, "Sieg", "Siege"), { filter: (s) => s.streak > 0 })
       ];
       const recent = [...ms].reverse().slice(0, 3);
-      el.innerHTML = `${filterBar2()}<div class="stats-grid">${tiles.join("")}</div>
-      <section class="panel"><h2 class="panel-title">Zuletzt gespielt</h2>${recent.map((m) => `<div class="mini-hist"><span class="hist-date">${fmtDate(m.date)}${m.variant ? ` \xB7 ${esc(vName(m.variant))}` : ""}</span>${rankedLine(g, m)}</div>`).join("")}
+      el.innerHTML = `${filterBar3()}<div class="stats-grid">${tiles.join("")}</div>
+      <section class="panel"><h2 class="panel-title">Zuletzt gespielt</h2>${recent.map((m) => `<div class="mini-hist"><span class="hist-date">${fmtDate(m.date)}${m.variant ? ` \xB7 ${esc(vName(m.variant))}` : ""}</span>${rankedLine(g2, m)}</div>`).join("")}
       <button class="btn btn-ghost wide" type="button" data-all>Alle Partien</button></section>`;
       $("[data-all]", el).onclick = () => ctx.go("verlauf");
-      bind(el, () => dashboard2(el, ctx));
+      bind2(el, () => dashboard3(el, ctx));
     }
-    let editing2 = null;
-    function neu(el, ctx) {
-      const e = editing2;
-      editing2 = null;
+    let editing3 = null;
+    function neu2(el, ctx) {
+      const e = editing3;
+      editing3 = null;
       const S = {
         id: e?.id,
         created: e?.created,
         date: e?.date || today(),
-        variant: e?.variant || (def.variants ? view2.variant !== "all" ? view2.variant : def.variants[0][0] : null),
+        variant: e?.variant || (def.variants ? view3.variant !== "all" ? view3.variant : def.variants[0][0] : null),
         sel: new Set(e?.players || []),
         pts: { ...e?.totals || {} },
         awards: { ...e?.awards || {} },
@@ -1864,7 +1864,7 @@
       <section class="panel" id="sPick"></section>
       <section class="panel" id="sPts"></section>
       <div class="save-wrap"><button class="btn btn-primary big" type="button" id="sSave">${S.id ? "\xC4nderungen speichern" : "Partie speichern"}</button></div>`;
-      playerPicker($("#sPick", el), { game: g, selected: S.sel, min: def.min, max: def.max, onChange: () => draw() });
+      playerPicker($("#sPick", el), { game: g2, selected: S.sel, min: def.min, max: def.max, onChange: () => draw() });
       $('[data-seg="sv"]', el)?.addEventListener("click", (ev) => {
         const b = ev.target.closest("button");
         if (!b) return;
@@ -1887,11 +1887,11 @@
         }
         const aw = awardsOf(S.variant);
         box.innerHTML = `<h2 class="panel-title">${esc(unit)}</h2><div class="rinputs">${P.map((p) => `<div class="rin" data-p="${p}">
-          <span class="rin-name">${g.avatar({ id: p, name: playerName(p, e) }, "dot")}${esc(playerName(p, e))}</span>
+          <span class="rin-name">${g2.avatar({ id: p, name: playerName(p, e) }, "dot")}${esc(playerName(p, e))}</span>
           <span class="rin-num">${def.negative ? `<button type="button" class="pm" data-pm="${p}" aria-label="Vorzeichen umdrehen">\xB1</button>` : ""}<input type="${def.negative ? "text" : "number"}" inputmode="numeric" pattern="-?[0-9]*" data-pts="${p}" value="${S.pts[p] ?? ""}" placeholder="0" aria-label="${esc(unit)} ${esc(playerName(p, e))}"></span>
         </div>`).join("")}</div>
         ${def.hint ? `<p class="hint">${def.hint(S.variant)}</p>` : ""}
-        ${aw.map((a) => `<div class="award"><span class="field-label">${esc(a)}</span><div class="chips" data-award="${esc(a)}">${P.map((p) => `<button type="button" class="chip" data-id="${p}" aria-pressed="${S.awards[a] === p}">${g.avatar({ id: p, name: playerName(p, e) }, "mini")}<span>${esc(playerName(p, e))}</span></button>`).join("")}</div></div>`).join("")}
+        ${aw.map((a) => `<div class="award"><span class="field-label">${esc(a)}</span><div class="chips" data-award="${esc(a)}">${P.map((p) => `<button type="button" class="chip" data-id="${p}" aria-pressed="${S.awards[a] === p}">${g2.avatar({ id: p, name: playerName(p, e) }, "mini")}<span>${esc(playerName(p, e))}</span></button>`).join("")}</div></div>`).join("")}
         <div id="sTie"></div>`;
         $$("[data-pts]", box).forEach((i) => i.addEventListener("input", () => {
           S.pts[i.dataset.pts] = parseInt(i.value, 10);
@@ -1923,7 +1923,7 @@
           S.tie = null;
           return;
         }
-        box.innerHTML = `<div class="tie"><span class="field-label">Gleichstand an der Spitze \u2013 wer hat gewonnen?</span><div class="chips">${L.map((p) => `<button type="button" class="chip" data-tie="${p}" aria-pressed="${S.tie === p}">${g.avatar({ id: p, name: playerName(p, e) }, "mini")}<span>${esc(playerName(p, e))}</span></button>`).join("")}<button type="button" class="chip" data-tie="shared" aria-pressed="${S.tie === "shared"}"><span>Geteilter Sieg</span></button></div>${def.tieHint ? `<p class="hint">${def.tieHint}</p>` : ""}</div>`;
+        box.innerHTML = `<div class="tie"><span class="field-label">Gleichstand an der Spitze \u2013 wer hat gewonnen?</span><div class="chips">${L.map((p) => `<button type="button" class="chip" data-tie="${p}" aria-pressed="${S.tie === p}">${g2.avatar({ id: p, name: playerName(p, e) }, "mini")}<span>${esc(playerName(p, e))}</span></button>`).join("")}<button type="button" class="chip" data-tie="shared" aria-pressed="${S.tie === "shared"}"><span>Geteilter Sieg</span></button></div>${def.tieHint ? `<p class="hint">${def.tieHint}</p>` : ""}</div>`;
         $$("[data-tie]", box).forEach((b) => b.addEventListener("click", () => {
           S.tie = b.dataset.tie;
           tie();
@@ -1959,19 +1959,19 @@
         try {
           await saveMatch(m);
           toast(`<b>Gespeichert.</b> ${esc(winners.map((p) => playerName(p)).join(" & "))} ${winners.length > 1 ? "gewinnen" : "gewinnt"} mit ${fmtNum(totals[winners[0]], 0)} ${esc(unit)}.`, { icon: def.winIcon?.() || "" });
-          view2.variant = def.variants ? S.variant : "all";
+          view3.variant = def.variants ? S.variant : "all";
           ctx.go("dashboard");
         } catch (err) {
           toast(esc(err.message));
         }
       };
     }
-    function statistik2(el, ctx) {
-      theme(view2.variant);
-      const ms = list(), st = stats(ms);
+    function statistik3(el, ctx) {
+      theme(view3.variant);
+      const ms = list2(), st = stats2(ms);
       if (!ms.length) {
-        el.innerHTML = `${filterBar2()}<div class="empty-state panel"><p>Noch keine Partien in dieser Auswahl.</p></div>`;
-        bind(el, () => statistik2(el, ctx));
+        el.innerHTML = `${filterBar3()}<div class="empty-state panel"><p>Noch keine Partien in dieser Auswahl.</p></div>`;
+        bind2(el, () => statistik3(el, ctx));
         return;
       }
       const cols = [{ key: "games", label: "Partien" }, { key: "wins", label: "Siege" }, { key: "rate", label: "Quote", fmt: fmtPct }, { key: "avg", label: "\xD8", fmt: (v) => fmtNum(v) }, { key: "best", label: "Rekord" }];
@@ -1982,36 +1982,36 @@
       });
       const allAwards = [...new Set((def.variants || [[null]]).flatMap(([v]) => awardsOf(v)))];
       const more = `
-      <h3 class="sub-h">${esc(unit)} im Verlauf</h3>${trendChart(g, ms, (m, id) => m.totals?.[id], { colors: (id) => def.colorOf(id), label: unit })}
-      <h3 class="sub-h">\xD8 Abstand zum Sieger</h3>${barChart([...st].filter((s) => s.gap != null).sort((a, b) => a.gap - b.gap).map((s) => ({ label: s.name, value: s.gap, icon: g.avatar(s, "mini"), color: def.colorOf(s.id), note: "kleiner ist besser" })))}
+      <h3 class="sub-h">${esc(unit)} im Verlauf</h3>${trendChart(g2, ms, (m, id) => m.totals?.[id], { colors: (id) => def.colorOf(id), label: unit })}
+      <h3 class="sub-h">\xD8 Abstand zum Sieger</h3>${barChart([...st].filter((s) => s.gap != null).sort((a, b) => a.gap - b.gap).map((s) => ({ label: s.name, value: s.gap, icon: g2.avatar(s, "mini"), color: def.colorOf(s.id), note: "kleiner ist besser" })))}
       <h3 class="sub-h">\xD8 ${esc(unit)} nach Spielerzahl</h3>${barChart(Object.entries(groups).sort().map(([n, v]) => ({ label: `${n} Spieler`, value: v.reduce((a, b) => a + b, 0) / v.length })))}
-      <h3 class="sub-h">L\xE4ngste Siegesserie</h3>${barChart([...st].filter((s) => s.streak).sort((a, b) => b.streak - a.streak).map((s) => ({ label: s.name, value: s.streak, icon: g.avatar(s, "mini"), color: def.colorOf(s.id), note: s.current ? `aktuell ${s.current}` : "" })), { digits: 0 })}
-      ${allAwards.map((a) => `<h3 class="sub-h">${esc(a)}</h3>${barChart(st.filter((s) => s.awards[a]).sort((x, y) => y.awards[a] - x.awards[a]).map((s) => ({ label: s.name, value: s.awards[a], icon: g.avatar(s, "mini"), color: def.colorOf(s.id) })), { digits: 0 })}`).join("")}
-      ${def.variants && view2.variant === "all" ? `<h3 class="sub-h">Siege je Variante</h3>${variantTable(ms, st)}` : ""}
+      <h3 class="sub-h">L\xE4ngste Siegesserie</h3>${barChart([...st].filter((s) => s.streak).sort((a, b) => b.streak - a.streak).map((s) => ({ label: s.name, value: s.streak, icon: g2.avatar(s, "mini"), color: def.colorOf(s.id), note: s.current ? `aktuell ${s.current}` : "" })), { digits: 0 })}
+      ${allAwards.map((a) => `<h3 class="sub-h">${esc(a)}</h3>${barChart(st.filter((s) => s.awards[a]).sort((x, y) => y.awards[a] - x.awards[a]).map((s) => ({ label: s.name, value: s.awards[a], icon: g2.avatar(s, "mini"), color: def.colorOf(s.id) })), { digits: 0 })}`).join("")}
+      ${def.variants && view3.variant === "all" ? `<h3 class="sub-h">Siege je Variante</h3>${variantTable(ms, st)}` : ""}
       <h3 class="sub-h">Kopf an Kopf</h3><div id="h2h"></div>`;
-      el.innerHTML = `${filterBar2()}
-      <section class="panel"><h2 class="panel-title">Rangliste</h2>${leaderboard(g, st, cols)}</section>
-      <section class="panel"><h2 class="panel-title">\xD8 ${esc(unit)}</h2>${barChart([...st].sort((a, b) => b.avg - a.avg).map((s) => ({ label: s.name, value: s.avg, icon: g.avatar(s, "mini"), color: def.colorOf(s.id), note: `Rekord ${s.best}` })))}</section>
+      el.innerHTML = `${filterBar3()}
+      <section class="panel"><h2 class="panel-title">Rangliste</h2>${leaderboard(g2, st, cols)}</section>
+      <section class="panel"><h2 class="panel-title">\xD8 ${esc(unit)}</h2>${barChart([...st].sort((a, b) => b.avg - a.avg).map((s) => ({ label: s.name, value: s.avg, icon: g2.avatar(s, "mini"), color: def.colorOf(s.id), note: `Rekord ${s.best}` })))}</section>
       <section class="panel">${details("Mehr Statistiken", more)}</section>`;
-      bind(el, () => statistik2(el, ctx));
-      h2hBlock($("#h2h", el), g, ms);
+      bind2(el, () => statistik3(el, ctx));
+      h2hBlock($("#h2h", el), g2, ms);
     }
     function variantTable(ms, st) {
       return `<div class="table-wrap"><table class="lb"><thead><tr><th class="l">Spieler</th>${def.variants.map(([, n]) => `<th>${esc(n)}</th>`).join("")}</tr></thead><tbody>
-      ${st.map((s) => `<tr><td class="l">${g.avatar(s, "mini")}<span class="nm">${esc(s.name)}</span></td>${def.variants.map(([v]) => {
+      ${st.map((s) => `<tr><td class="l">${g2.avatar(s, "mini")}<span class="nm">${esc(s.name)}</span></td>${def.variants.map(([v]) => {
         const mm = ms.filter((m) => m.variant === v && m.players.includes(s.id));
         return `<td>${mm.length ? `${mm.filter((m) => m.winners.includes(s.id)).length}<small> / ${mm.length}</small>` : "\u2013"}</td>`;
       }).join("")}</tr>`).join("")}</tbody></table></div>`;
     }
-    function verlauf2(el, ctx) {
-      theme(view2.variant);
-      historyList(el, ctx, { matches: matchesOf(def.id), line: (m) => rankedLine(g, m) + (m.awards ? `<p class="others">${Object.entries(m.awards).map(([a, p]) => `${esc(a)}: <b>${esc(playerName(p, m))}</b>`).join(" \xB7 ")}</p>` : ""), onEdit: (m) => {
-        editing2 = m;
+    function verlauf3(el, ctx) {
+      theme(view3.variant);
+      historyList(el, ctx, { matches: matchesOf(def.id), line: (m) => rankedLine(g2, m) + (m.awards ? `<p class="others">${Object.entries(m.awards).map(([a, p]) => `${esc(a)}: <b>${esc(playerName(p, m))}</b>`).join(" \xB7 ")}</p>` : ""), onEdit: (m) => {
+        editing3 = m;
         ctx.go("neu");
       } });
     }
-    g.tabs = { dashboard: dashboard2, neu, statistik: statistik2, verlauf: verlauf2 };
-    return g;
+    g2.tabs = { dashboard: dashboard3, neu: neu2, statistik: statistik3, verlauf: verlauf3 };
+    return g2;
   }
 
   // js/games/dominion.js
@@ -2091,9 +2091,384 @@
     <h1 class="g-title">Catan</h1><p class="g-sub"><span class="v-normal">Normal \xB7 Catan Energie \xB7 Raumfahrer</span><span class="v-energie">Catan Energie \u2013 Wind, Sonne, Strom</span><span class="v-raumfahrer">Raumfahrer \u2013 auf zu neuen Sternen</span></p>`
   });
 
+  // js/games/schiffe.js
+  var FLEETS = {
+    klassisch: { name: "Klassisch", note: "5 Schiffe \xB7 17 Felder", ships: [
+      { k: "traeger", n: "Flugzeugtr\xE4ger", len: 5, count: 1 },
+      { k: "schlacht", n: "Schlachtschiff", len: 4, count: 1 },
+      { k: "zerstoerer3", n: "Zerst\xF6rer", len: 3, count: 2 },
+      { k: "patrouille", n: "Patrouillenboot", len: 2, count: 1 }
+    ] }
+  };
+  var OLD = { kreuzer: "zerstoerer3", uboot: "zerstoerer3", zerstoerer: "patrouille" };
+  var normSunk = (o = {}) => {
+    const r = {};
+    for (const [k, c] of Object.entries(o)) {
+      const nk = OLD[k] || k;
+      r[nk] = (r[nk] || 0) + c;
+    }
+    return r;
+  };
+  var VARIANTS = Object.entries(FLEETS).map(([k, f]) => [k, f.name]);
+  var fleetOf = () => FLEETS.klassisch;
+  var ONE = VARIANTS.length < 2;
+  var fleetSize = (v) => fleetOf(v).ships.reduce((a, s) => a + s.count, 0);
+  var shipLen = (v, k) => fleetOf(v).ships.find((s) => s.k === k)?.len || 0;
+  function shipSvg(k, len, { sunk = false, cls = "" } = {}) {
+    const W = len * 20, H = 16, hull = sunk ? "#5E6B78" : "#A9B6C2", deck = sunk ? "#4A5562" : "#7E8C99", line2 = "#2B3947";
+    let body;
+    if (k === "patrouille") body = `<path d="M3 5 H${W - 10} Q${W - 1} 8 ${W - 10} 11 H3 Q1 8 3 5Z" fill="${hull}" stroke="${line2}" stroke-width="1.2"/><rect x="10" y="6" width="9" height="4" rx="1.5" fill="${deck}"/><circle cx="27" cy="8" r="1.6" fill="${deck}"/>`;
+    else if (k === "uboot") body = `<rect x="2" y="3" width="${W - 4}" height="10" rx="5" fill="${hull}" stroke="${line2}" stroke-width="1.2"/><rect x="${W / 2 - 6}" y="5" width="12" height="6" rx="2" fill="${deck}"/>`;
+    else {
+      body = `<path d="M3 4 H${W - 12} Q${W - 1} 8 ${W - 12} 12 H3 Q1 8 3 4Z" fill="${hull}" stroke="${line2}" stroke-width="1.2"/>`;
+      if (k === "traeger") body += `<rect x="6" y="5.6" width="${W - 22}" height="4.8" fill="${deck}"/><path d="M10 8 H${W - 20}" stroke="#E8EEF3" stroke-width=".8" stroke-dasharray="4 3"/><rect x="${W - 34}" y="2.5" width="6" height="4" fill="${deck}" stroke="${line2}" stroke-width=".8"/>`;
+      else for (let i = 0; i < len - 1; i++) body += `<rect x="${10 + i * 20}" y="6" width="${i === 1 ? 10 : 7}" height="4" rx="1" fill="${deck}"/>`;
+    }
+    const pegs = sunk ? Array.from({ length: len }, (_, i) => `<circle cx="${10 + i * 20}" cy="8" r="3.4" fill="#E63946" stroke="#7A1018" stroke-width=".8"/>`).join("") : "";
+    return `<svg class="ship ${sunk ? "sunk" : ""} ${cls}" viewBox="0 0 ${W} ${H}" style="width:${len * 22}px" aria-hidden="true">${body}${pegs}</svg>`;
+  }
+  var FLAGS = [
+    { n: "Flagge L", d: '<rect width="30" height="20" fill="#F6C90E"/><rect width="15" height="10" fill="#1B1B1B"/><rect x="15" y="10" width="15" height="10" fill="#1B1B1B"/>' },
+    { n: "Flagge O", d: '<rect width="30" height="20" fill="#F6C90E"/><path d="M0 0 H30 V20Z" fill="#D7263D"/>' },
+    { n: "Flagge U", d: '<rect width="30" height="20" fill="#fff"/><rect width="15" height="10" fill="#D7263D"/><rect x="15" y="10" width="15" height="10" fill="#D7263D"/>' },
+    { n: "Flagge N", d: '<rect width="30" height="20" fill="#fff"/>' + [0, 1, 2, 3].flatMap((r) => [0, 1, 2, 3].map((c) => (r + c) % 2 ? "" : `<rect x="${c * 7.5}" y="${r * 5}" width="7.5" height="5" fill="#1D4E9E"/>`)).join("") },
+    { n: "Flagge F", d: '<rect width="30" height="20" fill="#fff"/><path d="M15 2 L27 10 L15 18 L3 10Z" fill="#D7263D"/>' },
+    { n: "Flagge K", d: '<rect width="15" height="20" fill="#F6C90E"/><rect x="15" width="15" height="20" fill="#1D4E9E"/>' },
+    { n: "Flagge T", d: '<rect width="10" height="20" fill="#D7263D"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#1D4E9E"/>' },
+    { n: "Flagge P", d: '<rect width="30" height="20" fill="#1D4E9E"/><rect x="9" y="6" width="12" height="8" fill="#fff"/>' },
+    { n: "Flagge I", d: '<rect width="30" height="20" fill="#F6C90E"/><circle cx="15" cy="10" r="5.5" fill="#1B1B1B"/>' },
+    { n: "Flagge X", d: '<rect width="30" height="20" fill="#fff"/><rect x="12" width="6" height="20" fill="#1D4E9E"/><rect y="7" width="30" height="6" fill="#1D4E9E"/>' },
+    { n: "Flagge H", d: '<rect width="15" height="20" fill="#fff"/><rect x="15" width="15" height="20" fill="#D7263D"/>' },
+    { n: "Flagge J", d: '<rect width="30" height="20" fill="#1D4E9E"/><rect y="7" width="30" height="6" fill="#fff"/>' }
+  ];
+  var FLAG_COLOR = ["#C9A40B", "#D7263D", "#B8323F", "#1D4E9E", "#E0525F", "#2F6FC4", "#7D3C98", "#3A6EA5", "#8C7A0A", "#4F7CC2", "#C2185B", "#14708C"];
+  var flag = (x) => `<svg class="sflag" viewBox="0 0 34 24" aria-hidden="true"><g transform="translate(2 2)">${x.d}<rect width="30" height="20" fill="none" stroke="rgba(0,0,0,.35)" stroke-width="1" rx="1.5"/></g></svg>`;
+  var sunkOf = (m, pid) => normSunk(m.sunk?.[pid]);
+  var countSunk = (m, pid) => Object.values(sunkOf(m, pid)).reduce((a, b) => a + (+b || 0), 0);
+  var hitsOf = (m, pid) => Object.entries(sunkOf(m, pid)).reduce((a, [k, c]) => a + shipLen(m.variant, k) * c, 0);
+  var lostOf = (m, pid) => m.players.length === 2 ? countSunk(m, m.players.find((p) => p !== pid)) : null;
+  function stats(ms) {
+    const st = perPlayer(ms, { total: (m, pid) => countSunk(m, pid) });
+    for (const s of st) {
+      let sunk = 0, lost = 0, duels = 0, perfect = 0, close = 0, shots = 0, shotHits = 0, startG = 0, startW = 0, surv = [], winShots = [];
+      const byType = {};
+      for (const { m, won } of s.results) {
+        const c = countSunk(m, s.id);
+        sunk += c;
+        for (const [k, n] of Object.entries(sunkOf(m, s.id))) byType[k] = (byType[k] || 0) + n;
+        const l = lostOf(m, s.id);
+        if (l != null) {
+          duels++;
+          lost += l;
+          if (won) {
+            const left = fleetSize(m.variant) - l;
+            surv.push(left);
+            if (l === 0) perfect++;
+            if (left === 1) close++;
+          }
+        }
+        const sh = +m.shots?.[s.id];
+        if (sh > 0) {
+          shots += sh;
+          shotHits += hitsOf(m, s.id);
+          if (won) winShots.push(sh);
+        }
+        if (m.starter === s.id) {
+          startG++;
+          if (won) startW++;
+        }
+      }
+      const cnt = (k) => fleetOf().ships.find((x) => x.k === k)?.count || 1;
+      const fav = Object.entries(byType).sort((a, b) => b[1] / cnt(b[0]) - a[1] / cnt(a[0]))[0];
+      Object.assign(s, {
+        sunk,
+        lost: duels ? lost : null,
+        balance: duels ? sunk - lost : null,
+        avgSunk: s.games ? sunk / s.games : 0,
+        perfect,
+        close,
+        survAvg: surv.length ? surv.reduce((a, b) => a + b, 0) / surv.length : null,
+        accuracy: shots ? shotHits / shots : null,
+        shots,
+        fewestShots: winShots.length ? Math.min(...winShots) : null,
+        startRate: startG ? startW / startG : null,
+        startG,
+        fav: fav ? fav[0] : null,
+        favN: fav ? fav[1] : 0,
+        player: { id: s.id, name: s.name }
+      });
+    }
+    return st;
+  }
+  function shipSurvival(ms, v) {
+    const out = fleetOf(v).ships.map((sh) => ({ ...sh, avail: 0, sunk: 0 }));
+    for (const m of ms) if ((m.variant || "klassisch") === v) for (const pid of m.players) for (const o of out) o.sunk += +(sunkOf(m, pid)[o.k] || 0);
+    for (const o of out) {
+      o.avail = ms.filter((m) => (m.variant || "klassisch") === v).reduce((a, m) => a + o.count * m.players.length, 0);
+      o.rate = o.avail ? o.sunk / o.avail : null;
+    }
+    return out;
+  }
+  var g = {
+    id: "schiffe",
+    name: "Schiffe versenken",
+    theme: "theme-schiffe",
+    themeColor: "#0F2A44",
+    dot: "#E63946",
+    avatar: (p, size = "dot") => `<span class="av av-${size}" aria-hidden="true">${flag(pickFor("schiffe", FLAGS, p.id))}</span>`,
+    icons: { pal: FLAGS, current: (p) => pickFor("schiffe", FLAGS, p.id), render: (x) => flag(x) },
+    colorOf: (id) => FLAG_COLOR[FLAGS.indexOf(pickFor("schiffe", FLAGS, id))] || "#4F7CC2",
+    winIcon: () => shipSvg("traeger", 5, { cls: "toast-ship" }),
+    logo: () => `<div class="lg-schiffe"><div class="sv-grid"></div>${shipSvg("schlacht", 4, { cls: "s1" })}${shipSvg("patrouille", 2, { sunk: true, cls: "s2" })}<i class="peg w p1"></i><i class="peg w p2"></i><i class="peg r p3"></i><span class="nm">Schiffe versenken</span></div>`,
+    header: () => `<div class="sv-radar" aria-hidden="true"><i class="sweep"></i><i class="blip b1"></i><i class="blip b2"></i><i class="blip b3"></i></div><h1 class="g-title">Schiffe<br>versenken</h1><p class="g-sub">Treffer. Versenkt.</p>`
+  };
+  var view2 = { variant: "all" };
+  var filterBar2 = () => ONE ? "" : `<div class="filters">${seg("variant", [["all", "Alle"], ...VARIANTS], view2.variant)}</div>`;
+  var bind = (el, redraw) => $$('[data-seg="variant"]', el).forEach((s) => s.addEventListener("click", (e) => {
+    const b = e.target.closest("button");
+    if (b) {
+      view2.variant = b.dataset.v;
+      redraw();
+    }
+  }));
+  var list = () => matchesOf("schiffe", (m) => ONE || view2.variant === "all" || (m.variant || "klassisch") === view2.variant);
+  var shipName = (k) => Object.values(FLEETS).flatMap((f) => f.ships).find((s) => s.k === k)?.n || k;
+  function dashboard2(el, ctx) {
+    const ms = list(), st = stats(ms);
+    if (!ms.length) {
+      el.innerHTML = `${filterBar2()}<div class="empty-state panel"><p>Noch keine Seeschlacht eingetragen.</p><button class="btn btn-primary" type="button" data-new>Partie eintragen</button></div>`;
+      $("[data-new]", el).onclick = () => ctx.go("neu");
+      bind(el, () => dashboard2(el, ctx));
+      return;
+    }
+    const T = (title, key, fmt, opts = {}) => {
+      const r = top(st, key, opts);
+      return statTile(title, r ? fmt(r.value) : "\u2013", r ? whoList(g, r.who) : '<span class="muted">noch niemand</span>', opts.note || "");
+    };
+    const tiles = [
+      T("Meiste Siege", "wins", (v) => v),
+      T("Beste Siegquote", "rate", fmtPct, { min: 3, note: "ab 3 Partien" }),
+      T("Meiste Schiffe versenkt", "sunk", (v) => v),
+      T("Beste Flottenbilanz", "balance", (v) => v > 0 ? `+${v}` : v, { note: "versenkt minus verloren" }),
+      T("Treffsicherste Hand", "accuracy", fmtPct, { filter: (s) => s.shots >= 30, note: "Treffer pro Schuss" }),
+      T("Schnellster Sieg", "fewestShots", (v) => `${v} Sch\xFCsse`, { low: true }),
+      T("Perfekte Siege", "perfect", (v) => `${v}\xD7`, { filter: (s) => s.perfect > 0, note: "ohne ein eigenes Schiff zu verlieren" }),
+      T("L\xE4ngste Siegesserie", "streak", (v) => plural(v, "Sieg", "Siege"), { filter: (s) => s.streak > 0 })
+    ];
+    const starts = ms.filter((m) => m.starter && m.winners?.length);
+    const startRate = starts.length ? starts.filter((m) => m.winners.includes(m.starter)).length / starts.length : null;
+    const recent = [...ms].reverse().slice(0, 3);
+    el.innerHTML = `${filterBar2()}<div class="stats-grid">${tiles.join("")}</div>
+    ${startRate != null ? `<section class="panel first"><h2 class="panel-title">Lohnt sich der erste Schuss?</h2><p class="big-q"><b>${fmtPct(startRate)}</b> der Partien gewinnt, wer anf\xE4ngt <span class="muted">(${plural(starts.length, "Partie", "Partien")})</span></p></section>` : ""}
+    <section class="panel"><h2 class="panel-title">Zuletzt</h2>${recent.map(line).join("")}<button class="btn btn-ghost wide" type="button" data-all>Alle Partien</button></section>`;
+    $("[data-all]", el).onclick = () => ctx.go("verlauf");
+    bind(el, () => dashboard2(el, ctx));
+  }
+  function line(m) {
+    const v = m.variant || "klassisch", total = fleetSize(v) * (m.players.length - 1);
+    return `<div class="mini-hist sv-line"><span class="hist-date">${fmtDate(m.date)} \xB7 ${esc(fleetOf(v).name)}</span>
+    ${[...m.players].sort((a, b) => countSunk(m, b) - countSunk(m, a)).map((p) => `<div class="sv-row ${m.winners?.includes(p) ? "win" : ""}">
+      <span class="who">${g.avatar({ id: p, name: playerName(p, m) }, "mini")}${esc(playerName(p, m))}</span>
+      <span class="sv-mini">${fleetOf(v).ships.flatMap((sh) => Array.from({ length: sh.count * (m.players.length - 1) }, (_, i) => `<i class="${i < (sunkOf(m, p)[sh.k] || 0) ? "hit" : ""}" style="--l:${sh.len}" title="${esc(sh.n)}"></i>`)).join("")}</span>
+      <b>${countSunk(m, p)}/${total}</b></div>`).join("")}
+  </div>`;
+  }
+  var editing2 = null;
+  function neu(el, ctx) {
+    const e = editing2;
+    editing2 = null;
+    const S = {
+      id: e?.id,
+      created: e?.created,
+      date: e?.date || today(),
+      variant: e?.variant || (view2.variant !== "all" ? view2.variant : "klassisch"),
+      sel: new Set(e?.players || []),
+      sunk: Object.fromEntries(Object.entries(e?.sunk || {}).map(([p, o]) => [p, normSunk(o)])),
+      shots: { ...e?.shots || {} },
+      starter: e?.starter || null,
+      winner: e ? e.winners?.length ? e.winners[0] : "none" : null,
+      winnerTouched: !!e
+    };
+    el.innerHTML = `<section class="panel"><div class="setup-grid">
+      <label class="field"><span>Gespielt am</span><input type="date" id="vDate" value="${S.date}"></label>
+      <div><span class="field-label">Flotte</span>${ONE ? `<p class="fleet-line">${fleetOf().ships.map((sh) => `${sh.count > 1 ? `${sh.count}\xD7 ` : ""}${esc(sh.n)}`).join(" \xB7 ")}</p>` : seg("fleet", VARIANTS, S.variant)}<p class="hint" id="fleetNote"></p></div>
+    </div></section>
+    <section class="panel" id="vPick"></section>
+    <div id="vBoards"></div>
+    <section class="panel" id="vWin"></section>
+    <div class="save-wrap"><button class="btn btn-primary big" type="button" id="vSave">${S.id ? "\xC4nderungen speichern" : "Seeschlacht speichern"}</button></div>`;
+    playerPicker($("#vPick", el), { game: g, selected: S.sel, min: 2, max: 4, onChange: () => draw() });
+    $('[data-seg="fleet"]', el)?.addEventListener("click", (ev) => {
+      const b = ev.target.closest("button");
+      if (!b) return;
+      S.variant = b.dataset.v;
+      S.sunk = {};
+      $$('[data-seg="fleet"] button', el).forEach((x) => x.setAttribute("aria-pressed", x === b));
+      draw();
+    });
+    const ids = () => {
+      const ps = playersByCreated().map((p) => p.id);
+      return [...S.sel].sort((a, b) => ps.indexOf(a) - ps.indexOf(b));
+    };
+    const nm = (p) => playerName(p, e);
+    const maxOf = (sh) => sh.count * Math.max(1, ids().length - 1);
+    const total = () => fleetSize(S.variant) * Math.max(1, ids().length - 1);
+    function autoWinner() {
+      if (S.winnerTouched) return;
+      const done = ids().filter((p) => fleetOf(S.variant).ships.every((sh) => (S.sunk[p]?.[sh.k] || 0) >= maxOf(sh)));
+      S.winner = done.length === 1 ? done[0] : null;
+    }
+    function draw() {
+      $("#fleetNote", el).textContent = fleetOf(S.variant).note;
+      const P = ids(), box = $("#vBoards", el);
+      if (P.length < 2) {
+        box.innerHTML = "";
+        $("#vWin", el).innerHTML = '<span class="field-label">Wer hat gewonnen?</span><p class="hint">W\xE4hle mindestens zwei Spieler.</p>';
+        return;
+      }
+      box.innerHTML = P.map((p) => {
+        const opp = P.filter((x) => x !== p);
+        return `<section class="panel sv-board" data-p="${p}">
+        <div class="sv-head"><span class="who">${g.avatar({ id: p, name: nm(p) }, "dot")}<b>${esc(nm(p))}</b></span><span class="sv-count"><b data-cnt>0</b> / ${total()} versenkt</span></div>
+        <p class="hint">Welche Schiffe ${P.length === 2 ? `von <b>${esc(nm(opp[0]))}</b>` : "der Gegner"} hat ${esc(nm(p))} versenkt? Antippen zum Versenken.</p>
+        <div class="sv-ships">${fleetOf(S.variant).ships.flatMap((sh) => Array.from({ length: maxOf(sh) }, (_, i) => `<button type="button" class="sv-ship" data-k="${sh.k}" data-i="${i}" aria-pressed="false" aria-label="${esc(sh.n)} ${i + 1}">${shipSvg(sh.k, sh.len)}${shipSvg(sh.k, sh.len, { sunk: true })}<small>${esc(sh.n)}</small></button>`)).join("")}</div>
+        <div class="sv-extra">
+          <label class="sv-shots"><span>Sch\xFCsse <small>(optional)</small></span><input type="number" inputmode="numeric" min="0" data-shots="${p}" value="${S.shots[p] ?? ""}" placeholder="\u2013"></label>
+          <label class="tick"><input type="radio" name="starter" value="${p}" ${S.starter === p ? "checked" : ""}><span>hat angefangen</span></label>
+        </div>
+      </section>`;
+      }).join("");
+      P.forEach(paint);
+      $$(".sv-ship", box).forEach((b) => b.addEventListener("click", () => {
+        var _a;
+        const p = b.closest(".sv-board").dataset.p, k = b.dataset.k, i = +b.dataset.i;
+        const cur = S.sunk[p]?.[k] || 0;
+        ((_a = S.sunk)[p] || (_a[p] = {}))[k] = i < cur ? i : i + 1;
+        paint(p);
+        autoWinner();
+        drawWin();
+      }));
+      $$("[data-shots]", box).forEach((i) => i.addEventListener("input", () => {
+        S.shots[i.dataset.shots] = i.value === "" ? null : +i.value;
+      }));
+      $$('input[name="starter"]', box).forEach((r) => r.addEventListener("change", () => {
+        S.starter = r.value;
+      }));
+      autoWinner();
+      drawWin();
+    }
+    function paint(p) {
+      const card3 = $(`.sv-board[data-p="${p}"]`, el);
+      if (!card3) return;
+      $$(".sv-ship", card3).forEach((b) => b.setAttribute("aria-pressed", +b.dataset.i < (S.sunk[p]?.[b.dataset.k] || 0)));
+      $("[data-cnt]", card3).textContent = Object.values(S.sunk[p] || {}).reduce((a, b) => a + b, 0);
+    }
+    function drawWin() {
+      const P = ids(), box = $("#vWin", el);
+      if (P.length < 2) return;
+      box.innerHTML = `<span class="field-label">Wer hat gewonnen?</span><div class="chips">${P.map((p) => `<button type="button" class="chip" data-w="${p}" aria-pressed="${S.winner === p}">${g.avatar({ id: p, name: nm(p) }, "dot")}<span>${esc(nm(p))}</span></button>`).join("")}
+      <button type="button" class="chip" data-w="none" aria-pressed="${S.winner === "none"}"><span>Abgebrochen</span></button></div>
+      <p class="hint">${S.winnerTouched ? "" : "Wer die ganze gegnerische Flotte versenkt, wird automatisch ausgew\xE4hlt."}</p>`;
+      $$("[data-w]", box).forEach((b) => b.addEventListener("click", () => {
+        S.winner = b.dataset.w;
+        S.winnerTouched = true;
+        drawWin();
+      }));
+    }
+    draw();
+    $("#vSave", el).onclick = async () => {
+      const P = ids();
+      if (P.length < 2) return toast("W\xE4hle mindestens zwei Spieler.");
+      if (!S.winner) return toast("W\xE4hle, wer gewonnen hat \u2013 oder \u201EAbgebrochen\u201C.");
+      const sunk = Object.fromEntries(P.map((p) => [p, Object.fromEntries(Object.entries(S.sunk[p] || {}).filter(([, c]) => c > 0))]));
+      const totals = Object.fromEntries(P.map((p) => [p, Object.values(sunk[p]).reduce((a, b) => a + b, 0)]));
+      const winners = S.winner === "none" ? [] : [S.winner];
+      const pl = places(totals);
+      if (winners.length) {
+        P.forEach((p) => {
+          if (p !== winners[0] && pl[p] === 1) pl[p] = 2;
+        });
+        pl[winners[0]] = 1;
+      }
+      const shots = Object.fromEntries(P.filter((p) => S.shots[p] > 0).map((p) => [p, S.shots[p]]));
+      const m = {
+        id: S.id,
+        created: S.created,
+        game: "schiffe",
+        date: $("#vDate", el).value || today(),
+        variant: S.variant,
+        players: P,
+        sunk,
+        totals,
+        places: pl,
+        winners,
+        ...Object.keys(shots).length ? { shots } : {},
+        ...S.starter && P.includes(S.starter) ? { starter: S.starter } : {},
+        tags: [fleetOf(S.variant).name, ...winners.length ? [] : ["abgebrochen"]]
+      };
+      try {
+        await saveMatch(m);
+        toast(winners.length ? `<b>Versenkt!</b> ${esc(nm(winners[0]))} gewinnt die Seeschlacht.` : "<b>Gespeichert.</b> Partie ohne Sieger.", { icon: g.winIcon() });
+        view2.variant = S.variant;
+        ctx.go("dashboard");
+      } catch (err) {
+        toast(esc(err.message));
+      }
+    };
+  }
+  function statistik2(el, ctx) {
+    const ms = list(), st = stats(ms);
+    if (!ms.length) {
+      el.innerHTML = `${filterBar2()}<div class="empty-state panel"><p>Noch keine Partien in dieser Auswahl.</p></div>`;
+      bind(el, () => statistik2(el, ctx));
+      return;
+    }
+    const cols = [
+      { key: "games", label: "Partien" },
+      { key: "wins", label: "Siege" },
+      { key: "rate", label: "Quote", fmt: fmtPct },
+      { key: "sunk", label: "Versenkt" },
+      { key: "balance", label: "Bilanz", fmt: (v) => v == null ? "\u2013" : v > 0 ? `+${v}` : v },
+      { key: "accuracy", label: "Treffer", fmt: (v) => v == null ? "\u2013" : fmtPct(v) }
+    ];
+    const fleets = view2.variant === "all" ? Object.keys(FLEETS).filter((v) => ms.some((m) => (m.variant || "klassisch") === v)) : [view2.variant];
+    const survival = fleets.map((v) => {
+      const rows = shipSurvival(ms, v).filter((o) => o.avail);
+      if (!rows.length) return "";
+      const best = [...rows].sort((a, b) => a.rate - b.rate)[0];
+      return `<div class="surv"><h3 class="sub-h">${ONE ? "" : `${esc(fleetOf(v).name)}: `}Wie oft geht welches Schiff unter?</h3>
+      <ul class="surv-list">${rows.map((o) => `<li>${shipSvg(o.k, o.len)}<span class="sn">${esc(o.n)}</span><span class="bar-track"><span class="bar-fill" style="width:${Math.max(2, o.rate * 100)}%"></span></span><b>${fmtPct(o.rate)}</b></li>`).join("")}</ul>
+      <p class="hint">Am besten versteckt: <b>${esc(best.n)}</b> \u2013 \xFCberlebt in ${fmtPct(1 - best.rate)} der F\xE4lle.</p></div>`;
+    }).join("");
+    const startRows = st.filter((s) => s.startG).map((s) => ({ label: s.name, value: s.startRate * 100, icon: g.avatar(s.player, "mini"), color: g.colorOf(s.id), note: `${s.startG}\xD7 angefangen` }));
+    const more = `
+    <h3 class="sub-h">\xD8 versenkte Schiffe pro Partie</h3>${barChart([...st].sort((a, b) => b.avgSunk - a.avgSunk).map((s) => ({ label: s.name, value: s.avgSunk, icon: g.avatar(s.player, "mini"), color: g.colorOf(s.id) })))}
+    <h3 class="sub-h">Treffsicherheit (Treffer pro Schuss)</h3>${st.some((s) => s.accuracy != null) ? barChart(st.filter((s) => s.accuracy != null).sort((a, b) => b.accuracy - a.accuracy).map((s) => ({ label: s.name, value: s.accuracy * 100, icon: g.avatar(s.player, "mini"), color: g.colorOf(s.id), note: `${s.shots} Sch\xFCsse` })), { unit: " %", digits: 0, max: 100 }) : '<p class="empty">Wird angezeigt, sobald Sch\xFCsse eingetragen werden.</p>'}
+    <h3 class="sub-h">Wenigste Sch\xFCsse bis zum Sieg</h3>${st.some((s) => s.fewestShots) ? barChart(st.filter((s) => s.fewestShots).sort((a, b) => a.fewestShots - b.fewestShots).map((s) => ({ label: s.name, value: s.fewestShots, icon: g.avatar(s.player, "mini"), color: g.colorOf(s.id) })), { digits: 0 }) : '<p class="empty">Noch keine Siege mit eingetragenen Sch\xFCssen.</p>'}
+    <h3 class="sub-h">\xDCberlebende Schiffe beim Sieg (\xD8)</h3>${barChart(st.filter((s) => s.survAvg != null).sort((a, b) => b.survAvg - a.survAvg).map((s) => ({ label: s.name, value: s.survAvg, icon: g.avatar(s.player, "mini"), color: g.colorOf(s.id), note: `${s.close}\xD7 knapp mit nur einem Schiff` })))}
+    <h3 class="sub-h">Siegquote, wenn man anf\xE4ngt</h3>${startRows.length ? barChart(startRows.sort((a, b) => b.value - a.value), { unit: " %", digits: 0, max: 100 }) : '<p class="empty">Wird angezeigt, sobald \u201Ehat angefangen\u201C eingetragen wird.</p>'}
+    <h3 class="sub-h">Lieblingsziel</h3><ul class="kings">${st.filter((s) => s.fav).map((s) => `<li><span class="who">${g.avatar(s.player, "mini")}${esc(s.name)}</span><span class="k-cat">versenkt am h\xE4ufigsten</span><b>${esc(shipName(s.fav))} (${s.favN}\xD7)</b></li>`).join("")}</ul>
+    <h3 class="sub-h">L\xE4ngste Siegesserie</h3>${barChart([...st].filter((s) => s.streak).sort((a, b) => b.streak - a.streak).map((s) => ({ label: s.name, value: s.streak, icon: g.avatar(s.player, "mini"), color: g.colorOf(s.id), note: s.current ? `aktuell ${s.current}` : "" })), { digits: 0 })}
+    <h3 class="sub-h">Kopf an Kopf</h3><div id="h2h"></div>`;
+    el.innerHTML = `${filterBar2()}
+    <section class="panel"><h2 class="panel-title">Rangliste</h2>${leaderboard(g, st, cols)}<p class="hint">Bilanz = versenkte minus verlorene Schiffe (nur Duelle zu zweit). Treffer = Felder versenkter Schiffe pro Schuss.</p></section>
+    <section class="panel"><h2 class="panel-title">Schiffe</h2>${survival}</section>
+    <section class="panel">${details("Mehr Statistiken", more)}</section>`;
+    bind(el, () => statistik2(el, ctx));
+    h2hBlock($("#h2h", el), g, ms);
+  }
+  function verlauf2(el, ctx) {
+    historyList(el, ctx, { matches: matchesOf("schiffe"), line: (m) => line(m) + (m.shots ? `<p class="others">Sch\xFCsse: ${Object.entries(m.shots).map(([p, n]) => `${esc(playerName(p, m))} ${n}`).join(" \xB7 ")}</p>` : ""), onEdit: (m) => {
+      editing2 = m;
+      ctx.go("neu");
+    } });
+  }
+  g.tabs = { dashboard: dashboard2, neu, statistik: statistik2, verlauf: verlauf2 };
+  var schiffe_default = g;
+
   // js/games/registry.js
-  var GAMES = [floriferous_default, skyjo_default, flip7_default, feuilles_default, virus_default, dog_default, wizard_default, dominion_default, catan_default];
-  var gameById = (id) => GAMES.find((g) => g.id === id);
+  var GAMES = [floriferous_default, skyjo_default, flip7_default, feuilles_default, virus_default, dog_default, wizard_default, dominion_default, catan_default, schiffe_default];
+  var gameById = (id) => GAMES.find((g2) => g2.id === id);
 
   // js/app.js
   var app;
@@ -2144,7 +2519,7 @@
     app.innerHTML = `
   <main class="login">
     <h1 class="wordmark" aria-label="KahloGames">Kahlo<span>Games</span></h1>
-    <div class="dots" aria-hidden="true">${GAMES.map((g) => `<i style="background:${g.dot}"></i>`).join("")}</div>
+    <div class="dots" aria-hidden="true">${GAMES.map((g2) => `<i style="background:${g2.dot}"></i>`).join("")}</div>
     <form class="login-form" id="loginForm">
       <label for="pw">Passwort</label>
       <div class="login-row">
@@ -2181,12 +2556,12 @@
   <main class="hub-main">
     <h2 class="hub-q">Was habt ihr gespielt?</h2>
     <div class="tiles">
-      ${GAMES.map((g) => {
-      const ms = matchesOf(g.id);
+      ${GAMES.map((g2) => {
+      const ms = matchesOf(g2.id);
       const last = ms[ms.length - 1];
-      return `<a class="tile tile-${g.id}" href="#/g/${g.id}">
-          <div class="tile-logo">${g.logo()}</div>
-          <div class="tile-meta"><b>${esc(g.name)}</b><span>${ms.length ? `${plural(ms.length, "Partie", "Partien")} \xB7 zuletzt ${fmtDate(last.date, { day: "2-digit", month: "2-digit" })}` : "Noch keine Partie"}</span></div>
+      return `<a class="tile tile-${g2.id}" href="#/g/${g2.id}">
+          <div class="tile-logo">${g2.logo()}</div>
+          <div class="tile-meta"><b>${esc(g2.name)}</b><span>${ms.length ? `${plural(ms.length, "Partie", "Partien")} \xB7 zuletzt ${fmtDate(last.date, { day: "2-digit", month: "2-digit" })}` : "Noch keine Partie"}</span></div>
         </a>`;
     }).join("")}
     </div>
@@ -2278,60 +2653,60 @@
     }
   }
   function renderGame(id, tab) {
-    const g = gameById(id);
-    setTheme(g);
-    current = { game: g, tab };
+    const g2 = gameById(id);
+    setTheme(g2);
+    current = { game: g2, tab };
     app.innerHTML = `
   <div class="g-shell">
-    ${g.decor ? g.decor() : ""}
+    ${g2.decor ? g2.decor() : ""}
     <header class="g-top">
-      <div class="g-actions"><a class="g-back" href="#/" aria-label="Zur Spielauswahl">${gridIcon}<span>Spiele</span></a><a class="g-gear" href="#/g/${id}/einstellungen" aria-label="Einstellungen f\xFCr ${esc(g.name)}" ${tab === "einstellungen" ? 'aria-current="page"' : ""}>${gearIcon}</a></div>
-      ${g.header()}
+      <div class="g-actions"><a class="g-back" href="#/" aria-label="Zur Spielauswahl">${gridIcon}<span>Spiele</span></a><a class="g-gear" href="#/g/${id}/einstellungen" aria-label="Einstellungen f\xFCr ${esc(g2.name)}" ${tab === "einstellungen" ? 'aria-current="page"' : ""}>${gearIcon}</a></div>
+      ${g2.header()}
     </header>
-    <nav class="g-tabs" aria-label="Bereiche">${TABS.map(([t, l]) => `<a class="g-tab" href="#/g/${id}/${t}" ${t === tab ? 'aria-current="page"' : ""}>${g.tabIcon ? g.tabIcon(t) : ""}<span>${l}</span></a>`).join("")}</nav>
+    <nav class="g-tabs" aria-label="Bereiche">${TABS.map(([t, l]) => `<a class="g-tab" href="#/g/${id}/${t}" ${t === tab ? 'aria-current="page"' : ""}>${g2.tabIcon ? g2.tabIcon(t) : ""}<span>${l}</span></a>`).join("")}</nav>
     <main class="g-main" id="gMain"></main>
   </div>`;
-    const ctx = { game: g, go: (t) => go(`#/g/${id}/${t}`), rerender: () => {
+    const ctx = { game: g2, go: (t) => go(`#/g/${id}/${t}`), rerender: () => {
       const o = $("#gMain"), n = o.cloneNode(false);
       o.replaceWith(n);
-      g.tabs[tab](n, ctx);
+      g2.tabs[tab](n, ctx);
     } };
-    if (tab === "einstellungen") return gameSettings($("#gMain"), g);
-    g.tabs[tab]($("#gMain"), ctx);
+    if (tab === "einstellungen") return gameSettings($("#gMain"), g2);
+    g2.tabs[tab]($("#gMain"), ctx);
   }
-  function gameSettings(el, g) {
+  function gameSettings(el, g2) {
     const ps = playersByCreated();
-    el.innerHTML = `<section class="panel"><h2 class="panel-title">Spieler-Symbole in ${esc(g.name)}</h2>
+    el.innerHTML = `<section class="panel"><h2 class="panel-title">Spieler-Symbole in ${esc(g2.name)}</h2>
     <p class="hint">Tippe auf einen Spieler, um sein Symbol f\xFCr dieses Spiel zu \xE4ndern. Neue Spieler legst du \xFCber das Zahnrad auf der Startseite an.</p>
-    ${ps.length ? `<ul class="icon-list">${ps.map((p) => `<li><button type="button" class="icon-row" data-id="${p.id}">${g.avatar(p, "big")}<span class="pname">${esc(p.name)}</span><span class="chev">${backIcon}</span></button></li>`).join("")}</ul>` : '<p class="empty">Noch keine Spieler angelegt.</p>'}
+    ${ps.length ? `<ul class="icon-list">${ps.map((p) => `<li><button type="button" class="icon-row" data-id="${p.id}">${g2.avatar(p, "big")}<span class="pname">${esc(p.name)}</span><span class="chev">${backIcon}</span></button></li>`).join("")}</ul>` : '<p class="empty">Noch keine Spieler angelegt.</p>'}
   </section>`;
-    $$(".icon-row", el).forEach((b) => b.addEventListener("click", () => pickIcon(g, b.dataset.id, el)));
+    $$(".icon-row", el).forEach((b) => b.addEventListener("click", () => pickIcon(g2, b.dataset.id, el)));
   }
-  async function pickIcon(g, id, el) {
+  async function pickIcon(g2, id, el) {
     const p = store.players.find((x) => x.id === id);
     if (!p) return;
     let looks = JSON.parse(JSON.stringify(p.looks || {}));
     const others = store.players.filter((x) => x.id !== id);
     await modal({
-      title: `${p.name} in ${g.name}`,
+      title: `${p.name} in ${g2.name}`,
       cls: "icon-modal",
       body: '<div class="look-ed"></div>',
       onMount: (w) => {
         const box = $(".look-ed", w);
-        if (g.lookEditor) return g.lookEditor(box, p, looks, (l) => looks = l);
-        const pal = g.icons.pal;
+        if (g2.lookEditor) return g2.lookEditor(box, p, looks, (l) => looks = l);
+        const pal = g2.icons.pal;
         const draw = () => {
-          const cur = looks[g.id]?.i ?? pal.indexOf(g.icons.current(p));
+          const cur = looks[g2.id]?.i ?? pal.indexOf(g2.icons.current(p));
           box.innerHTML = `<div class="icon-grid">${pal.map((x, i) => {
-            const taken = others.filter((o) => pal.indexOf(g.icons.current(o)) === i).map((o) => o.name);
-            return `<button type="button" class="icon-opt ${i === cur ? "on" : ""}" data-i="${i}" title="${esc(x.n != null && typeof x.n === "string" ? x.n : "")}"><span class="av av-big">${g.icons.render(x)}</span>${taken.length ? `<small>${esc(taken.join(", "))}</small>` : "<small>&nbsp;</small>"}</button>`;
+            const taken = others.filter((o) => pal.indexOf(g2.icons.current(o)) === i).map((o) => o.name);
+            return `<button type="button" class="icon-opt ${i === cur ? "on" : ""}" data-i="${i}" title="${esc(x.n != null && typeof x.n === "string" ? x.n : "")}"><span class="av av-big">${g2.icons.render(x)}</span>${taken.length ? `<small>${esc(taken.join(", "))}</small>` : "<small>&nbsp;</small>"}</button>`;
           }).join("")}</div><p class="hint">Unter einem Symbol steht, wer es gerade hat.</p>`;
         };
         draw();
         box.addEventListener("click", (e) => {
           const b = e.target.closest(".icon-opt");
           if (!b) return;
-          looks = { ...looks, [g.id]: { i: +b.dataset.i } };
+          looks = { ...looks, [g2.id]: { i: +b.dataset.i } };
           draw();
         });
       },
@@ -2346,7 +2721,7 @@
         return true;
       } }]
     });
-    gameSettings(el, g);
+    gameSettings(el, g2);
   }
   var gridIcon = `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2.5" y="2.5" width="6" height="6" rx="1.5"/><rect x="11.5" y="2.5" width="6" height="6" rx="1.5"/><rect x="2.5" y="11.5" width="6" height="6" rx="1.5"/><rect x="11.5" y="11.5" width="6" height="6" rx="1.5"/></svg>`;
   onChange(() => {
