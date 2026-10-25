@@ -311,3 +311,41 @@ body.theme { background: var(--bg); padding-bottom: calc(86px + env(safe-area-in
 .hub-sort button { border: 1.5px solid var(--line); background: transparent; color: var(--ink); border-radius: 999px; padding: 6px 12px; min-height: 34px; font: 600 14px/1 var(--font); cursor: pointer; }
 .hub-sort button[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
 @media (max-width: 440px) { .hub-sort span { display: none; } .hub-sort button { padding: 6px 11px; font-size: 13px; } }
+
+/* Gesamtstatistik */
+.gl-card { display: flex; align-items: center; gap: 14px; margin-top: 18px; padding: 16px 18px; border-radius: 20px; background: var(--ink); color: var(--bg); text-decoration: none; }
+.gl-card b { display: block; font-size: 18px; letter-spacing: -.01em; }
+.gl-card small { display: block; font-size: 13px; opacity: .75; margin-top: 2px; }
+.gl-card > span:nth-child(2) { flex: 1; }
+.gl-card-ic { width: 44px; height: 44px; border-radius: 12px; background: rgba(255, 255, 255, .12); display: grid; place-items: center; flex: none; }
+.gl-card-ic svg { width: 24px; height: 24px; }
+.gl-card .chev svg { width: 18px; height: 18px; transform: rotate(180deg); }
+.gl-hero { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin: 6px 0 22px; }
+@media (min-width: 760px) { .gl-hero { grid-template-columns: repeat(4, 1fr); } }
+.gl-hero div { background: var(--card); border-radius: var(--radius); padding: 16px; display: grid; gap: 2px; }
+.gl-hero b { font: 800 clamp(34px, 9vw, 48px)/1 var(--font); letter-spacing: -.04em; }
+.gl-hero span { color: var(--muted); font-size: 14px; font-weight: 600; }
+.gl-h { font: 800 22px/1.1 var(--font); letter-spacing: -.02em; margin: 0 0 12px; }
+.gl .stats-grid + .panel { margin-top: 14px; }
+.gl-av { border-radius: 50%; background: var(--c); color: #fff; font: 700 12px/1 var(--font); display: inline-grid; place-items: center; }
+.av-dot.gl-av { font-size: 15px; }
+.gl-gdot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; flex: none; }
+.gl-kings li { gap: 8px; }
+.gl-matrix th { vertical-align: bottom; }
+.gl-matrix th .gl-gn { display: block; writing-mode: vertical-rl; transform: rotate(180deg); white-space: nowrap; font-size: 12px; margin: 4px auto 0; max-height: 110px; }
+.gl-matrix td { text-align: center; padding: 6px 4px; border-radius: 6px; line-height: 1.1; }
+.gl-matrix td small { display: block; font-size: 10px; opacity: .8; }
+.gl-matrix td.gl-empty { color: var(--muted); }
+.gl-matrix { border-collapse: separate; border-spacing: 3px; }
+.gl-fav li { display: grid; grid-template-columns: minmax(90px, 1fr) 1.2fr 1.2fr; gap: 10px; align-items: center; }
+.gl-fv { display: grid; font-size: 14px; font-weight: 600; line-height: 1.25; }
+.gl-fv small { font-size: 11px; color: var(--muted); font-weight: 500; }
+.gl-right { margin-left: auto; }
+.gl .lb th, .gl .lb td { padding-left: 5px; padding-right: 5px; }
+.av-xl { width: 92px; height: 92px; }
+.winbig { display: flex; align-items: center; gap: 14px; margin: 6px 0 8px; }
+.winbig p { margin: 0; font-size: 18px; }
+.winbig .av-xl { animation: winPop .5s cubic-bezier(.2, 1.4, .4, 1); }
+.winbig.preview { margin-top: 16px; padding: 12px; border-radius: 16px; background: var(--accent-soft); }
+@keyframes winPop { from { transform: scale(.5) rotate(-12deg); opacity: 0; } }
+.toast > .av { width: 48px; height: 48px; }

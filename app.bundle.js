@@ -433,8 +433,8 @@
     });
     return { redraw: draw };
   }
-  function statTile(title, value, who, note = "", cls = "") {
-    return `<article class="stat ${cls}"><h3>${esc(title)}</h3><p class="stat-val">${value}</p>${who ? `<p class="stat-who">${who}</p>` : ""}${note ? `<p class="stat-note">${note}</p>` : ""}</article>`;
+  function statTile(title, value, who2, note = "", cls = "") {
+    return `<article class="stat ${cls}"><h3>${esc(title)}</h3><p class="stat-val">${value}</p>${who2 ? `<p class="stat-who">${who2}</p>` : ""}${note ? `<p class="stat-note">${note}</p>` : ""}</article>`;
   }
   var whoList = (game, list2) => list2.map((s) => `<span class="who">${game.avatar(s.player || { id: s.id, name: s.name }, "mini")}${esc(s.name)}</span>`).join("");
   function leaderboard(game, stats2, cols, { sort = "wins" } = {}) {
@@ -550,6 +550,7 @@
         } else round.doubled = false;
       }
       if (cfg.extra === "roundWinner" && round.winner) final[round.winner] = 0;
+      if (cfg.extra === "flip7") for (const p of round.flip7 || []) final[p] = (+final[p] || 0) + 15;
       round.final = final;
       return round;
     }
@@ -620,7 +621,7 @@
             <span class="rin-name">${g2.avatar({ id: p, name: playerName(p) }, "dot")}${esc(playerName(p))}</span>
             ${cfg.extra === "wizard" ? `<span class="rin-wz"><label><small>Ansage</small><input type="number" inputmode="numeric" min="0" max="${n}" data-bid="${p}" placeholder="0" aria-label="Ansage ${esc(playerName(p))}"></label><label><small>Stiche</small><input type="number" inputmode="numeric" min="0" max="${n}" data-tricks="${p}" placeholder="0" aria-label="Stiche ${esc(playerName(p))}"></label></span>` : `<span class="rin-num">${cfg.negative ? `<button type="button" class="pm" data-pm="${p}" aria-label="Vorzeichen umdrehen">\xB1</button>` : ""}<input type="${cfg.negative ? "text" : "number"}" inputmode="numeric" pattern="-?[0-9]*" step="1" data-score="${p}" placeholder="0" aria-label="Punkte ${esc(playerName(p))}"></span>`}
             ${cfg.extra === "closer" ? `<label class="tick"><input type="radio" name="closer" value="${p}"><span>hat beendet</span></label>` : ""}
-            ${cfg.extra === "flip7" ? `<label class="tick"><input type="checkbox" data-f7="${p}"><span>Flip 7!</span></label>` : ""}
+            ${cfg.extra === "flip7" ? `<label class="tick"><input type="checkbox" data-f7="${p}"><span>Flip 7! <b>+15</b></span></label>` : ""}
           </div>`).join("")}</div>
         ${cfg.labels.roundHint ? `<p class="hint">${cfg.labels.roundHint}</p>` : ""}
         <button class="btn btn-primary wide" type="button" data-add-round>Runde ${n} eintragen</button>
@@ -996,15 +997,15 @@
     }
     function leader() {
       const cs = $$(".pcard", el);
-      let best = -1, who = [];
+      let best = -1, who2 = [];
       cs.forEach((c) => {
         const t = total(c.dataset.id);
         if (t > best) {
           best = t;
-          who = [c];
-        } else if (t === best) who.push(c);
+          who2 = [c];
+        } else if (t === best) who2.push(c);
       });
-      cs.forEach((c) => c.classList.toggle("leader", S.mode === "multi" && best > 0 && who.includes(c)));
+      cs.forEach((c) => c.classList.toggle("leader", S.mode === "multi" && best > 0 && who2.includes(c)));
     }
     el.addEventListener("click", (ev) => {
       const mode = ev.target.closest("[data-mode]");
@@ -1290,7 +1291,13 @@
     { n: 2, c: "#3FA34D" },
     { n: 7, c: "#E8B90F" },
     { n: 9, c: "#D93A3A" },
-    { n: 0, c: "#45A9DD" }
+    { n: 0, c: "#45A9DD" },
+    { n: 1, c: "#3FA34D" },
+    { n: 4, c: "#3FA34D" },
+    { n: 5, c: "#E8B90F" },
+    { n: 8, c: "#E8B90F" },
+    { n: 10, c: "#D93A3A" },
+    { n: 12, c: "#D93A3A" }
   ];
   var card = (n, c, extra = "") => `<span class="sk-card ${extra}" style="--c:${c}"><b>${n}</b></span>`;
   var skyjo_default = makeRoundsGame({
@@ -1328,7 +1335,18 @@
     { n: 5, c: "#1C7ED6" },
     { n: 10, c: "#C2A100" },
     { n: 1, c: "#2B2D42" },
-    { n: 8, c: "#D6336C" }
+    { n: 8, c: "#D6336C" },
+    { n: 0, c: "#6C757D" },
+    { n: 2, c: "#0B7285" },
+    { n: 4, c: "#E8590C" },
+    { n: 6, c: "#2F9E44" },
+    { n: 11, c: "#862E9C" },
+    { n: "+2", c: "#F59F00" },
+    { n: "+4", c: "#37B24D" },
+    { n: "+6", c: "#1098AD" },
+    { n: "+8", c: "#7048E8" },
+    { n: "+10", c: "#C2255C" },
+    { n: "\xD72", c: "#212529" }
   ];
   var tk = (n, c, cls = "") => `<span class="f7-card ${cls}" style="--c:${c}"><b>${n}</b></span>`;
   var flip7_default = makeRoundsGame({
@@ -1342,7 +1360,7 @@
     extra: "flip7",
     min: 2,
     max: 12,
-    labels: { startHint: "Das Spiel endet nach der Runde, in der jemand 200 Punkte erreicht. Viele Punkte gewinnen.", roundHint: "Ausgeschieden (Doppelte gezogen)? Einfach 0 eintragen. \u201EFlip 7!\u201C ankreuzen, wenn jemand sieben verschiedene Zahlen hatte \u2013 die 15 Bonuspunkte gleich mit eintragen." },
+    labels: { startHint: "Das Spiel endet nach der Runde, in der jemand 200 Punkte erreicht. Viele Punkte gewinnen.", roundHint: "Ausgeschieden (Doppelte gezogen)? Einfach 0 eintragen. Hatte jemand sieben verschiedene Zahlen, \u201EFlip 7!\u201C ankreuzen \u2013 die 15 Bonuspunkte rechnet die App automatisch dazu." },
     avatar: (p, size = "dot") => {
       const x = pickFor("flip7", PAL2, p.id);
       return `<span class="av av-${size}" aria-hidden="true">${tk(x.n, x.c)}</span>`;
@@ -1365,7 +1383,12 @@
     { n: 10, c: "#2F6D6A" },
     { n: 2, c: "#7A5C99" },
     { n: 9, c: "#6B8E23" },
-    { n: 5, c: "#A0522D" }
+    { n: 5, c: "#A0522D" },
+    { n: 3, c: "#3E6B8A" },
+    { n: 6, c: "#B8860B" },
+    { n: 8, c: "#556B2F" },
+    { n: 11, c: "#9E3D5A" },
+    { n: 12, c: "#CC7722" }
   ];
   var leaf = (n, c, cls = "") => `<span class="lf ${cls}" style="--c:${c}"><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M20 3C9 10 6 22 12 32c3 4 8 6 8 6s5-2 8-6c6-10 3-22-8-29z" fill="var(--c)"/><path d="M20 8v30" stroke="rgba(255,255,255,.5)" stroke-width="1.4"/></svg><b>${n}</b></span>`;
   var feuilles_default = makeRoundsGame({
@@ -1461,7 +1484,7 @@
       const w = m.winners || [];
       const teamTxt = m.mode === "teams" && m.teams?.length ? `<div class="teams-line">${m.teams.map((t) => `<span class="team ${t.every((p) => w.includes(p)) ? "win" : ""}">${t.map((p) => `${g2.avatar({ id: p, name: playerName(p, m) }, "mini")}${esc(playerName(p, m))}`).join(" + ")}</span>`).join('<span class="vs">vs</span>')}</div>` : "";
       return `<div class="mini-hist"><span class="hist-date">${fmtDate(m.date)}${m.variant ? ` \xB7 ${esc(vName(m.variant))}` : ""}</span>
-      <p class="winline">${def.winIconSmall || "\u{1F3C6}"} <b>${esc(w.map((p) => playerName(p, m)).join(" & "))}</b> ${w.length > 1 ? "gewinnen" : "gewinnt"}</p>
+      ${def.bigWinner && w.length ? `<div class="winbig">${w.map((p) => g2.avatar({ id: p, name: playerName(p, m) }, "xl")).join("")}<p><b>${esc(w.map((p) => playerName(p, m)).join(" & "))}</b> ${w.length > 1 ? "gewinnen" : "gewinnt"}</p></div>` : `<p class="winline">${def.winIconSmall || "\u{1F3C6}"} <b>${esc(w.map((p) => playerName(p, m)).join(" & "))}</b> ${w.length > 1 ? "gewinnen" : "gewinnt"}</p>`}
       ${teamTxt || `<p class="others">${m.players.filter((p) => !w.includes(p)).map((p) => `${g2.avatar({ id: p, name: playerName(p, m) }, "mini")}${esc(playerName(p, m))}`).join(" \xB7 ")}</p>`}</div>`;
     }
     let editing3 = null;
@@ -1562,7 +1585,8 @@
         if (effMode() === "teams") {
           box.innerHTML = `<span class="field-label">Welches Team hat gewonnen?</span><div class="win-teams">${teams().map((t, i) => `<button type="button" class="win-team t${i}" data-w="t${i}" aria-pressed="${S.winner === `t${i}`}"><span class="tn">${teamName(i)}</span>${t.map((p) => `<span class="who">${g2.avatar({ id: p, name: playerName(p) }, "dot")}${esc(playerName(p))}</span>`).join("")}</button>`).join("")}</div>`;
         } else {
-          box.innerHTML = `<span class="field-label">Wer hat gewonnen?</span><div class="chips">${ids().map((p) => `<button type="button" class="chip" data-w="${p}" aria-pressed="${S.winner === p}">${g2.avatar({ id: p, name: playerName(p) }, "dot")}<span>${esc(playerName(p))}</span></button>`).join("")}</div>`;
+          box.innerHTML = `<span class="field-label">Wer hat gewonnen?</span><div class="chips">${ids().map((p) => `<button type="button" class="chip" data-w="${p}" aria-pressed="${S.winner === p}">${g2.avatar({ id: p, name: playerName(p) }, "dot")}<span>${esc(playerName(p))}</span></button>`).join("")}</div>
+          ${def.bigWinner && S.winner ? `<div class="winbig preview">${g2.avatar({ id: S.winner, name: playerName(S.winner) }, "xl")}<p><b>${esc(playerName(S.winner))}</b> gewinnt</p></div>` : ""}`;
         }
         $$("[data-w]", box).forEach((b) => b.addEventListener("click", () => {
           S.winner = b.dataset.w;
@@ -1592,7 +1616,7 @@
         };
         try {
           await saveMatch(m);
-          toast(`<b>Gespeichert.</b> Gl\xFCckwunsch, ${esc(winners.map((p) => playerName(p)).join(" & "))}!`, { icon: def.winIcon?.() || "" });
+          toast(`<b>Gespeichert.</b> Gl\xFCckwunsch, ${esc(winners.map((p) => playerName(p)).join(" & "))}!`, { icon: def.bigWinner ? g2.avatar({ id: winners[0], name: playerName(winners[0]) }, "big") : def.winIcon?.() || "" });
           ctx.go("dashboard");
         } catch (err) {
           toast(esc(err.message));
@@ -1677,7 +1701,15 @@
     { c: "#8B3FD9", e: "wink" },
     { c: "#FF7A1A", e: "o" },
     { c: "#14B8A6", e: "grin" },
-    { c: "#E64CA0", e: "wink" }
+    { c: "#E64CA0", e: "wink" },
+    { c: "#E63946", e: "o" },
+    { c: "#2F7DF6", e: "grin" },
+    { c: "#22A45D", e: "wink" },
+    { c: "#F5B700", e: "o" },
+    { c: "#8B3FD9", e: "grin" },
+    { c: "#7A4A2A", e: "wink" },
+    { c: "#4B5563", e: "o" },
+    { c: "#84CC16", e: "grin" }
   ];
   function blob(c, e = "grin", cls = "") {
     const spikes = Array.from({ length: 9 }, (_, i) => {
@@ -1703,6 +1735,7 @@
     icons: { pal: PAL4, current: (p) => pickFor("virus", PAL4, p.id), render: (x) => blob(x.c, x.e) },
     colorOf: (id) => pickFor("virus", PAL4, id).c,
     winIconSmall: "\u{1F9A0}",
+    bigWinner: true,
     winIcon: () => blob("#22A45D", "grin", "toast-ic"),
     logo: () => `<div class="lg-virus">${blob("#E63946", "grin", "b1")}${blob("#2F7DF6", "wink", "b2")}${blob("#22A45D", "o", "b3")}${blob("#F5B700", "grin", "b4")}<span>Virus!</span></div>`,
     header: () => `<div class="vi-hero" aria-hidden="true">${blob("#E63946", "grin", "h1")}${blob("#2F7DF6", "wink", "h2")}${blob("#22A45D", "o", "h3")}${blob("#F5B700", "grin", "h4")}${blob("#8B3FD9", "wink", "h5")}</div><h1 class="g-title">Virus!</h1><p class="g-sub">Wer zuerst vier gesunde Organe hat, gewinnt</p>`
@@ -1717,7 +1750,14 @@
     { c: "#F1EFEA", n: "Wei\xDF" },
     { c: "#27272A", n: "Schwarz" },
     { c: "#EA580C", n: "Orange" },
-    { c: "#7C3AED", n: "Lila" }
+    { c: "#7C3AED", n: "Lila" },
+    { c: "#EC4899", n: "Pink" },
+    { c: "#0D9488", n: "T\xFCrkis" },
+    { c: "#38BDF8", n: "Hellblau" },
+    { c: "#92400E", n: "Braun" },
+    { c: "#9CA3AF", n: "Grau" },
+    { c: "#1E3A8A", n: "Dunkelblau" },
+    { c: "#84CC16", n: "Hellgr\xFCn" }
   ];
   var marble = (c, cls = "") => `<span class="marble ${cls}" style="--c:${c}"></span>`;
   var paw = `<svg viewBox="0 0 32 32" aria-hidden="true" class="paw"><ellipse cx="16" cy="21" rx="7" ry="6"/><ellipse cx="8" cy="13" rx="3" ry="4"/><ellipse cx="13.5" cy="8.5" rx="3" ry="4"/><ellipse cx="18.5" cy="8.5" rx="3" ry="4"/><ellipse cx="24" cy="13" rx="3" ry="4"/></svg>`;
@@ -1752,7 +1792,15 @@
     { c: "#9B5DE5" },
     { c: "#F28C28" },
     { c: "#17B3B3" },
-    { c: "#E05BA8" }
+    { c: "#E05BA8" },
+    { c: "#7A4A2A" },
+    { c: "#4B5563" },
+    { c: "#84CC16" },
+    { c: "#1E3A8A" },
+    { c: "#B91C1C" },
+    { c: "#F472B6" },
+    { c: "#0EA5E9" },
+    { c: "#FACC15" }
   ];
   var hat = (c, cls = "") => `<svg class="wz-hat ${cls}" viewBox="0 0 40 40" aria-hidden="true"><path d="M20 3 C 24 12, 28 22, 31 30 L 9 30 C 13 22, 15 12, 20 3 Z" fill="${c}"/><path d="M20 3 C 22 9 25 12 30 13" stroke="${c}" stroke-width="3" fill="none" stroke-linecap="round"/><ellipse cx="20" cy="31" rx="16" ry="4.5" fill="${c}"/><ellipse cx="20" cy="30" rx="16" ry="4" fill="rgba(0,0,0,.18)"/><path d="M18 16l1.2 2.6 2.8.3-2.1 1.9.6 2.8L18 22.2l-2.5 1.4.6-2.8-2.1-1.9 2.8-.3z" fill="#FFE9A8"/><circle cx="24" cy="24" r="1.2" fill="#FFE9A8"/><circle cx="14" cy="11" r=".9" fill="#FFE9A8"/></svg>`;
   var card2 = (c, sym, cls = "") => `<span class="wz-card ${cls}" style="--c:${c}"><b>${sym}</b></span>`;
@@ -1807,7 +1855,7 @@
       const st = perPlayer(ms);
       for (const s of st) {
         s.awards = {};
-        for (const { m } of s.results) for (const [k, who] of Object.entries(m.awards || {})) if (who === s.id) s.awards[k] = (s.awards[k] || 0) + 1;
+        for (const { m } of s.results) for (const [k, who2] of Object.entries(m.awards || {})) if (who2 === s.id) s.awards[k] = (s.awards[k] || 0) + 1;
         s.awardTotal = Object.values(s.awards).reduce((a, b) => a + b, 0);
         const gaps = s.results.filter((r) => r.total != null).map((r) => Math.max(...Object.values(r.m.totals)) - r.total);
         s.gap = gaps.length ? gaps.reduce((a, b) => a + b, 0) / gaps.length : null;
@@ -2023,7 +2071,13 @@
     { c: "#2F5D2B", n: "Provinz" },
     { c: "#6B3A8C", n: "Fluch" },
     { c: "#3A6BA8", n: "Trank" },
-    { c: "#A23B3B", n: "Herzogtum" }
+    { c: "#A23B3B", n: "Herzogtum" },
+    { c: "#1F6F78", n: "Meer" },
+    { c: "#D97706", n: "Bernstein" },
+    { c: "#4B5563", n: "Eisen" },
+    { c: "#BE185D", n: "Rubin" },
+    { c: "#2563EB", n: "Saphir" },
+    { c: "#65A30D", n: "Smaragd" }
   ];
   var shield = (c, cls = "") => `<svg class="dm-shield ${cls}" viewBox="0 0 40 44" aria-hidden="true"><path d="M20 2 L36 8 V20 C36 31 28 38 20 42 C12 38 4 31 4 20 V8 Z" fill="${c}" stroke="#F3E6C8" stroke-width="2.5"/><path d="M12 25 L14 15 L18 20 L20 13 L22 20 L26 15 L28 25 Z" fill="#F3E6C8"/><rect x="12" y="26" width="16" height="3" rx="1" fill="#F3E6C8"/></svg>`;
   var coin = (c, v, cls = "") => `<span class="dm-coin ${cls}" style="--c:${c}"><b>${v}</b></span>`;
@@ -2056,7 +2110,13 @@
     { c: "#2E8B57", n: "Gr\xFCn" },
     { c: "#7B4A2A", n: "Braun" },
     { c: "#8E44AD", n: "Lila" },
-    { c: "#16A085", n: "T\xFCrkis" }
+    { c: "#16A085", n: "T\xFCrkis" },
+    { c: "#F1C40F", n: "Gelb" },
+    { c: "#E84393", n: "Rosa" },
+    { c: "#7F8C8D", n: "Grau" },
+    { c: "#2D3436", n: "Schwarz" },
+    { c: "#74B9FF", n: "Hellblau" },
+    { c: "#1E6B3A", n: "Dunkelgr\xFCn" }
   ];
   var house = (c, cls = "") => `<svg class="ct-house ${cls}" viewBox="0 0 40 40" aria-hidden="true"><path d="M8 20 L20 8 L32 20 V34 H8 Z" fill="${c}" stroke="#3B2A1A" stroke-width="2.4" stroke-linejoin="round"/><rect x="17" y="24" width="6" height="10" fill="rgba(0,0,0,.25)"/></svg>`;
   var HEX = { wood: "#2F7D32", brick: "#C1440E", wheat: "#E9B824", sheep: "#8BC34A", ore: "#78909C", desert: "#E6CF97" };
@@ -2156,10 +2216,23 @@
     { n: "Flagge I", d: '<rect width="30" height="20" fill="#F6C90E"/><circle cx="15" cy="10" r="5.5" fill="#1B1B1B"/>' },
     { n: "Flagge X", d: '<rect width="30" height="20" fill="#fff"/><rect x="12" width="6" height="20" fill="#1D4E9E"/><rect y="7" width="30" height="6" fill="#1D4E9E"/>' },
     { n: "Flagge H", d: '<rect width="15" height="20" fill="#fff"/><rect x="15" width="15" height="20" fill="#D7263D"/>' },
-    { n: "Flagge J", d: '<rect width="30" height="20" fill="#1D4E9E"/><rect y="7" width="30" height="6" fill="#fff"/>' }
+    { n: "Flagge J", d: '<rect width="30" height="20" fill="#1D4E9E"/><rect y="7" width="30" height="6" fill="#fff"/>' },
+    { n: "Flagge A", d: '<path d="M0 0 H15 V20 H0Z" fill="#fff"/><path d="M15 0 H30 L22 10 L30 20 H15Z" fill="#1D4E9E"/>' },
+    { n: "Flagge B", d: '<path d="M0 0 H30 L22 10 L30 20 H0Z" fill="#D7263D"/>' },
+    { n: "Flagge C", d: '<rect width="30" height="20" fill="#1D4E9E"/><rect y="4" width="30" height="12" fill="#fff"/><rect y="8" width="30" height="4" fill="#D7263D"/>' },
+    { n: "Flagge D", d: '<rect width="30" height="20" fill="#F6C90E"/><rect y="5" width="30" height="10" fill="#1D4E9E"/>' },
+    { n: "Flagge E", d: '<rect width="30" height="10" fill="#1D4E9E"/><rect y="10" width="30" height="10" fill="#D7263D"/>' },
+    { n: "Flagge G", d: '<rect width="30" height="20" fill="#F6C90E"/><rect x="5" width="5" height="20" fill="#1D4E9E"/><rect x="15" width="5" height="20" fill="#1D4E9E"/><rect x="25" width="5" height="20" fill="#1D4E9E"/>' },
+    { n: "Flagge M", d: '<rect width="30" height="20" fill="#1D4E9E"/><path d="M0 0 L30 20 M30 0 L0 20" stroke="#fff" stroke-width="4"/>' },
+    { n: "Flagge R", d: '<rect width="30" height="20" fill="#D7263D"/><rect x="12.5" width="5" height="20" fill="#F6C90E"/><rect y="7.5" width="30" height="5" fill="#F6C90E"/>' },
+    { n: "Flagge S", d: '<rect width="30" height="20" fill="#fff"/><rect x="10" y="6" width="10" height="8" fill="#1D4E9E"/>' },
+    { n: "Flagge V", d: '<rect width="30" height="20" fill="#fff"/><path d="M0 0 L30 20 M30 0 L0 20" stroke="#D7263D" stroke-width="4"/>' },
+    { n: "Flagge W", d: '<rect width="30" height="20" fill="#1D4E9E"/><rect x="5" y="4" width="20" height="12" fill="#fff"/><rect x="10" y="7" width="10" height="6" fill="#D7263D"/>' },
+    { n: "Flagge Y", d: '<rect width="30" height="20" fill="#F6C90E"/>' + [0, 1, 2, 3, 4, 5, 6].map((k) => `<path d="M${k * 8 - 20} 20 L${k * 8 - 16} 20 L${k * 8 + 4} 0 L${k * 8} 0Z" fill="#D7263D"/>`).join("") },
+    { n: "Flagge Z", d: '<path d="M0 0 H30 L15 10Z" fill="#1B1B1B"/><path d="M30 0 V20 L15 10Z" fill="#D7263D"/><path d="M0 20 H30 L15 10Z" fill="#1D4E9E"/><path d="M0 0 V20 L15 10Z" fill="#F6C90E"/>' }
   ];
-  var FLAG_COLOR = ["#C9A40B", "#D7263D", "#B8323F", "#1D4E9E", "#E0525F", "#2F6FC4", "#7D3C98", "#3A6EA5", "#8C7A0A", "#4F7CC2", "#C2185B", "#14708C"];
-  var flag = (x) => `<svg class="sflag" viewBox="0 0 34 24" aria-hidden="true"><g transform="translate(2 2)">${x.d}<rect width="30" height="20" fill="none" stroke="rgba(0,0,0,.35)" stroke-width="1" rx="1.5"/></g></svg>`;
+  var FLAG_COLOR = ["#C9A40B", "#D7263D", "#B8323F", "#1D4E9E", "#E0525F", "#2F6FC4", "#7D3C98", "#3A6EA5", "#8C7A0A", "#4F7CC2", "#C2185B", "#14708C", "#5B8DD9", "#E5484D", "#2B7A9E", "#B89B0B", "#9B2C5E", "#C9A40B", "#3F5FAE", "#E06C1A", "#6E7FBF", "#C43D52", "#2F4F9E", "#D9822B", "#475569"];
+  var flag = (x) => `<svg class="sflag" viewBox="0 0 34 24" aria-hidden="true"><defs><clipPath id="fc"><rect width="30" height="20"/></clipPath></defs><g transform="translate(2 2)"><g clip-path="url(#fc)">${x.d}</g><rect width="30" height="20" fill="none" stroke="rgba(0,0,0,.35)" stroke-width="1" rx="1.5"/></g></svg>`;
   var sunkOf = (m, pid) => normSunk(m.sunk?.[pid]);
   var countSunk = (m, pid) => Object.values(sunkOf(m, pid)).reduce((a, b) => a + (+b || 0), 0);
   var hitsOf = (m, pid) => Object.entries(sunkOf(m, pid)).reduce((a, [k, c]) => a + shipLen(k) * c, 0);
@@ -2544,15 +2617,171 @@
   var GAMES = [floriferous_default, skyjo_default, flip7_default, feuilles_default, virus_default, dog_default, wizard_default, dominion_default, catan_default, schiffe_default];
   var gameById = (id) => GAMES.find((g2) => g2.id === id);
 
+  // js/global.js
+  var COLS = ["#2F6FC4", "#D2408A", "#2E8B57", "#E67E22", "#7D3C98", "#C0392B", "#14708C", "#B8860B", "#5D6D7E", "#8E44AD", "#16A085", "#A0522D"];
+  var colorOf = (id) => {
+    const i = playersByCreated().findIndex((p) => p.id === id);
+    return COLS[(i < 0 ? 0 : i) % COLS.length];
+  };
+  var initial = (id, name, size = "mini") => `<span class="av av-${size} gl-av" style="--c:${colorOf(id)}" aria-hidden="true">${esc((name || "?").trim().charAt(0).toUpperCase())}</span>`;
+  var who = (s) => `<span class="who">${initial(s.id, s.name)}${esc(s.name)}</span>`;
+  var WD = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"];
+  var MON = ["Jan", "Feb", "M\xE4r", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
+  var day = (iso) => {
+    const [y, m, d] = String(iso).slice(0, 10).split("-").map(Number);
+    return new Date(y, m - 1, d);
+  };
+  function renderGlobal(app2, GAMES2, backIcon2) {
+    var _a, _b;
+    const ms = store.matches.filter((m) => GAMES2.some((g2) => g2.id === m.game));
+    const gName = (id) => GAMES2.find((g2) => g2.id === id)?.name || id;
+    const gDot = (id) => GAMES2.find((g2) => g2.id === id)?.dot || "#888";
+    const P = /* @__PURE__ */ new Map();
+    for (const m of ms) for (const pid of m.players || []) {
+      if (!P.has(pid)) P.set(pid, { id: pid, name: playerName(pid, m), games: 0, decided: 0, wins: 0, byGame: {}, dates: /* @__PURE__ */ new Set(), mates: {} });
+      const s = P.get(pid), won = (m.winners || []).includes(pid), hasWinner = (m.winners || []).length > 0;
+      s.games++;
+      if (hasWinner) s.decided++;
+      if (won) s.wins++;
+      s.dates.add(String(m.date).slice(0, 10));
+      const bg = (_a = s.byGame)[_b = m.game] || (_a[_b] = { games: 0, decided: 0, wins: 0 });
+      bg.games++;
+      if (hasWinner) bg.decided++;
+      if (won) bg.wins++;
+      for (const o of m.players) if (o !== pid) s.mates[o] = (s.mates[o] || 0) + 1;
+    }
+    const st = [...P.values()].map((s) => {
+      const gs = Object.entries(s.byGame);
+      const fav = gs.sort((a, b) => b[1].games - a[1].games)[0];
+      const best = gs.filter(([, v]) => v.decided >= 3).sort((a, b) => b[1].wins / b[1].decided - a[1].wins / a[1].decided)[0];
+      return { ...s, rate: s.decided ? s.wins / s.decided : null, variety: gs.length, nights: s.dates.size, fav: fav?.[0], favN: fav?.[1].games, best: best?.[0], bestRate: best ? best[1].wins / best[1].decided : null };
+    });
+    const byDate = {};
+    ms.forEach((m) => {
+      const d = String(m.date).slice(0, 10);
+      (byDate[d] || (byDate[d] = [])).push(m);
+    });
+    const dates = Object.keys(byDate).sort();
+    const longest = dates.reduce((a, d) => !a || byDate[d].length > byDate[a].length ? d : a, null);
+    const wd = Array(7).fill(0);
+    dates.forEach((d) => wd[day(d).getDay()]++);
+    const topWd = wd.indexOf(Math.max(...wd));
+    const months = {};
+    ms.forEach((m) => {
+      const k = String(m.date).slice(0, 7);
+      months[k] = (months[k] || 0) + 1;
+    });
+    const mKeys = Object.keys(months).sort().slice(-12);
+    const perGame = GAMES2.map((g2) => {
+      const gm = ms.filter((m) => m.game === g2.id);
+      const wins = {};
+      gm.forEach((m) => (m.winners || []).forEach((w) => wins[w] = (wins[w] || 0) + 1));
+      const top2 = Object.entries(wins).sort((a, b) => b[1] - a[1]);
+      const kings = top2.filter(([, n]) => n === top2[0]?.[1]).map(([id]) => ({ id, name: playerName(id, gm.find((m) => m.players.includes(id))) }));
+      return { g: g2, n: gm.length, kings, kingWins: top2[0]?.[1] || 0, players: new Set(gm.flatMap((m) => m.players)).size };
+    }).filter((x) => x.n).sort((a, b) => b.n - a.n);
+    const pairs = {};
+    ms.forEach((m) => {
+      const ps = [...m.players || []].sort();
+      for (let i = 0; i < ps.length; i++) for (let j = i + 1; j < ps.length; j++) {
+        const k = ps[i] + "|" + ps[j];
+        pairs[k] = (pairs[k] || 0) + 1;
+      }
+    });
+    const topPairs = Object.entries(pairs).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([k, n]) => {
+      const [a, b] = k.split("|");
+      const m = ms.find((x) => x.players.includes(a));
+      const m2 = ms.find((x) => x.players.includes(b));
+      return { a: { id: a, name: playerName(a, m) }, b: { id: b, name: playerName(b, m2) }, n };
+    });
+    const tile = (title, val, w = "", note = "") => `<article class="stat"><h3>${esc(title)}</h3><p class="stat-val">${val}</p>${w ? `<p class="stat-who">${w}</p>` : ""}${note ? `<p class="stat-note">${note}</p>` : ""}</article>`;
+    const topBy = (key, filter = () => true, low = false) => {
+      const l = st.filter((s) => filter(s) && s[key] != null);
+      if (!l.length) return null;
+      const v = low ? Math.min(...l.map((s) => s[key])) : Math.max(...l.map((s) => s[key]));
+      return { v, w: l.filter((s) => s[key] === v) };
+    };
+    const T = (title, key, fmt, filter, note) => {
+      const r = topBy(key, filter);
+      return tile(title, r ? fmt(r.v) : "\u2013", r ? r.w.map(who).join("") : '<span class="muted">noch niemand</span>', note);
+    };
+    const sorted = [...st].sort((a, b) => b.wins - a.wins || (b.rate ?? 0) - (a.rate ?? 0) || b.games - a.games);
+    const gamesUsed = GAMES2.filter((g2) => ms.some((m) => m.game === g2.id));
+    const maxCell = Math.max(1, ...st.flatMap((s) => Object.values(s.byGame).map((v) => v.games)));
+    const matrix = `<div class="table-wrap"><table class="lb gl-matrix"><thead><tr><th class="l">Spieler</th>${gamesUsed.map((g2) => `<th title="${esc(g2.name)}"><span class="gl-gdot" style="background:${g2.dot}"></span><span class="gl-gn">${esc(g2.name)}</span></th>`).join("")}</tr></thead>
+    <tbody>${sorted.map((s) => `<tr><td class="l">${initial(s.id, s.name)}<span class="nm">${esc(s.name)}</span></td>${gamesUsed.map((g2) => {
+      const v = s.byGame[g2.id];
+      if (!v) return '<td class="gl-empty">\xB7</td>';
+      const a = 0.12 + 0.6 * (v.games / maxCell);
+      return `<td style="background:rgba(28,27,25,${a.toFixed(2)});color:${a > 0.45 ? "#fff" : "inherit"}" title="${esc(s.name)} \xB7 ${esc(g2.name)}: ${v.games} Partien, ${v.wins} Siege">${v.games}${v.decided ? `<small>${Math.round(v.wins / v.decided * 100)}%</small>` : ""}</td>`;
+    }).join("")}</tr>`).join("")}</tbody></table></div>
+    <p class="hint">Zahl = Partien, darunter die Siegquote. Je dunkler, desto \xF6fter gespielt.</p>`;
+    app2.innerHTML = `
+  <header class="hub-top">
+    <a class="icon-btn" href="#/" aria-label="Zur\xFCck zur Spielauswahl">${backIcon2}</a>
+    <h1 class="hub-title">Gesamtstatistik</h1>
+    <span></span>
+  </header>
+  <main class="hub-main gl">
+    ${!ms.length ? '<p class="empty">Sobald Partien eingetragen sind, gibt es hier den \xDCberblick \xFCber alle Spiele.</p>' : `
+    <section class="gl-hero">
+      <div><b>${ms.length}</b><span>${ms.length === 1 ? "Partie" : "Partien"}</span></div>
+      <div><b>${dates.length}</b><span>${dates.length === 1 ? "Spieleabend" : "Spieleabende"}</span></div>
+      <div><b>${gamesUsed.length}</b><span>von ${GAMES2.length} Spielen</span></div>
+      <div><b>${st.length}</b><span>Spieler</span></div>
+    </section>
+
+    <h2 class="gl-h">Bestenliste \xFCber alle Spiele</h2>
+    <div class="stats-grid">
+      ${T("Meiste Siege", "wins", (v) => v)}
+      ${T("Beste Siegquote", "rate", fmtPct, (s) => s.decided >= 10, "ab 10 Partien mit Sieger")}
+      ${T("Meiste Partien", "games", (v) => v)}
+      ${T("Allrounder", "variety", (v) => plural(v, "Spiel", "Spiele"), () => true, "die meisten verschiedenen Spiele")}
+      ${T("Treueste Seele", "nights", (v) => plural(v, "Abend", "Abende"), () => true, "an den meisten Spieleabenden dabei")}
+      ${tile("L\xE4ngster Abend", longest ? `${byDate[longest].length} Partien` : "\u2013", longest ? fmtDate(longest) : "", longest ? [...new Set(byDate[longest].map((m) => gName(m.game)))].join(", ") : "")}
+      ${tile("Lieblingstag", dates.length ? WD[topWd] : "\u2013", "", dates.length ? `${wd[topWd]} von ${dates.length} Abenden` : "")}
+      ${tile("\xD8 Partien pro Abend", dates.length ? fmtNum(ms.length / dates.length) : "\u2013")}
+    </div>
+
+    <section class="panel"><h2 class="panel-title">Rangliste</h2>
+      <div class="table-wrap"><table class="lb"><thead><tr><th class="l">Spieler</th><th>Partien</th><th>Siege</th><th>Quote</th><th>Spiele</th></tr></thead>
+      <tbody>${sorted.map((s, i) => `<tr><td class="l"><span class="rank">${i + 1}</span>${initial(s.id, s.name)}<span class="nm">${esc(s.name)}</span></td><td>${s.games}</td><td>${s.wins}</td><td>${s.rate == null ? "\u2013" : fmtPct(s.rate)}</td><td>${s.variety}</td></tr>`).join("")}</tbody></table></div>
+      <p class="hint">Siegquote z\xE4hlt nur Partien mit Sieger (ohne Solo-Partien und abgebrochene).</p>
+    </section>
+
+    <section class="panel"><h2 class="panel-title">Lieblings- und Paradespiele</h2>
+      <ul class="kings gl-fav">${sorted.map((s) => `<li>${who(s)}<span class="gl-fv"><small>spielt am liebsten</small>${s.fav ? `${esc(gName(s.fav))} <span class="muted">(${s.favN}\xD7)</span>` : "\u2013"}</span><span class="gl-fv"><small>gewinnt am ehesten</small>${s.best ? `${esc(gName(s.best))} <span class="muted">${fmtPct(s.bestRate)}</span>` : '<span class="muted">noch offen</span>'}</span></li>`).join("")}</ul>
+      <p class="hint">\u201EGewinnt am ehesten\u201C: h\xF6chste Siegquote in einem Spiel mit mindestens 3 Partien.</p>
+    </section>
+
+    <section class="panel"><h2 class="panel-title">Wer regiert welches Spiel?</h2>
+      <ul class="kings gl-kings">${perGame.map((x) => `<li><span class="gl-gdot" style="background:${gDot(x.g.id)}"></span><span class="k-cat">${esc(x.g.name)}</span>${x.kings.length ? `${x.kings.map(who).join(" ")}<b>${plural(x.kingWins, "Sieg", "Siege")}</b>` : '<span class="muted">nur Solo-Partien</span>'}</li>`).join("")}</ul>
+    </section>
+
+    <section class="panel"><h2 class="panel-title">Partien je Spiel</h2>
+      ${barChart(perGame.map((x) => ({ label: x.g.name, value: x.n, color: x.g.dot, note: `${x.players} Spieler` })), { digits: 0 })}
+    </section>
+
+    <section class="panel">${details("Mehr Statistiken", `
+      <h3 class="sub-h">Partien pro Monat</h3>${barChart(mKeys.map((k) => ({ label: `${MON[+k.slice(5, 7) - 1]} ${k.slice(2, 4)}`, value: months[k], color: "var(--ink)" })), { digits: 0 })}
+      <h3 class="sub-h">Spieleabende nach Wochentag</h3>${barChart([1, 2, 3, 4, 5, 6, 0].map((i) => ({ label: WD[i], value: wd[i], color: "var(--ink)" })).filter((x) => x.value), { digits: 0 })}
+      <h3 class="sub-h">Wer spielt was?</h3>${matrix}
+      <h3 class="sub-h">Unzertrennlich \u2013 die meisten gemeinsamen Partien</h3><ul class="kings">${topPairs.map((x) => `<li>${who(x.a)}<span class="muted">&amp;</span>${who(x.b)}<b class="gl-right">${x.n}\xD7</b></li>`).join("") || '<li class="muted">Noch keine gemeinsamen Partien.</li>'}</ul>
+      <h3 class="sub-h">Siege insgesamt</h3>${barChart(sorted.filter((s) => s.wins).map((s) => ({ label: s.name, value: s.wins, icon: initial(s.id, s.name), color: colorOf(s.id), note: `${s.games} Partien` })), { digits: 0 })}
+    `)}</section>`}
+  </main>`;
+  }
+
   // js/app.js
   var app;
-  var APP_VERSION = "1.7";
+  var APP_VERSION = "1.9";
   var TABS = [["dashboard", "Dashboard"], ["neu", "Neues Spiel"], ["statistik", "Statistik"], ["verlauf", "Verlauf"]];
   var current = null;
   function parse() {
     const h = location.hash.replace(/^#\/?/, "").split("/").filter(Boolean);
     if (h[0] === "g" && gameById(h[1])) return { view: "game", game: h[1], tab: h[2] === "einstellungen" || TABS.some(([t]) => t === h[2]) ? h[2] : "dashboard" };
     if (h[0] === "einstellungen") return { view: "settings" };
+    if (h[0] === "gesamt") return { view: "global" };
     return { view: "hub" };
   }
   var go = (hash) => {
@@ -2580,6 +2809,7 @@
     if (r.view === "game") return renderGame(r.game, r.tab);
     setTheme(null);
     if (r.view === "settings") return renderSettings();
+    if (r.view === "global") return renderGlobal(app, GAMES, backIcon);
     renderHub();
   }
   function setTheme(game) {
@@ -2655,7 +2885,7 @@
     app.innerHTML = `
   <header class="hub-top">
     <h1 class="wordmark small">Kahlo<span>Games</span></h1>
-    <div class="hub-right"><span class="ver" title="Version der App">v${APP_VERSION}</span><a class="icon-btn" href="#/einstellungen" aria-label="Einstellungen">${gearIcon}</a></div>
+    <div class="hub-right"><span class="ver" title="Version der App">v${APP_VERSION}</span><a class="icon-btn" href="#/gesamt" aria-label="Gesamtstatistik" title="Gesamtstatistik">${chartIcon}</a><a class="icon-btn" href="#/einstellungen" aria-label="Einstellungen">${gearIcon}</a></div>
   </header>
   <main class="hub-main">
     <h2 class="hub-q">Was habt ihr gespielt?</h2>
@@ -2666,6 +2896,7 @@
           <div class="tile-meta"><b>${esc(x.g.name)}</b><span>${meta(x)}</span></div>
         </a>`).join("")}
     </div>
+    ${store.matches.length ? `<a class="gl-card" href="#/gesamt"><span class="gl-card-ic">${chartIcon}</span><span><b>Gesamtstatistik</b><small>${plural(store.matches.length, "Partie", "Partien")} \xB7 alle Spiele und Spieler im Vergleich</small></span><span class="chev">${backIcon}</span></a>` : ""}
     ${demo ? '<p class="demo-note">Demo-Modus \u2013 noch nicht mit Google Sheets verbunden.</p>' : ""}
   </main>`;
     $$("[data-sort]").forEach((b) => b.addEventListener("click", () => {
@@ -2677,6 +2908,7 @@
     }));
   }
   var gearIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>`;
+  var chartIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M4 20h16"/><path d="M7 16v-5"/><path d="M12 16V6"/><path d="M17 16v-8"/></svg>`;
   var backIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>`;
   function renderSettings() {
     const ps = playersByCreated();

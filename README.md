@@ -43,6 +43,7 @@ Solange `API_URL` leer ist, läuft alles im **Demo-Modus**: Daten werden nur im 
 ## Bedienung
 
 - **Start:** Passwort eingeben → Spiel wählen. Das Zahnrad auf der Startseite öffnet die **Einstellungen** (Spieler anlegen, umbenennen, löschen).
+- **Gesamtstatistik:** über das Diagramm-Symbol oben auf der Startseite (oder die Karte unter den Spielen) – alle Spiele und Spieler im Vergleich.
 - **Spieler-Symbole** stellt man im jeweiligen Spiel über das Zahnrad neben „Spiele“ ein – jedes Spiel hat eigene Symbole.
 - **Catan:** Wählt man oben die Variante Catan Energie oder Raumfahrer, wechselt das Design.
 - **Spieler löschen** braucht das Lösch-Passwort (Livius fragen). Alte Partien bleiben im Verlauf erhalten.
