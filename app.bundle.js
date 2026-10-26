@@ -569,7 +569,7 @@
       live();
       function setup() {
         const sel = /* @__PURE__ */ new Set();
-        el.innerHTML = `<section class="panel">
+        el.innerHTML = `${rulesPanel(g2)}<section class="panel">
           <div class="row"><label class="field"><span>Gespielt am</span><input type="date" id="rDate" value="${today()}"></label></div>
           <div id="rPick"></div>
           <button class="btn btn-primary wide" type="button" id="rStart" disabled>Spiel starten</button>
@@ -587,7 +587,7 @@
         const P = d.players, totals = totalsOf(d.rounds, P), pl = places(totals, cfg.lowWins);
         const isEnd = ended(totals, d), mr = maxR(P.length);
         const order = [...P].sort((a, b) => pl[a] - pl[b]);
-        el.innerHTML = `
+        el.innerHTML = `${rulesPanel(g2)}
         <section class="panel score-head">
           <div class="sh-top"><span>${fmtDate(d.date)}</span><span>${mr ? `Runde ${Math.min(d.rounds.length, mr)} von ${mr}` : plural(d.rounds.length, "Runde", "Runden")}${cfg.target ? ` \xB7 Ziel ${cfg.target}` : ""}</span></div>
           <ol class="standings">${order.map((p) => `<li class="${pl[p] === 1 && d.rounds.length ? "lead" : ""}">
@@ -758,6 +758,221 @@
     return { newTab, stats: stats2, totalsOf };
   }
 
+
+  // js/games/rules.js
+  var RULES = {
+    floriferous: { goal: "Nach drei Tagen im Garten die meisten Punkte haben.", items: [
+      "Das Spiel dauert 3 Tage. Jeden Tag liegt ein Raster aus Karten aus (offen, verdeckt und Steine).",
+      "Pro Zug nimmst du eine Karte aus der nächsten Spalte. Wer höher in der Spalte nimmt, ist im nächsten Zug früher dran.",
+      "Desire-Karten unten in der Spalte bringen viele Punkte, setzen dich aber in der Zugfolge nach hinten.",
+      "Am Tagesende werden die Missionen gewertet: Wer die Bedingung erfüllt, setzt eine eigene Holzblume darauf. Früher heißt mehr Punkte.",
+      "Am Ende zählen: Missionen, Steine, Desires, Kitsch und das Blumengesteck.",
+      "Solo spielst du gegen die Krähe. Deine Punkte ergeben die Stimmung von Anxious bis Nirvana."
+    ] },
+    skyjo: { goal: "Möglichst wenig Punkte sammeln.", items: [
+      "Jeder hat 12 verdeckte Karten (3 × 4) und deckt zu Beginn 2 davon auf.",
+      "Im Zug: eine Karte vom Stapel oder der Ablage nehmen und gegen eine eigene tauschen. Oder die gezogene Karte abwerfen und dafür eine eigene aufdecken.",
+      "Drei gleiche Zahlen in einer Spalte kommen sofort weg.",
+      "Wer als Erster alle Karten aufgedeckt hat, beendet die Runde. Alle anderen haben noch einen Zug.",
+      "Hat der Beender nicht die wenigsten Punkte, zählen seine Punkte doppelt (nur wenn sie positiv sind).",
+      "Laut Regel endet das Spiel, sobald jemand 100 Punkte hat. Wenigste Punkte gewinnen."
+    ] },
+    flip7: { goal: "Als Erster 200 Punkte erreichen.", items: [
+      "Reihum: noch eine Karte ziehen oder stehen bleiben und die Punkte der Runde sichern.",
+      "Ziehst du eine Zahl, die du schon hast, bist du raus und bekommst 0 Punkte.",
+      "7 verschiedene Zahlen = Flip 7: 15 Bonuspunkte, und die Runde endet sofort.",
+      "Bonuskarten: +2 bis +10 dazu, ×2 verdoppelt die Zahlenkarten.",
+      "Aktionen: Freeze (jemand muss stehen bleiben), Flip Three (3 Karten ziehen), Second Chance (eine doppelte Zahl abwehren).",
+      "Wer nach einer Runde 200 oder mehr hat, beendet das Spiel. Höchste Punktzahl gewinnt."
+    ] },
+    feuilles: { goal: "Als Erster alle Karten loswerden.", items: [
+      "3 bis 6 Spieler. Auf dem Tisch entsteht eine Zahlenreihe.",
+      "Im Zug legst du eine oder mehrere gleiche Zahlen an: unten links (niedriger) oder oben rechts (höher).",
+      "Legst du mehrere gleiche Karten, müssen die nächsten mindestens genauso viele legen.",
+      "Wer nicht kann oder will, passt, nimmt eine offene Karte vom Tisch und ist für diese Runde raus.",
+      "Wertung in KahloGames: Der Rundensieger bekommt 0 Punkte, alle anderen zählen die Zahlen ihrer Restkarten.",
+      "Am Ende gewinnt die niedrigste Summe."
+    ] },
+    virus: { goal: "Als Erster 4 gesunde Organe in verschiedenen Farben vor sich haben.", items: [
+      "Jeder hat immer 3 Handkarten. Im Zug spielst du 1 Karte oder wirfst beliebig viele ab und ziehst auf 3 nach.",
+      "Virus auf ein fremdes Organ: Es ist infiziert. Ein zweites Virus zerstört es.",
+      "Medizin auf ein infiziertes Organ heilt es. Zwei Medizinen machen es für immer immun.",
+      "Farben müssen passen. Bunte Karten (Joker) passen überall.",
+      "Behandlungen: Transplantation, Organdieb, Ansteckung, Latexhandschuh, Kunstfehler.",
+      "Ein immunes Organ zählt als gesund und kann nicht mehr angegriffen werden."
+    ] },
+    dog: {
+      royal: { t: "Dog Royal", goal: "Alle Figuren ins Ziel bringen (im Team alle 8).", items: [
+        "2 bis 6 Spieler. Bei 4 und 6 spielen die Gegenübersitzenden als Team, sonst jeder für sich.",
+        "Jede Runde gibt es 5 Karten. Partner tauschen 1 Karte verdeckt. Ohne Team gibt jeder 1 Karte nach links.",
+        "Jeder hat König, Ritter, Bürger und Narr. Überholen darf man nur gleich- oder rangniedrigere Figuren. Grüne Karten heben das auf.",
+        "Den König kann nur ein anderer König schlagen. Sonst schlägt jede Figur jede.",
+        "Eine Figur auf dem eigenen Startfeld blockiert und ist geschützt. Der Ritter darf blockierte Startfelder überspringen.",
+        "Sieg: Das Team mit allen 8 Figuren im Ziel. Ohne Team gewinnt, wer zuerst 4 im Ziel hat."
+      ] },
+      backdog: { t: "Backdog", goal: "Alle Figuren ins Ziel bringen.", items: [
+        "Grundregeln wie bei DOG: Karte spielen, Figur bewegen, Karte muss ganz ausgeführt werden.",
+        "Wer keine Karte ausführen kann, scheidet für die Runde aus.",
+        "Startfeld: Eine eigene Figur dort ist geschützt und blockiert.",
+        "Wer auf einer Figur landet, schlägt sie zurück in den Start.",
+        "Backdog-Sonderregeln: hier noch nicht eingetragen."
+      ] },
+      agent: { t: "Agent Dog", goal: "Alle Figuren ins Ziel bringen (im Team alle 8).", items: [
+        "2 bis 4 Spieler. Zu viert spielen Rot/Grün gegen Blau/Gelb, sonst jeder für sich.",
+        "Jede Runde gibt es 5 Karten. Im Team tauscht ihr zu Beginn je 1 Karte. Über Karten wird nicht geredet.",
+        "Endet eine Figur auf einem Loch, taucht sie unter: Ihre Farbe ist verdeckt und jeder darf sie bewegen.",
+        "Agententreffpunkt: Wer dort endet, zieht die nächste Figur dahinter vor, und sie taucht sofort unter.",
+        "Neue Karten: Tauschkarte (zwei untergetauchte Figuren tauschen) und Partnerkarte (4 Punkte frei verteilen).",
+        "Wer eine eigene oder eine Teamfigur schlägt, scheidet aus der Runde aus."
+      ] }
+    },
+    wizard: { goal: "Genau so viele Stiche machen, wie man angesagt hat.", items: [
+      "60 Karten: 4 Farben von 1 bis 13 plus 4 Zauberer und 4 Narren.",
+      "Runde 1 bekommt jeder 1 Karte, Runde 2 zwei usw. Die nächste Karte vom Stapel bestimmt Trumpf.",
+      "Vor jeder Runde sagt jeder an, wie viele Stiche er macht.",
+      "Farbe bedienen ist Pflicht. Zauberer und Narren darf man immer spielen.",
+      "Der erste Zauberer gewinnt den Stich. Narren verlieren immer.",
+      "Ansage getroffen: 20 + 10 je Stich. Daneben: −10 je Stich Abweichung."
+    ] },
+    dominion: { goal: "Am Ende die meisten Siegpunkte im Deck haben.", items: [
+      "Start: 7 Kupfer und 3 Anwesen. 5 Karten auf die Hand.",
+      "Zug in drei Phasen: 1 Aktion ausspielen, 1 Karte kaufen, dann aufräumen und 5 neue Karten ziehen.",
+      "Karten wie +1 Aktion oder +1 Kauf erlauben mehr.",
+      "Siegpunkte: Anwesen 1, Herzogtum 3, Provinz 6. Flüche zählen −1.",
+      "Ende: Die Provinzen sind leer oder 3 beliebige Stapel sind leer.",
+      "Gleichstand: Wer weniger Züge hatte, gewinnt. Sonst wird der Sieg geteilt."
+    ] },
+    catan: {
+      normal: { t: "Catan", goal: "Als Erster 10 Siegpunkte im eigenen Zug.", items: [
+        "Würfeln: Felder mit der Zahl geben allen angrenzenden Siedlungen 1 Rohstoff, Städten 2.",
+        "Eine 7: Wer mehr als 7 Karten hat, gibt die Hälfte ab. Der Räuber zieht um und klaut 1 Karte.",
+        "Bauen: Straße (Holz, Lehm), Siedlung (Holz, Lehm, Getreide, Wolle), Stadt (2 Getreide, 3 Erz), Entwicklungskarte (Erz, Getreide, Wolle).",
+        "Handeln mit Mitspielern oder 4:1 mit der Bank, an Häfen 3:1 oder 2:1.",
+        "Siedlung 1 Punkt, Stadt 2 Punkte, Siegpunktkarte 1 Punkt.",
+        "Längste Handelsstraße (ab 5) und Größte Rittermacht (ab 3 Rittern) zählen je 2 Punkte."
+      ] },
+      energie: { t: "Catan Energie", goal: "10 Siegpunkte, wenn der Beutel nicht vorher leer ist.", items: [
+        "Grundregeln wie Catan, für 3 bis 4 Spieler.",
+        "Kraftwerke: braune (fossil) verschmutzen, grüne sind nachhaltig. Sie liefern Energie, die wie ein Joker wirkt.",
+        "Zu Zugbeginn zieht man Chips aus dem Beutel. Volle Leisten lösen Ereignisse aus: grau trifft Verschmutzer, grün belohnt Nachhaltige.",
+        "Umweltschäden blockieren Erträge, bis man Energie abgibt.",
+        "Der Umweltinspektor ersetzt den Räuber.",
+        "Ist der Beutel leer, gewinnt, wer netto die meisten grünen Kraftwerke hat, egal wie viele Siegpunkte."
+      ] },
+      raumfahrer: { t: "Raumfahrer (Sternenfahrer)", goal: "Als Erster 15 Siegpunkte im eigenen Zug.", items: [
+        "Start mit 2 Kolonien und 1 Raumhafen, also 4 Punkte.",
+        "Zug: würfeln und Erträge, handeln und bauen, dann mit dem Mutterschiff fliegen.",
+        "Mutterschiff schütteln: Bunte Kugeln ergeben die Geschwindigkeit. Die schwarze Kugel bringt eine Begegnung.",
+        "Kolonie 1 Punkt, Raumhafen 2 Punkte. Handelsstationen bringen Freundschaftskarten.",
+        "Piraten besiegen und Eisplaneten terraformen bringt Medaillen (1 Punkt).",
+        "Ausbauten am Mutterschiff: Kanonen, Frachtmodule, Antriebe."
+      ] }
+    },
+    schiffe: { goal: "Als Erster die ganze gegnerische Flotte versenken.", items: [
+      "Jeder versteckt seine Flotte auf dem eigenen Feld. Die Schiffe stehen gerade und berühren sich nicht.",
+      "Abwechselnd ein Feld ansagen, z. B. „B7“. Der andere antwortet „Wasser“, „Treffer“ oder „Versenkt“.",
+      "Nach einem Treffer darf man je nach Hausregel nochmal schießen.",
+      "Ein Schiff ist versenkt, wenn alle seine Felder getroffen sind.",
+      "Wer alle Schiffe des Gegners versenkt, gewinnt."
+    ] },
+    karten: {
+      maumau: { t: "Mau Mau", goal: "Als Erster alle Karten loswerden.", items: [
+        "Jeder bekommt 5 bis 7 Karten. Eine Karte liegt offen in der Mitte.",
+        "Man legt eine Karte gleicher Farbe oder gleichen Werts. Wer nicht kann, zieht eine Karte.",
+        "7: Der Nächste zieht 2. Mit einer weiteren 7 gibt man weiter (+2).",
+        "8: Der Nächste setzt aus.",
+        "Bube: Darf auf alles und man wünscht sich eine Farbe. Bube auf Bube gilt nicht.",
+        "Bei der vorletzten Karte „Mau“ sagen, beim Ablegen der letzten „Mau Mau“. Vergessen heißt 1 Strafkarte."
+      ] },
+      bluff: { t: "Bluff", goal: "Als Erster alle Karten loswerden.", items: [
+        "Alle Karten werden verteilt.",
+        "Reihum legt man 1 bis 4 Karten verdeckt ab und sagt an, was es ist, z. B. „zwei Könige“.",
+        "Man darf lügen. Welche Werte erlaubt sind, regelt eure Hausregel (gleicher Wert oder aufsteigend).",
+        "Jeder darf „Bluff!“ rufen. Die zuletzt gelegten Karten werden aufgedeckt.",
+        "War gelogen, nimmt der Lügner den ganzen Stapel. War es wahr, nimmt ihn der Rufer.",
+        "Wer zuerst keine Karten mehr hat, gewinnt."
+      ] },
+      shithead: { t: "Shit Head", goal: "Nicht als Letzter Karten haben, denn der ist der Shit Head.", items: [
+        "Jeder bekommt 3 verdeckte Karten, darauf 3 offene, dazu 3 Handkarten. Vor dem Start darf man Hand und offene Karten tauschen.",
+        "Man legt gleich hoch oder höher, auch mehrere gleiche Karten auf einmal. Wer nicht kann, nimmt den Stapel.",
+        "Solange der Stapel da ist, zieht man auf 3 Handkarten nach.",
+        "Sonderkarten (Hausregeln variieren): 2 = Neustart, 10 = Stapel verbrennen, vier Gleiche verbrennen ebenfalls.",
+        "Ist die Hand leer, spielt man die offenen Karten, danach blind die verdeckten.",
+        "Wer zuletzt noch Karten hat, ist der Shit Head und gibt die nächste Runde."
+      ] },
+      arschloch: { t: "Arschloch", goal: "Als Erster raus und Präsident werden.", items: [
+        "Alle Karten werden verteilt. Der Ausspieler legt eine, zwei, drei oder vier gleiche Karten.",
+        "Die Nächsten müssen gleich viele, aber höhere Karten legen oder passen.",
+        "Passen alle, räumt der Letzte ab und spielt neu aus.",
+        "Wer zuerst raus ist, wird Präsident. Danach folgen Vize-Präsident und Volk. Der Vorletzte wird Vize-Arschloch, der Letzte Arschloch.",
+        "Nächste Runde: Das Arschloch gibt seine 2 besten Karten an den Präsidenten und bekommt 2 beliebige zurück. Die Vizes tauschen je 1 Karte.",
+        "KahloGames-Wertung: pro Runde Rangpunkte (Präsident = Spielerzahl − 1, Arschloch = 0)."
+      ] },
+      elfer: { t: "11er raus", goal: "Als Erster alle Karten ablegen.", items: [
+        "Gespielt wird mit Zahlen 1 bis 20 in vier Farben.",
+        "Wer eine 11 hat, legt sie aus. Jede Farbe beginnt mit ihrer 11.",
+        "An die 11 legt man nach oben (12, 13 …) und nach unten (10, 9 …) in derselben Farbe an.",
+        "Wer nicht anlegen kann, zieht bis zu 3 Karten, bis eine passt.",
+        "Wer zuerst keine Karten mehr hat, gewinnt."
+      ] },
+      canasta: { t: "Canasta", goal: "Als Erste Seite 5000 Punkte erreichen.", items: [
+        "Zu viert im Team (gegenüber), zu zweit oder zu dritt jeder für sich. 2 Pakete plus 4 Joker.",
+        "Man meldet Sätze aus mindestens 3 gleichen Werten. Joker und Zweien sind wild, aber höchstens 3 in einem Satz.",
+        "Erstmeldung braucht mindestens: unter 0 → 15, ab 0 → 50, ab 1500 → 90, ab 3000 → 120 Punkte.",
+        "Canasta = 7 Karten: rein 500, gemischt 300. Ausmachen geht erst mit mindestens einem Canasta.",
+        "Ausmachen +100, verdeckt ausmachen +200. Rote Dreien je 100, alle vier 800. Ohne eigene Meldung zählen sie minus.",
+        "Kartenwerte: Joker 50, Ass und 2 je 20, K bis 8 je 10, 7 bis 4 und schwarze 3 je 5. Ausgelegte Karten zählen plus, Karten auf der Hand minus."
+      ] },
+      skat: { t: "Skat", goal: "Als Alleinspieler mindestens 61 Augen holen.", items: [
+        "3 Spieler bekommen je 10 Karten, 2 liegen im Skat. Zu viert setzt der Geber aus.",
+        "Reizen: 18, 20, 22, 23, 24, 27, 30 … Wer am höchsten reizt, ist Alleinspieler und darf den Skat aufnehmen. Ohne Skat ist es ein Handspiel.",
+        "Spielwert = Grundwert × Stufen. Grundwert: Karo 9, Herz 10, Pik 11, Kreuz 12, Grand 24.",
+        "Stufen: Spitzen (mit/ohne) + 1 für das Spiel, dazu je 1 für Hand, Schneider, Schneider angesagt, Schwarz, Schwarz angesagt, Ouvert.",
+        "Null: 23, Null Hand 35, Null ouvert 46, Null ouvert Hand 59. Der Alleinspieler darf keinen Stich machen.",
+        "Verloren zählt doppelt minus. Überreizt: Der nächsthöhere passende Wert zählt doppelt minus. Bei Seeger-Fabian zusätzlich ±50 und 40 (zu viert 30) für jeden Gegner."
+      ] },
+      schwimmen: { t: "Schwimmen", goal: "Als Letzter noch im Spiel sein.", items: [
+        "Jeder hat 3 Karten, 3 liegen offen in der Mitte. Jeder hat 3 Leben.",
+        "Im Zug: eine Karte tauschen, alle drei tauschen, schieben oder klopfen. Nach dem Klopfen hat jeder noch einen Zug.",
+        "Gezählt wird eine Farbe: Ass 11, Bildkarten 10, sonst der Kartenwert. Drei gleiche Werte zählen 30,5.",
+        "31 auf der Hand beendet die Runde sofort. Drei Asse sind Feuer: Alle anderen verlieren ein Leben.",
+        "Wer die wenigsten Punkte hat, verliert ein Leben. Wer kein Leben mehr hat, schwimmt. Verliert er nochmal, ist er raus.",
+        "Wer als Letzter übrig ist, gewinnt."
+      ] }
+    },
+    ligretto: { goal: "Nach den vereinbarten Runden die meisten Punkte haben.", items: [
+      "Jeder hat ein eigenes Kartenspiel (4 Farben, 1 bis 10). Vor sich: der Ligretto-Stapel mit 10 Karten und eine Reihe offener Karten. Der Rest ist auf der Hand.",
+      "Alle spielen gleichzeitig, ohne Reihenfolge!",
+      "Jede 1 eröffnet einen Stapel in der Mitte. Darauf kommt die 2 derselben Farbe, dann die 3 usw. bis 10.",
+      "Aus der Hand werden immer 3 Karten umgedreht, aber nur die oberste darf gespielt werden. Lücken in der Reihe füllt man aus dem Ligretto-Stapel.",
+      "Wer seinen Ligretto-Stapel leer hat, ruft „Ligretto Stop!“, und die Runde endet sofort.",
+      "Wertung: +1 für jede eigene Karte in der Mitte, −2 für jede Karte, die noch im Ligretto-Stapel liegt."
+    ] }
+  };
+  var rulesOpen = {};
+  if (typeof document !== "undefined") document.addEventListener("toggle", (e) => {
+    const d = e.target;
+    if (d?.matches?.("details.rules")) rulesOpen[d.dataset.rules] = d.open;
+  }, true);
+  var bookIcon = '<svg class="rules-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5"/><path d="M9 8h7M9 11.5h5"/></svg>';
+  var rulesList = (r) => `${r.goal ? `<p class="rules-goal"><b>Ziel:</b> ${esc(r.goal)}</p>` : ""}<ul class="rules-list">${r.items.map((i) => `<li>${esc(i)}</li>`).join("")}</ul>`;
+  function rulesHTML(game, variant) {
+    const R = RULES[game.id];
+    if (!R) return "";
+    let title = "Regeln", body;
+    if (R.items) body = rulesList(R);
+    else if (variant && variant !== "all" && R[variant]) {
+      title = `Regeln \xB7 ${R[variant].t}`;
+      body = rulesList(R[variant]);
+    } else body = Object.values(R).map((r) => `<details class="rules-sub"><summary>${esc(r.t)}</summary>${rulesList(r)}</details>`).join("");
+    return `<section class="panel rules-panel"><details class="more rules" data-rules="${game.id}" ${rulesOpen[game.id] ? "open" : ""}><summary><span>${bookIcon}${esc(title)}</span><i aria-hidden="true"></i></summary><div class="more-body">${body}</div></details></section>`;
+  }
+  var rulesPanel = (game, variant) => `<div class="rules-slot">${rulesHTML(game, variant)}</div>`;
+  function updateRules(el, game, variant) {
+    const s = el.querySelector(".rules-slot");
+    if (s) s.innerHTML = rulesHTML(game, variant);
+  }
+
   // js/games/floriferous.js
   var BASE = typeof window !== "undefined" && window.KG_ASSETS != null ? window.KG_ASSETS : "assets/flori/";
   var A = (n) => `${BASE}${n}.webp`;
@@ -913,7 +1128,7 @@
       return `<li>${img(c.icon, "ci")}<span class="k-cat">${c.name}</span><span class="who">${avatar(best.player, "mini")}${esc(best.name)}</span><b>\xD8 ${fmtNum(best.cat[c.key])}</b></li>`;
     }).join("");
     const recent = [...ms].reverse().slice(0, 3);
-    el.innerHTML = `${filterBar()}
+    el.innerHTML = `${filterBar()}${rulesPanel(g2)}
     ${ms.length ? `
     <div class="stats-grid">${tiles.join("")}</div>
     <section class="panel"><h2 class="ribbon">Kategorie-K\xF6nige</h2><ul class="kings">${kings}</ul></section>
@@ -942,7 +1157,7 @@
       return (_a = S.scores)[id] || (_a[id] = Object.fromEntries(CATS.map((c) => [c.key, 0])));
     };
     const total = (id) => CATS.reduce((a, c) => a + (+sc(id)[c.key] || 0), 0);
-    el.innerHTML = `
+    el.innerHTML = `${rulesPanel(g2)}
     <section class="panel" aria-label="Spiel einrichten">
       ${img("splash_orange", "deco", "")}
       <div class="setup-grid">
@@ -1193,7 +1408,7 @@
     function dashboard3(el, ctx) {
       const ms = matchesOf(def.id), st = engine.stats(ms);
       if (!ms.length) {
-        el.innerHTML = `<div class="empty-state panel"><p>Noch keine Partie gespielt.</p><button class="btn btn-primary" type="button" data-new>Spiel starten</button></div>`;
+        el.innerHTML = `${rulesPanel(g2)}<div class="empty-state panel"><p>Noch keine Partie gespielt.</p><button class="btn btn-primary" type="button" data-new>Spiel starten</button></div>`;
         $("[data-new]", el).onclick = () => ctx.go("neu");
         return;
       }
@@ -1211,7 +1426,7 @@
         ...def.extraTiles ? def.extraTiles(st, T) : []
       ];
       const recent = [...ms].reverse().slice(0, 3);
-      el.innerHTML = `<div class="stats-grid">${tiles.join("")}</div>
+      el.innerHTML = `${rulesPanel(g2)}<div class="stats-grid">${tiles.join("")}</div>
       <section class="panel"><h2 class="panel-title">Zuletzt gespielt</h2>${recent.map((m) => `<div class="mini-hist"><span class="hist-date">${new Date(m.date).toLocaleDateString("de-DE")}</span>${rankedLine(g2, m)}</div>`).join("")}
       <button class="btn btn-ghost wide" type="button" data-all>Alle Partien</button></section>`;
       $("[data-all]", el).onclick = () => ctx.go("verlauf");
@@ -1466,7 +1681,7 @@
         return statTile(title, r ? fmt(r.value) : "\u2013", r ? whoList(g2, r.who) : '<span class="muted">noch niemand</span>', opts.note || "");
       };
       if (!ms.length) {
-        el.innerHTML = `${filterBar3()}<div class="empty-state panel"><p>Noch keine Partie${view3.variant !== "all" ? ` in ${esc(vName(view3.variant))}` : ""}.</p><button class="btn btn-primary" type="button" data-new>Sieg eintragen</button></div>`;
+        el.innerHTML = `${filterBar3()}${rulesPanel(g2, view3.variant)}<div class="empty-state panel"><p>Noch keine Partie${view3.variant !== "all" ? ` in ${esc(vName(view3.variant))}` : ""}.</p><button class="btn btn-primary" type="button" data-new>Sieg eintragen</button></div>`;
         $("[data-new]", el).onclick = () => ctx.go("neu");
         bind(el, () => dashboard3(el, ctx));
         return;
@@ -1479,7 +1694,7 @@
         ...def.teams ? [T("Meiste Teamsiege", "teamWins", (v) => v, { filter: (s) => s.teamWins > 0 }), T("Meiste Einzelsiege", "soloWins", (v) => v, { filter: (s) => s.soloWins > 0 })] : []
       ];
       const recent = [...ms].reverse().slice(0, 4);
-      el.innerHTML = `${filterBar3()}<div class="stats-grid">${tiles.join("")}</div>
+      el.innerHTML = `${filterBar3()}${rulesPanel(g2, view3.variant)}<div class="stats-grid">${tiles.join("")}</div>
       <section class="panel"><h2 class="panel-title">Zuletzt gewonnen</h2>${recent.map(line2).join("")}<button class="btn btn-ghost wide" type="button" data-all>Alle Partien</button></section>`;
       $("[data-all]", el).onclick = () => ctx.go("verlauf");
       bind(el, () => dashboard3(el, ctx));
@@ -1506,7 +1721,7 @@
         winner: e?.winners?.length ? e.mode === "teams" ? `t${(e.teams || []).findIndex((t) => t.includes(e.winners[0]))}` : e.winners[0] : null
       };
       (e?.teams || []).forEach((t, i) => t.forEach((p) => S.team[p] = i));
-      el.innerHTML = `<section class="panel">
+      el.innerHTML = `${rulesPanel(g2, S.variant)}<section class="panel">
         <div class="setup-grid">
           <label class="field"><span>Gespielt am</span><input type="date" id="wDate" value="${S.date}"></label>
           ${def.variants ? `<div><span class="field-label">Variante</span>${seg("wv", def.variants, S.variant)}</div>` : ""}
@@ -1526,6 +1741,7 @@
         if (!b) return;
         S.variant = b.dataset.v;
         $$('[data-seg="wv"] button', el).forEach((x) => x.setAttribute("aria-pressed", x === b));
+        updateRules(el, g2, S.variant);
       });
       const ids = () => [...S.sel];
       const nTeams = () => Math.floor(ids().length / 2);
@@ -1839,15 +2055,16 @@
     const view3 = { variant: "all" };
     const vName = (k) => (def.variants || []).find(([v]) => v === k)?.[1] || "";
     const awardsOf = (v) => def.awards?.[v] || [];
-    const filterBar3 = () => def.variants ? `<div class="filters">${seg("variant", [["all", "Alle"], ...def.variants], view3.variant)}</div>` : "";
-    const bind = (el, redraw) => $$('[data-seg="variant"]', el).forEach((s) => s.addEventListener("click", (e) => {
+    view3.src = "all";
+    const filterBar3 = () => def.variants || def.sources ? `<div class="filters">${def.variants ? seg("variant", [["all", "Alle"], ...def.variants], view3.variant) : ""}${def.sources ? seg("src", def.sources, view3.src) : ""}</div>` : "";
+    const bind = (el, redraw) => $$('[data-seg="variant"], [data-seg="src"]', el).forEach((s) => s.addEventListener("click", (e) => {
       const b = e.target.closest("button");
       if (b) {
-        view3.variant = b.dataset.v;
+        view3[s.dataset.seg === "src" ? "src" : "variant"] = b.dataset.v;
         redraw();
       }
     }));
-    const list2 = () => matchesOf(def.id, (m) => view3.variant === "all" || m.variant === view3.variant);
+    const list2 = () => matchesOf(def.id, (m) => (view3.variant === "all" || m.variant === view3.variant) && (!def.sourceOf || view3.src === "all" || def.sourceOf(m) === view3.src));
     const unit = def.unit || "Punkte";
     const theme = (v) => {
       if (def.variantTheme) {
@@ -1864,13 +2081,14 @@
         const gaps = s.results.filter((r) => r.total != null).map((r) => Math.max(...Object.values(r.m.totals)) - r.total);
         s.gap = gaps.length ? gaps.reduce((a, b) => a + b, 0) / gaps.length : null;
       }
+      def.statsExtra?.(st, ms);
       return st;
     }
     function dashboard3(el, ctx) {
       theme(view3.variant);
       const ms = list2(), st = stats2(ms);
       if (!ms.length) {
-        el.innerHTML = `${filterBar3()}<div class="empty-state panel"><p>Noch keine Partie${view3.variant !== "all" ? ` in ${esc(vName(view3.variant))}` : ""}.</p><button class="btn btn-primary" type="button" data-new>Partie eintragen</button></div>`;
+        el.innerHTML = `${filterBar3()}${rulesPanel(g2, view3.variant)}<div class="empty-state panel"><p>Noch keine Partie${view3.variant !== "all" ? ` in ${esc(vName(view3.variant))}` : ""}${view3.src !== "all" && def.sources ? ` (${esc(def.sources.find(([k]) => k === view3.src)?.[1] || "")})` : ""}.</p><button class="btn btn-primary" type="button" data-new>Partie eintragen</button></div>${def.emptyExtra ? def.emptyExtra() : ""}`;
         $("[data-new]", el).onclick = () => ctx.go("neu");
         bind(el, () => dashboard3(el, ctx));
         return;
@@ -1885,11 +2103,12 @@
         T(`Bester \xD8`, "avg", (v) => fmtNum(v), { note: unit }),
         T("Rekord", "best", (v) => fmtNum(v, 0), { note: unit }),
         T("Meiste Partien", "games", (v) => v),
-        T("L\xE4ngste Siegesserie", "streak", (v) => plural(v, "Sieg", "Siege"), { filter: (s) => s.streak > 0 })
+        T("L\xE4ngste Siegesserie", "streak", (v) => plural(v, "Sieg", "Siege"), { filter: (s) => s.streak > 0 }),
+        ...def.extraTiles ? def.extraTiles(st, T, ms) : []
       ];
       const recent = [...ms].reverse().slice(0, 3);
-      el.innerHTML = `${filterBar3()}<div class="stats-grid">${tiles.join("")}</div>
-      <section class="panel"><h2 class="panel-title">Zuletzt gespielt</h2>${recent.map((m) => `<div class="mini-hist"><span class="hist-date">${fmtDate(m.date)}${m.variant ? ` \xB7 ${esc(vName(m.variant))}` : ""}</span>${rankedLine(g2, m)}</div>`).join("")}
+      el.innerHTML = `${filterBar3()}${rulesPanel(g2, view3.variant)}<div class="stats-grid">${tiles.join("")}</div>${def.dashExtra ? def.dashExtra(ms, st) : ""}
+      <section class="panel"><h2 class="panel-title">Zuletzt gespielt</h2>${def.recentNote ? def.recentNote(ms) : ""}${recent.map((m) => `<div class="mini-hist"><span class="hist-date">${fmtDate(m.date)}${m.variant ? ` \xB7 ${esc(vName(m.variant))}` : ""}</span>${rankedLine(g2, m)}${def.lineExtra ? def.lineExtra(m) : ""}</div>`).join("")}
       <button class="btn btn-ghost wide" type="button" data-all>Alle Partien</button></section>`;
       $("[data-all]", el).onclick = () => ctx.go("verlauf");
       bind(el, () => dashboard3(el, ctx));
@@ -1909,7 +2128,7 @@
         tie: e?.winners?.length > 1 ? "shared" : e?.winners?.[0] || null
       };
       theme(S.variant);
-      el.innerHTML = `<section class="panel"><div class="setup-grid">
+      el.innerHTML = `${rulesPanel(g2, S.variant)}${def.neuNote ? def.neuNote(e) : ""}<section class="panel"><div class="setup-grid">
         <label class="field"><span>Gespielt am</span><input type="date" id="sDate" value="${S.date}"></label>
         ${def.variants ? `<div><span class="field-label">Variante</span>${seg("sv", def.variants, S.variant)}</div>` : ""}
       </div></section>
@@ -1922,6 +2141,7 @@
         if (!b) return;
         S.variant = b.dataset.v;
         theme(S.variant);
+        updateRules(el, g2, S.variant);
         $$('[data-seg="sv"] button', el).forEach((x) => x.setAttribute("aria-pressed", x === b));
         draw();
       });
@@ -2006,7 +2226,8 @@
           winners,
           ...def.variants ? { variant: S.variant } : {},
           ...Object.keys(awards).length ? { awards } : {},
-          tags: [...def.variants ? [vName(S.variant)] : [], plural(P.length, "Spieler", "Spieler")]
+          ...def.keep ? def.keep(e) : {},
+          tags: [...def.variants ? [vName(S.variant)] : [], plural(P.length, "Spieler", "Spieler"), ...def.keepTags ? def.keepTags(e) : []]
         };
         try {
           await saveMatch(m);
@@ -2040,6 +2261,7 @@
       <h3 class="sub-h">L\xE4ngste Siegesserie</h3>${barChart([...st].filter((s) => s.streak).sort((a, b) => b.streak - a.streak).map((s) => ({ label: s.name, value: s.streak, icon: g2.avatar(s, "mini"), color: def.colorOf(s.id), note: s.current ? `aktuell ${s.current}` : "" })), { digits: 0 })}
       ${allAwards.map((a) => `<h3 class="sub-h">${esc(a)}</h3>${barChart(st.filter((s) => s.awards[a]).sort((x, y) => y.awards[a] - x.awards[a]).map((s) => ({ label: s.name, value: s.awards[a], icon: g2.avatar(s, "mini"), color: def.colorOf(s.id) })), { digits: 0 })}`).join("")}
       ${def.variants && view3.variant === "all" ? `<h3 class="sub-h">Siege je Variante</h3>${variantTable(ms, st)}` : ""}
+      ${def.moreExtra ? def.moreExtra(ms, st) : ""}
       <h3 class="sub-h">Kopf an Kopf</h3><div id="h2h"></div>`;
       el.innerHTML = `${filterBar3()}
       <section class="panel"><h2 class="panel-title">Rangliste</h2>${leaderboard(g2, st, cols)}</section>
@@ -2057,7 +2279,7 @@
     }
     function verlauf3(el, ctx) {
       theme(view3.variant);
-      historyList(el, ctx, { matches: matchesOf(def.id), line: (m) => rankedLine(g2, m) + (m.awards ? `<p class="others">${Object.entries(m.awards).map(([a, p]) => `${esc(a)}: <b>${esc(playerName(p, m))}</b>`).join(" \xB7 ")}</p>` : ""), onEdit: (m) => {
+      historyList(el, ctx, { matches: matchesOf(def.id), line: (m) => rankedLine(g2, m) + (def.lineExtra ? def.lineExtra(m) : "") + (m.awards ? `<p class="others">${Object.entries(m.awards).map(([a, p]) => `${esc(a)}: <b>${esc(playerName(p, m))}</b>`).join(" \xB7 ")}</p>` : ""), onEdit: (m) => {
         editing3 = m;
         ctx.go("neu");
       } });
@@ -2128,6 +2350,113 @@
   var ehex = (c, cls, ic) => `<span class="ct-hex ${cls}" style="--c:${c}"><i class="eic">${EICON[ic]}</i></span>`;
   var ROCKET = '<svg class="rocket" viewBox="0 0 60 60"><path d="M30 4 C40 12 42 26 38 40 H22 C18 26 20 12 30 4Z" fill="#E8EEFF"/><circle cx="30" cy="22" r="5" fill="#2C64B5" stroke="#9AA7CF" stroke-width="2"/><path d="M22 34 L13 44 L22 42Z M38 34 L47 44 L38 42Z" fill="#FF6B3D"/><path d="M25 40 Q30 56 35 40Z" fill="#FFB13D"/></svg>';
   var hex = (c, cls = "", n = "") => `<span class="ct-hex ${cls}" style="--c:${c}">${n ? `<b>${n}</b>` : ""}</span>`;
+  var CATAN_URL = "https://liviuweb.github.io/kahlo-catan/";
+  var ctIco = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>';
+  var ctLink = (label = "Online spielen", cls = "") => `<a class="ct-online ${cls}" href="${CATAN_URL}" target="_blank" rel="noopener">${label}${ctIco}</a>`;
+  var KC_MAPS = { klassisch: "Klassisch", nebel: "Nebelinsel", europa: "Europa", afrika: "Afrika", asien: "Asien", nordamerika: "Nordamerika", suedamerika: "S\xFCdamerika", australien: "Australien", kontinent: "Zuf\xE4lliger Kontinent" };
+  var KC_DRACHE = { glut: "Glutzone", flug: "Drachenflug", gier: "Gier" };
+  var isKC = (m) => !!(m?.kahlo || m?.tags?.includes("Kahlo-Catan"));
+  var kcMap = (m) => KC_MAPS[m.kahlo?.karte] || m.kahlo?.karte || "";
+  var kcAvg = (a) => a.length ? a.reduce((x, y) => x + y, 0) / a.length : null;
+  var kcNum = (v) => Number.isFinite(+v) && v !== null && v !== "" ? +v : null;
+  function kcDice(ms) {
+    const d = Array(13).fill(0);
+    for (const m of ms) for (const [k, c] of Object.entries(m.kahlo?.wuerfel || {})) if (+k >= 2 && +k <= 12) d[+k] += +c || 0;
+    return d;
+  }
+  function diceHist(d) {
+    const total = d.reduce((a, b) => a + b, 0);
+    if (!total) return "";
+    tip();
+    const ks = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], exp = (k) => (6 - Math.abs(7 - k)) / 36;
+    const max = Math.max(...ks.map((k) => d[k] / total), exp(7)) * 1.08;
+    const seven = d[7] / total;
+    return `<h3 class="sub-h">W\xFCrfelverteilung <small class="muted">\xB7 ${plural(total, "Wurf", "W\xFCrfe")}</small></h3>
+    <div class="dice-hist">${ks.map((k) => `<div class="dh-col" data-tip="<b>${k}</b><br>${d[k]}\xD7 (${fmtPct(d[k] / total)})<br>erwartet ${fmtPct(exp(k))}"><span class="dh-track"><span class="dh-bar ${k === 7 ? "s7" : ""}" style="height:${d[k] / total / max * 100}%"></span><i class="dh-exp" style="bottom:${exp(k) / max * 100}%"></i></span><b>${k}</b></div>`).join("")}</div>
+    <p class="hint">Balken: so oft fiel die Zahl. Strich: so oft f\xE4llt sie im Schnitt. Die 7 kam ${fmtPct(seven)} statt ${fmtPct(1 / 6)}.</p>`;
+  }
+  var CATAN_HOOKS = {
+    sources: [["all", "Alle Partien"], ["app", "Kahlo-Catan"], ["brett", "Am Brett"]],
+    sourceOf: (m) => isKC(m) ? "app" : "brett",
+    statsExtra(st) {
+      for (const s of st) {
+        let fast = null, ritter = 0, rg = 0, hort = 0, kc = 0;
+        for (const { m, won } of s.results) {
+          if (!isKC(m)) continue;
+          kc++;
+          const k = m.kahlo || {}, r = kcNum(k.runden);
+          if (won && r != null) fast = fast == null ? r : Math.min(fast, r);
+          if (k.ritter && k.ritter[s.id] != null) {
+            ritter += +k.ritter[s.id] || 0;
+            rg++;
+          }
+          if (k.drache?.hort && k.drache.hort === s.id) hort++;
+        }
+        Object.assign(s, { kcGames: kc, fastWin: fast, ritter, ritterAvg: rg ? ritter / rg : null, hort, player: s.player || { id: s.id, name: s.name } });
+      }
+    },
+    extraTiles: (st, T, ms) => ms.some(isKC) ? [
+      T("Schnellster Sieg", "fastWin", (v) => plural(v, "Runde", "Runden"), { low: true, filter: (s) => s.fastWin != null, note: "in Kahlo-Catan" }),
+      T("Meiste Ritter", "ritter", (v) => v, { filter: (s) => s.ritter > 0, note: "ausgespielt in Kahlo-Catan" })
+    ] : [],
+    emptyExtra: () => `<section class="panel ct-onl"><div><h2 class="panel-title">Kahlo-Catan</h2><p>Partien aus dem Online-Spiel landen automatisch hier.</p></div>${ctLink("Zum Online-Spiel")}</section>`,
+    dashExtra(ms) {
+      const kc = ms.filter(isKC);
+      if (!kc.length) return `<section class="panel ct-onl"><div><h2 class="panel-title">Kahlo-Catan</h2><p>Partien aus dem Online-Spiel landen automatisch hier, mit Karte, Runden, Dauer und W\xFCrfelverteilung.</p></div>${ctLink("Zum Online-Spiel")}</section>`;
+      const rounds = kc.map((m) => kcNum(m.kahlo?.runden)).filter((v) => v != null), mins = kc.map((m) => kcNum(m.kahlo?.minuten)).filter((v) => v != null);
+      const maps = {};
+      kc.forEach((m) => {
+        const n = kcMap(m);
+        if (n) maps[n] = (maps[n] || 0) + 1;
+      });
+      const fav = Object.entries(maps).sort((a, b) => b[1] - a[1])[0];
+      const fact = (l, v) => `<div class="ct-fact"><small>${l}</small><b>${v}</b></div>`;
+      return `<section class="panel ct-kc"><div class="ct-kc-head"><h2 class="panel-title">Kahlo-Catan</h2>${ctLink("Online spielen", "sm")}</div>
+      <div class="ct-facts">${fact("Partien", kc.length)}${fact("\xD8 Runden", rounds.length ? fmtNum(kcAvg(rounds), 0) : "–")}${fact("\xD8 Dauer", mins.length ? `${fmtNum(kcAvg(mins), 0)} Min` : "–")}${fact("Lieblingskarte", fav ? esc(fav[0]) : "–")}</div>
+      ${diceHist(kcDice(kc))}</section>`;
+    },
+    recentNote(ms) {
+      const kc = ms.filter(isKC).length;
+      return kc ? `<p class="hint ct-split">${kc} aus Kahlo-Catan \xB7 ${ms.length - kc} am Brett</p>` : "";
+    },
+    lineExtra(m) {
+      if (!isKC(m)) return "";
+      const k = m.kahlo || {}, bits = [];
+      if (kcMap(m)) bits.push(esc(kcMap(m)));
+      if (kcNum(k.runden) != null) bits.push(plural(+k.runden, "Runde", "Runden"));
+      if (kcNum(k.minuten) != null) bits.push(`${k.minuten} Min`);
+      if (k.ziel && +k.ziel !== 10) bits.push(`Ziel ${k.ziel}`);
+      if (m.tags?.includes("Team")) bits.push("Team");
+      if (k.drache) bits.push(`\u{1F409} ${KC_DRACHE[k.drache.art] || "Drache"}`);
+      bits.push(m.online ? "online" : "ein Ger\xE4t");
+      return `<p class="others ct-meta"><span class="ct-tag">Kahlo-Catan</span>${bits.join(" \xB7 ")}</p>${k.drache?.hort ? `<p class="others">Drachenhort: <b>${esc(playerName(k.drache.hort, m))}</b></p>` : ""}`;
+    },
+    neuNote: (e) => e && isKC(e) ? '<p class="notice ct-note">Diese Partie kommt aus Kahlo-Catan. \xC4nderungen hier \xFCberschreiben das Ergebnis aus der App.</p>' : e ? "" : `<section class="panel ct-onl sm"><p>Partien aus <b>Kahlo-Catan</b> tr\xE4gt die App selbst ein. Hier nur Partien am echten Spielbrett eintragen.</p>${ctLink("Online spielen")}</section>`,
+    keep: (e) => e && isKC(e) ? { ...e.online != null ? { online: e.online } : {}, ...e.kahlo ? { kahlo: e.kahlo } : {} } : {},
+    keepTags: (e) => e && isKC(e) ? (e.tags || []).filter((t) => !/^\d+ Spieler$/.test(t) && !["Normal", "Catan Energie", "Raumfahrer"].includes(t)) : [],
+    moreExtra(ms, st) {
+      const kc = ms.filter(isKC);
+      if (!kc.length) return "";
+      const byMap = {};
+      kc.forEach((m) => {
+        const n = kcMap(m) || "–", o = byMap[n] || (byMap[n] = { n: 0, r: [], t: [] });
+        o.n++;
+        if (kcNum(m.kahlo?.runden) != null) o.r.push(+m.kahlo.runden);
+        if (kcNum(m.kahlo?.minuten) != null) o.t.push(+m.kahlo.minuten);
+      });
+      const col = (id) => catan_default.colorOf(id);
+      const bars = (list2, val, o = {}) => barChart(list2.map((s) => ({ label: s.name, value: val(s), icon: catan_default.avatar(s, "mini"), color: col(s.id), note: o.note ? o.note(s) : "" })), { digits: o.digits ?? 1 });
+      const kcSt = st.filter((s) => s.kcGames);
+      const brett = ms.length - kc.length, onl = kc.filter((m) => m.online).length;
+      return `<h3 class="sub-h">Wo gespielt?</h3>${stackBar([{ label: "Kahlo-Catan online", value: onl, color: "#B5371F" }, { label: "Kahlo-Catan auf einem Ger\xE4t", value: kc.length - onl, color: "#E9B824" }, { label: "Am Brett", value: brett, color: "#2C64B5" }], { label: "Herkunft" })}
+      <div class="legend"><span><i style="background:#B5371F"></i>online (${onl})</span><span><i style="background:#E9B824"></i>ein Ger\xE4t (${kc.length - onl})</span><span><i style="background:#2C64B5"></i>am Brett (${brett})</span></div>
+      ${diceHist(kcDice(kc))}
+      <h3 class="sub-h">Karten in Kahlo-Catan</h3><div class="table-wrap"><table class="lb"><thead><tr><th class="l">Karte</th><th>Partien</th><th>\xD8 Runden</th><th>\xD8 Dauer</th></tr></thead><tbody>${Object.entries(byMap).sort((a, b) => b[1].n - a[1].n).map(([n, o]) => `<tr><td class="l">${esc(n)}</td><td>${o.n}</td><td>${o.r.length ? fmtNum(kcAvg(o.r), 0) : "–"}</td><td>${o.t.length ? `${fmtNum(kcAvg(o.t), 0)} Min` : "–"}</td></tr>`).join("")}</tbody></table></div>
+      ${kcSt.some((s) => s.fastWin != null) ? `<h3 class="sub-h">Schnellster Sieg (Runden)</h3>${bars(kcSt.filter((s) => s.fastWin != null).sort((a, b) => a.fastWin - b.fastWin), (s) => s.fastWin, { digits: 0, note: () => "weniger ist besser" })}` : ""}
+      ${kcSt.some((s) => s.ritterAvg != null) ? `<h3 class="sub-h">\xD8 Ritter pro Partie</h3>${bars(kcSt.filter((s) => s.ritterAvg != null).sort((a, b) => b.ritterAvg - a.ritterAvg), (s) => s.ritterAvg, { note: (s) => `${s.ritter} insgesamt` })}` : ""}
+      ${kcSt.some((s) => s.hort) ? `<h3 class="sub-h">\u{1F409} Drachenhort</h3>${bars(kcSt.filter((s) => s.hort).sort((a, b) => b.hort - a.hort), (s) => s.hort, { digits: 0 })}` : ""}`;
+    }
+  };
   var catan_default = makeScoreGame({
     id: "catan",
     name: "Catan",
@@ -2139,6 +2468,7 @@
     unit: "Siegpunkte",
     variants: [["normal", "Normal"], ["energie", "Catan Energie"], ["raumfahrer", "Raumfahrer"]],
     awards: { normal: ["L\xE4ngste Handelsstra\xDFe", "Gr\xF6\xDFte Rittermacht"] },
+    ...CATAN_HOOKS,
     hint: (v) => v === "normal" ? "Siegpunkte am Ende inkl. Siegpunktkarten. Unten optional: wer die Handelsstra\xDFe und die Rittermacht hatte." : "Siegpunkte am Spielende eintragen.",
     avatar: (p, size = "dot") => `<span class="av av-${size}" aria-hidden="true">${house(pickFor("catan", PAL8, p.id).c)}</span>`,
     icons: { pal: PAL8, current: (p) => pickFor("catan", PAL8, p.id), render: (x) => house(x.c) },
@@ -2152,7 +2482,7 @@
     header: () => `<div class="ct-board v-normal" aria-hidden="true">${hex(HEX.wood, "b1")}${hex(HEX.wheat, "b2", 9)}${hex(HEX.brick, "b3", 5)}${hex(HEX.sheep, "b4")}${hex(HEX.desert, "b5")}${hex(HEX.ore, "b6", 8)}${hex(HEX.wood, "b7", 4)}${house("#C0392B", "s1")}${house("#2C64B5", "s2")}</div>
     <div class="ct-board ct-energy v-energie" aria-hidden="true">${ehex("#0E8F6E", "b1", "wind")}${ehex("#F2B705", "b2", "sun")}${ehex("#2E7D32", "b3", "leaf")}${ehex("#1E88C8", "b4", "bolt")}${ehex("#7CB342", "b5", "wind")}${ehex("#F2B705", "b6", "sun")}${ehex("#0E8F6E", "b7", "bolt")}</div>
     <div class="ct-space v-raumfahrer" aria-hidden="true"><span class="planet p1"></span><span class="planet p2"></span><span class="planet p3"></span>${ROCKET}</div>
-    <h1 class="g-title">Catan</h1><p class="g-sub"><span class="v-normal">Normal \xB7 Catan Energie \xB7 Raumfahrer</span><span class="v-energie">Catan Energie \u2013 Wind, Sonne, Strom</span><span class="v-raumfahrer">Raumfahrer \u2013 auf zu neuen Sternen</span></p>`
+    <h1 class="g-title">Catan</h1><p class="g-sub"><span class="v-normal">Normal \xB7 Catan Energie \xB7 Raumfahrer</span><span class="v-energie">Catan Energie \u2013 Wind, Sonne, Strom</span><span class="v-raumfahrer">Raumfahrer \u2013 auf zu neuen Sternen</span></p>${ctLink("Online spielen", "ct-online-head")}`
   });
 
   // js/games/schiffe.js
@@ -2366,13 +2696,13 @@
   function filterBar2() {
     return `<div class="filters">${seg("mode", [["duell", "Duelle"], ["solo", "Einzelspieler"]], view2.mode, "seg-big")}${seg("variant", VARIANTS, view2.variant)}</div>`;
   }
-  function withFilters(el, ctx, views) {
-    el.innerHTML = `${filterBar2()}<div data-body></div>`;
+  function withFilters(el, ctx, views, rules = false) {
+    el.innerHTML = `${filterBar2()}${rules ? rulesPanel(g) : ""}<div data-body></div>`;
     $$("[data-seg]", el).forEach((s) => s.addEventListener("click", (e) => {
       const b = e.target.closest("button");
       if (!b) return;
       view2[s.dataset.seg] = b.dataset.v;
-      withFilters(el, ctx, views);
+      withFilters(el, ctx, views, rules);
     }));
     views[view2.mode]($("[data-body]", el), ctx);
   }
@@ -2518,11 +2848,11 @@
   var ONLINE_TXT = "Zwei Handys, zwei Flotten \u2013 auch aus verschiedenen St\xE4dten. Oder allein gegen den Computer, Flottenjagd, Tagesmission und Letzte Granate. Die Ergebnisse landen automatisch hier.";
   function dashboard2(el, ctx) {
     if (!all().length) {
-      el.innerHTML = `<div class="empty-state panel"><p>Noch keine Seeschlacht eingetragen.</p><button class="btn btn-primary" type="button" data-new>Partie eintragen</button></div>${onlinePanel(ONLINE_TXT)}`;
+      el.innerHTML = `${rulesPanel(g)}<div class="empty-state panel"><p>Noch keine Seeschlacht eingetragen.</p><button class="btn btn-primary" type="button" data-new>Partie eintragen</button></div>${onlinePanel(ONLINE_TXT)}`;
       $("[data-new]", el).onclick = () => ctx.go("neu");
       return;
     }
-    withFilters(el, ctx, { duell: duelDashboard, solo: soloDashboard });
+    withFilters(el, ctx, { duell: duelDashboard, solo: soloDashboard }, true);
   }
   function duelDashboard(el, ctx) {
     const ms = list(), st = stats(ms);
@@ -2606,7 +2936,7 @@
     SHIPS.forEach((sh) => {
       S.fleet[sh.k] = +normSunk(base.fleet)[sh.k] || 0;
     });
-    el.innerHTML = `${e?.online ? `<p class="notice sv-note">Diese Partie wurde online gespielt. \xC4nderungen hier \xFCberschreiben das Ergebnis aus dem Online-Spiel.</p>` : e ? "" : `<section class="panel sv-onl sm"><p>Online-Duelle und Einzelspiele tr\xE4gt das <b>Online-Spiel</b> automatisch ein. Hier nur Partien am echten Spielbrett eintragen.</p></section>`}
+    el.innerHTML = `${rulesPanel(g)}${e?.online ? `<p class="notice sv-note">Diese Partie wurde online gespielt. \xC4nderungen hier \xFCberschreiben das Ergebnis aus dem Online-Spiel.</p>` : e ? "" : `<section class="panel sv-onl sm"><p>Online-Duelle und Einzelspiele tr\xE4gt das <b>Online-Spiel</b> automatisch ein. Hier nur Partien am echten Spielbrett eintragen.</p></section>`}
     <section class="panel"><div class="setup-grid">
       <label class="field"><span>Gespielt am</span><input type="date" id="vDate" value="${S.date}"></label>
       <div><span class="field-label">Spielfeld</span>
@@ -2857,8 +3187,1342 @@
   g.tabs = { dashboard: dashboard2, neu, statistik: statistik2, verlauf: verlauf2 };
   var schiffe_default = g;
 
+
+  // js/games/karten.js
+  var SUIT = { s: ["♠", "#1D1D22"], h: ["♥", "#C8102E"], d: ["♦", "#C8102E"], c: ["♣", "#1D1D22"] };
+  var pcard = (r, s, cls = "", c = "") => `<span class="pc ${cls}" style="--s:${SUIT[s][1]}${c ? `;--c:${c}` : ""}"><b>${r}</b><i>${SUIT[s][0]}</i></span>`;
+  var KPAL = [
+    { r: "A", s: "s", c: "#1F6F4A", n: "Pik-Ass" },
+    { r: "K", s: "h", c: "#C8102E", n: "Herz-K\xF6nig" },
+    { r: "D", s: "d", c: "#2B4C9B", n: "Karo-Dame" },
+    { r: "B", s: "c", c: "#D98E04", n: "Kreuz-Bube" },
+    { r: "10", s: "h", c: "#6B3FA0", n: "Herz-Zehn" },
+    { r: "9", s: "s", c: "#0E7C86", n: "Pik-Neun" },
+    { r: "8", s: "d", c: "#B5476B", n: "Karo-Acht" },
+    { r: "7", s: "c", c: "#5B6B2E", n: "Kreuz-Sieben" },
+    { r: "A", s: "h", c: "#8C2F1C", n: "Herz-Ass" },
+    { r: "K", s: "c", c: "#3A3A44", n: "Kreuz-K\xF6nig" },
+    { r: "D", s: "s", c: "#E0632A", n: "Pik-Dame" },
+    { r: "B", s: "d", c: "#2F8F5B", n: "Karo-Bube" }
+  ];
+  var KV = [
+    { k: "maumau", n: "Mau Mau", kind: "order", min: 2, max: 8, r: "7", s: "h", sub: "Farbe auf Farbe, Zahl auf Zahl" },
+    { k: "bluff", n: "Bluff", kind: "order", min: 3, max: 8, r: "?", s: "s", sub: "Wer l\xFCgt, nimmt den Stapel" },
+    { k: "shithead", n: "Shit Head", kind: "shithead", min: 2, max: 6, r: "10", s: "d", sub: "Blo\xDF nicht Letzter werden" },
+    { k: "arschloch", n: "Arschloch", kind: "arschloch", min: 3, max: 8, r: "K", s: "c", sub: "Vom Pr\xE4sidenten zum Arschloch" },
+    { k: "elfer", n: "11er raus", kind: "order", min: 2, max: 6, r: "11", s: "h", sub: "Alles beginnt bei der 11" },
+    { k: "canasta", n: "Canasta", kind: "canasta", min: 2, max: 6, r: "3", s: "d", sub: "Wer zuerst 5000 hat" },
+    { k: "skat", n: "Skat", kind: "skat", min: 3, max: 4, r: "B", s: "c", sub: "Reizen, dr\xFCcken, Stiche z\xE4hlen" },
+    { k: "schwimmen", n: "Schwimmen", kind: "schwimmen", min: 2, max: 9, r: "31", s: "s", sub: "Drei Leben, dann schwimmst du" }
+  ];
+  var kvOf = (k) => KV.find((v) => v.k === k);
+  var kName = (k) => kvOf(k)?.n || k;
+  var KV_KEY = "kg.karten.v";
+  var kview = { v: (() => {
+    try {
+      const v = localStorage.getItem(KV_KEY);
+      return KV.some((x) => x.k === v) ? v : "all";
+    } catch {
+      return "all";
+    }
+  })() };
+  var setKV = (v) => {
+    kview.v = v;
+    try {
+      localStorage.setItem(KV_KEY, v);
+    } catch {
+    }
+  };
+  var kdk = (k) => `karten-${k}`;
+  var kms = (v = kview.v) => matchesOf("karten", (m) => v === "all" || m.variant === v);
+  var knm = (p, m) => playerName(p, m);
+  var kSort = (ids) => {
+    const ps = playersByCreated().map((p) => p.id);
+    return [...ids].sort((a, b) => ps.indexOf(a) - ps.indexOf(b));
+  };
+  var kg = {
+    id: "karten",
+    name: "Kartenspiele",
+    theme: "theme-karten",
+    themeColor: "#17432E",
+    dot: "#2E8B57",
+    avatar: (p, size = "dot") => {
+      const x = pickFor("karten", KPAL, p.id);
+      return `<span class="av av-${size}" aria-hidden="true">${pcard(x.r, x.s, "pav", x.c)}</span>`;
+    },
+    icons: { pal: KPAL, current: (p) => pickFor("karten", KPAL, p.id), render: (x) => pcard(x.r, x.s, "pav", x.c) },
+    colorOf: (id) => pickFor("karten", KPAL, id).c,
+    winIcon: () => pcard("A", "h", "toast-pc"),
+    logo: () => `<div class="lg-karten">${pcard("A", "s", "k1")}${pcard("K", "h", "k2")}${pcard("D", "d", "k3")}${pcard("B", "c", "k4")}<span class="nm">Kartenspiele</span></div>`,
+    header: () => `<div class="kt-fan" aria-hidden="true">${pcard("7", "h", "f1")}${pcard("B", "c", "f2")}${pcard("A", "s", "f3")}${pcard("K", "d", "f4")}${pcard("10", "h", "f5")}</div><h1 class="g-title">Karten&shy;spiele</h1><p class="g-sub">Mau Mau, Skat, Canasta &amp; Co.</p>`
+  };
+  var kav = (p, m, size = "dot") => kg.avatar({ id: p, name: knm(p, m) }, size);
+  function kvBar(cur, all = true) {
+    return `<div class="kv-bar" role="group" aria-label="Kartenspiel w\xE4hlen">${all ? `<button type="button" data-kv="all" aria-pressed="${cur === "all"}">${pcard("★", "h", "mini")}<span>Alle</span></button>` : ""}${KV.map((v) => `<button type="button" data-kv="${v.k}" aria-pressed="${cur === v.k}">${pcard(v.r, v.s, "mini")}<span>${esc(v.n)}</span>${draft.get(kdk(v.k)) ? '<i class="live-dot" title="Spiel l\xE4uft"></i>' : ""}</button>`).join("")}</div>`;
+  }
+  function bindKV(el, cb) {
+    $$("[data-kv]", el).forEach((b) => b.addEventListener("click", () => {
+      setKV(b.dataset.kv);
+      cb();
+    }));
+    const bar = $(".kv-bar", el), on = bar && $("[aria-pressed=true]", bar);
+    if (on) requestAnimationFrame(() => bar.scrollLeft = on.offsetLeft - bar.offsetLeft - (bar.clientWidth - on.offsetWidth) / 2);
+  }
+  function titlesFor(n) {
+    if (n <= 2) return ["Pr\xE4sident", "Arschloch"].slice(0, n);
+    if (n === 3) return ["Pr\xE4sident", "Volk", "Arschloch"];
+    const t = ["Pr\xE4sident", "Vize-Pr\xE4sident"];
+    for (let i = 0; i < n - 4; i++) t.push("Volk");
+    return t.concat(["Vize-Arschloch", "Arschloch"]);
+  }
+  var TSHORT = { "Pr\xE4sident": "P", "Vize-Pr\xE4sident": "VP", "Volk": "V", "Vize-Arschloch": "VA", "Arschloch": "A" };
+  var ttl = (t) => `<span class="ttl t-${TSHORT[t]}" title="${esc(t)}">${TSHORT[t]}</span>`;
+  function orderBox(box, { P, order, label, hint = "", onChange = () => {
+  }, autoLast = true, badge }) {
+    const draw = () => {
+      box.innerHTML = `<span class="field-label">${esc(label)}</span><div class="chips ord">${P.map((p) => {
+        const i = order.indexOf(p);
+        return `<button type="button" class="chip ord-chip" data-o="${p}" aria-pressed="${i >= 0}"><span class="ord-n">${i >= 0 ? badge ? badge(i) : i + 1 : ""}</span>${kav(p)}<span>${esc(knm(p))}</span></button>`;
+      }).join("")}</div>
+      ${order.length ? '<button type="button" class="linkbtn" data-oreset>Reihenfolge zur\xFCcksetzen</button>' : ""}${hint ? `<p class="hint">${hint}</p>` : ""}`;
+      $$("[data-o]", box).forEach((b) => b.addEventListener("click", () => {
+        const p = b.dataset.o, i = order.indexOf(p);
+        if (i >= 0) order.splice(i, 1);
+        else {
+          order.push(p);
+          if (autoLast && P.length > 1 && order.length === P.length - 1) order.push(P.find((x) => !order.includes(x)));
+        }
+        draw();
+        onChange();
+      }));
+      $("[data-oreset]", box)?.addEventListener("click", () => {
+        order.length = 0;
+        draw();
+        onChange();
+      });
+    };
+    draw();
+    return { redraw: draw };
+  }
+  var kStep = (f, v, label, note = "") => `<div class="kstep" data-f="${f}"><span class="kstep-l">${label}${note ? `<small>${note}</small>` : ""}</span><span class="step"><button type="button" data-st="-1" aria-label="${esc(label)} weniger">−</button><b>${v}</b><button type="button" data-st="1" aria-label="${esc(label)} mehr">+</button></span></div>`;
+  var liveActions = (n, what = "Runde") => `<div class="live-actions">${n ? `<button class="btn btn-ghost" type="button" data-undo>Letzte ${what} l\xF6schen</button>` : ""}<button class="btn btn-ghost" type="button" data-cancel>Abbrechen</button><button class="btn btn-primary" type="button" data-finish ${n ? "" : "disabled"}>Spiel beenden & speichern</button></div>`;
+  function bindLive(el, ctx, K, { undo, finish }) {
+    $("[data-undo]", el)?.addEventListener("click", undo);
+    $("[data-cancel]", el).onclick = async () => {
+      if (await confirmBox("Laufendes Spiel verwerfen? Die Eintr\xE4ge gehen verloren.", { ok: "Verwerfen", danger: true })) {
+        draft.clear(K);
+        ctx.rerender();
+      }
+    };
+    $("[data-finish]", el).onclick = finish;
+  }
+  async function kSave(m, ctx, K, msg) {
+    try {
+      await saveMatch(m);
+      if (K) draft.clear(K);
+      toast(msg, { icon: kg.winIcon() });
+      ctx.go(K ? "verlauf" : "dashboard");
+    } catch (err) {
+      toast(esc(err.message));
+    }
+  }
+  function setupLive(el, ctx, V, { extra = "", hint = "", mount, valid, start }) {
+    const sel = /* @__PURE__ */ new Set();
+    el.innerHTML = `${rulesPanel(kg, V.k)}<section class="panel">
+      <div class="setup-grid"><label class="field"><span>Gespielt am</span><input type="date" id="kDate" value="${today()}"></label></div>
+      <div id="kPick" class="kpick"></div>
+      <div id="kExtra">${extra}</div>
+      <button class="btn btn-primary wide" type="button" id="kStart" disabled>Spiel starten</button>
+      ${hint ? `<p class="hint">${hint}</p>` : ""}
+    </section>`;
+    const btn = $("#kStart", el);
+    const check = () => btn.disabled = sel.size < V.min;
+    const api = { sel, box: $("#kExtra", el) };
+    playerPicker($("#kPick", el), { game: kg, selected: sel, min: V.min, max: V.max, onChange: () => {
+      check();
+      mount?.(api);
+    } });
+    mount?.(api);
+    btn.onclick = () => {
+      const err = valid?.(api);
+      if (err) return toast(err);
+      const d = start({ date: $("#kDate", el).value || today(), players: kSort(sel) }, api);
+      draft.set(kdk(V.k), d);
+      ctx.rerender();
+    };
+  }
+  function standings(P, totals, pl, { right = (p) => `<b>${fmtNum(totals[p], 0)}</b>`, extra = () => "", lead = true, sub = () => "" } = {}) {
+    const order = [...P].sort((a, b) => pl[a] - pl[b]);
+    return `<ol class="standings">${order.map((p) => `<li class="${pl[p] === 1 && lead ? "lead" : ""}"><span class="st-place">${pl[p]}.</span>${kav(p)}<span class="nm">${esc(knm(p))}${sub(p)}</span>${right(p)}${extra(p)}</li>`).join("")}</ol>`;
+  }
+  var kEditing = null;
+  function kNeu(el, ctx) {
+    const e = kEditing;
+    kEditing = null;
+    if (e) setKV(e.variant);
+    const v = kview.v;
+    if (v === "all") {
+      el.innerHTML = `<section class="panel"><h2 class="panel-title">Was spielt ihr?</h2><div class="kv-grid">${KV.map((x) => `<button type="button" class="kv-card" data-kv="${x.k}">${pcard(x.r, x.s, "kv-pc")}<span class="kv-t"><b>${esc(x.n)}</b><small>${esc(x.sub)}</small></span>${draft.get(kdk(x.k)) ? '<span class="kv-live">l\xE4uft</span>' : ""}</button>`).join("")}</div></section>`;
+      bindKV(el, () => kNeu(el, ctx));
+      return;
+    }
+    const V = kvOf(v);
+    el.innerHTML = `${kvBar(v, false)}<div id="kBody"></div>`;
+    bindKV(el, () => kNeu(el, ctx));
+    const body = $("#kBody", el);
+    ({ order: neuOrder, shithead: neuShit, arschloch: liveArsch, canasta: liveCanasta, skat: liveSkat, schwimmen: liveSchwimmen })[V.kind](body, ctx, V, e);
+  }
+  function neuOrder(el, ctx, V, e) {
+    const S = { id: e?.id, created: e?.created, sel: new Set(e?.players || []), order: [...e?.order || []] };
+    el.innerHTML = `${rulesPanel(kg, V.k)}<section class="panel"><div class="setup-grid"><label class="field"><span>Gespielt am</span><input type="date" id="kDate" value="${e?.date || today()}"></label></div></section>
+      <section class="panel" id="kPick"></section><section class="panel" id="kOrd"></section>
+      <div class="save-wrap"><button class="btn btn-primary big" type="button" id="kSave">${S.id ? "\xC4nderungen speichern" : "Partie speichern"}</button></div>`;
+    const ids = () => kSort(S.sel);
+    let ob;
+    const drawOrd = () => {
+      const P = ids();
+      for (let i = S.order.length - 1; i >= 0; i--) if (!P.includes(S.order[i])) S.order.splice(i, 1);
+      if (P.length < V.min) {
+        $("#kOrd", el).innerHTML = `<span class="field-label">Wer war zuerst raus?</span><p class="hint">W\xE4hle mindestens ${V.min} Spieler.</p>`;
+        return;
+      }
+      ob = orderBox($("#kOrd", el), { P, order: S.order, label: "Wer war zuerst raus? Tippe in der Reihenfolge.", hint: "Mindestens den Sieger antippen. Wer keinen Platz bekommt, teilt sich den letzten Platz." });
+    };
+    playerPicker($("#kPick", el), { game: kg, selected: S.sel, min: V.min, max: V.max, onChange: drawOrd });
+    drawOrd();
+    $("#kSave", el).onclick = () => {
+      const P = ids();
+      if (P.length < V.min) return toast(`W\xE4hle mindestens ${V.min} Spieler.`);
+      const order = S.order.filter((p) => P.includes(p));
+      if (!order.length) return toast("Tippe an, wer zuerst raus war.");
+      const pl = Object.fromEntries(P.map((p) => [p, order.includes(p) ? order.indexOf(p) + 1 : order.length + 1]));
+      const m = { id: S.id, created: S.created, game: "karten", variant: V.k, date: $("#kDate", el).value || today(), players: P, order, places: pl, winners: [order[0]], tags: [V.n, plural(P.length, "Spieler", "Spieler")] };
+      kSave(m, ctx, null, `<b>Gespeichert.</b> Gl\xFCckwunsch, ${esc(knm(order[0]))}!`);
+    };
+  }
+  function neuShit(el, ctx, V, e) {
+    const S = { id: e?.id, created: e?.created, sel: new Set(e?.players || []), loser: e?.loser || null, first: e?.first || null };
+    el.innerHTML = `${rulesPanel(kg, V.k)}<section class="panel"><div class="setup-grid"><label class="field"><span>Gespielt am</span><input type="date" id="kDate" value="${e?.date || today()}"></label></div></section>
+      <section class="panel" id="kPick"></section><section class="panel" id="kRes"></section>
+      <div class="save-wrap"><button class="btn btn-primary big" type="button" id="kSave">${S.id ? "\xC4nderungen speichern" : "Partie speichern"}</button></div>`;
+    const ids = () => kSort(S.sel);
+    const draw = () => {
+      const P = ids(), box = $("#kRes", el);
+      if (!P.includes(S.loser)) S.loser = null;
+      if (!P.includes(S.first) || S.first === S.loser) S.first = null;
+      if (P.length < V.min) {
+        box.innerHTML = `<span class="field-label">Wer ist der Shit Head?</span><p class="hint">W\xE4hle mindestens ${V.min} Spieler.</p>`;
+        return;
+      }
+      box.innerHTML = `<span class="field-label">Wer ist der Shit Head?</span><div class="chips">${P.map((p) => `<button type="button" class="chip shit" data-l="${p}" aria-pressed="${S.loser === p}">${kav(p)}<span>${esc(knm(p))}</span></button>`).join("")}</div>
+        <div class="award"><span class="field-label">Wer war zuerst raus? <small class="muted">(optional)</small></span><div class="chips">${P.filter((p) => p !== S.loser).map((p) => `<button type="button" class="chip" data-f="${p}" aria-pressed="${S.first === p}">${kav(p)}<span>${esc(knm(p))}</span></button>`).join("")}</div></div>`;
+      $$("[data-l]", box).forEach((b) => b.addEventListener("click", () => {
+        S.loser = b.dataset.l;
+        draw();
+      }));
+      $$("[data-f]", box).forEach((b) => b.addEventListener("click", () => {
+        S.first = S.first === b.dataset.f ? null : b.dataset.f;
+        draw();
+      }));
+    };
+    playerPicker($("#kPick", el), { game: kg, selected: S.sel, min: V.min, max: V.max, onChange: draw });
+    draw();
+    $("#kSave", el).onclick = () => {
+      const P = ids();
+      if (P.length < V.min) return toast(`W\xE4hle mindestens ${V.min} Spieler.`);
+      if (!S.loser) return toast("W\xE4hle, wer der Shit Head ist.");
+      const pl = Object.fromEntries(P.map((p) => [p, p === S.loser ? P.length : p === S.first ? 1 : S.first ? 2 : 1]));
+      const m = { id: S.id, created: S.created, game: "karten", variant: V.k, date: $("#kDate", el).value || today(), players: P, loser: S.loser, ...S.first ? { first: S.first } : {}, places: pl, winners: S.first ? [S.first] : [], tags: [V.n, plural(P.length, "Spieler", "Spieler")] };
+      kSave(m, ctx, null, `<b>Gespeichert.</b> \u{1F4A9} ${esc(knm(S.loser))} ist der Shit Head.`);
+    };
+  }
+  function arschTotals(d) {
+    const n = d.players.length, t = Object.fromEntries(d.players.map((p) => [p, 0]));
+    for (const r of d.rounds) r.order.forEach((p, i) => t[p] += n - 1 - i);
+    return t;
+  }
+  function liveArsch(el, ctx, V) {
+    const K = kdk(V.k);
+    let d = draft.get(K);
+    if (!d) return setupLive(el, ctx, V, { hint: "Pro Runde tippt ihr an, in welcher Reihenfolge ihr rausgegangen seid. Die App verteilt Titel und Rangpunkte (Pr\xE4sident = Spielerzahl − 1, Arschloch = 0).", start: (b) => ({ ...b, rounds: [] }) });
+    const P = d.players, n = P.length, T = titlesFor(n);
+    const totals = arschTotals(d), pl = places(totals);
+    const lastR = d.rounds[d.rounds.length - 1];
+    const tOf = (p) => lastR ? T[lastR.order.indexOf(p)] : null;
+    const order = [];
+    const seat = lastR ? [...lastR.order] : P;
+    el.innerHTML = `${rulesPanel(kg, V.k)}
+      <section class="panel score-head"><div class="sh-top"><span>${fmtDate(d.date)}</span><span>${plural(d.rounds.length, "Runde", "Runden")}</span></div>
+      ${standings(P, totals, pl, { lead: d.rounds.length > 0, sub: (p) => tOf(p) ? ` ${ttl(tOf(p))}` : "" })}</section>
+      <section class="panel round-form"><h2 class="panel-title">Runde ${d.rounds.length + 1}</h2><div id="aOrd"></div>
+      <button class="btn btn-primary wide" type="button" data-add disabled>Runde ${d.rounds.length + 1} eintragen</button></section>
+      ${d.rounds.length ? `<section class="panel"><h2 class="panel-title">Runden</h2><div class="table-wrap"><table class="rt"><thead><tr><th>#</th>${P.map((p) => `<th>${esc(knm(p))}</th>`).join("")}</tr></thead>
+      <tbody>${d.rounds.map((r, i) => `<tr><td>${i + 1}</td>${P.map((p) => {
+      const j = r.order.indexOf(p);
+      return `<td>${ttl(T[j])} ${n - 1 - j}</td>`;
+    }).join("")}</tr>`).join("")}</tbody>
+      <tfoot><tr><td>Σ</td>${P.map((p) => `<td><b>${totals[p]}</b></td>`).join("")}</tr></tfoot></table></div></section>` : ""}
+      ${liveActions(d.rounds.length)}`;
+    orderBox($("#aOrd", el), { P: seat, order, label: "Wer ist in welcher Reihenfolge rausgegangen?", badge: (i) => TSHORT[T[i]], hint: `Der Erste wird ${T[0]}, der Letzte ${T[n - 1]}. Den Letzten setzt die App automatisch.`, onChange: () => {
+      $("[data-add]", el).disabled = order.length < n;
+    } });
+    $("[data-add]", el).onclick = () => {
+      d.rounds.push({ order: [...order] });
+      draft.set(K, d);
+      const r = d.rounds[d.rounds.length - 1];
+      toast(`<b>Pr\xE4sident: ${esc(knm(r.order[0]))}</b>Arschloch: ${esc(knm(r.order[n - 1]))}`);
+      liveArsch(el, ctx, V);
+    };
+    bindLive(el, ctx, K, {
+      undo: () => {
+        d.rounds.pop();
+        draft.set(K, d);
+        liveArsch(el, ctx, V);
+      },
+      finish: () => {
+        const top2 = Math.max(...Object.values(totals));
+        let L = P.filter((p) => totals[p] === top2);
+        if (L.length > 1) {
+          const pres = (p) => d.rounds.filter((r) => r.order[0] === p).length;
+          const mp = Math.max(...L.map(pres));
+          L = L.filter((p) => pres(p) === mp);
+        }
+        const pl2 = { ...pl };
+        if (L.length === 1) P.forEach((p) => {
+          if (p !== L[0] && pl2[p] === 1) pl2[p] = 2;
+        });
+        const m = { game: "karten", variant: V.k, date: d.date, players: P, rounds: d.rounds, totals, places: pl2, winners: L, tags: [V.n, plural(d.rounds.length, "Runde", "Runden")] };
+        kSave(m, ctx, K, `<b>Gespeichert.</b> ${esc(L.map((p) => knm(p)).join(" & "))} ${L.length > 1 ? "gewinnen" : "gewinnt"} mit ${totals[L[0]]} Rangpunkten.`);
+      }
+    });
+  }
+  var cnMin = (t) => t < 0 ? 15 : t < 1500 ? 50 : t < 3e3 ? 90 : 120;
+  var CN_TARGET = 5e3;
+  function cnScore(r, key, out, hidden) {
+    const red = (+r.drei || 0) >= 4 ? 800 : (+r.drei || 0) * 100;
+    if (r.none) return -red - (+r.hand || 0);
+    return (+r.rein || 0) * 500 + (+r.gem || 0) * 300 + red + (+r.laid || 0) - (+r.hand || 0) + (out === key ? hidden ? 200 : 100 : 0);
+  }
+  var cnTotals = (d) => {
+    const t = Object.fromEntries(d.sides.map((s) => [s.key, 0]));
+    for (const r of d.rounds) for (const s of d.sides) t[s.key] += r.pts[s.key] || 0;
+    return t;
+  };
+  var sideName = (s, m) => s.members.length > 1 ? s.members.map((p) => knm(p, m)).join(" & ") : knm(s.members[0], m);
+  var sideAv = (s, m, size = "mini") => s.members.map((p) => kav(p, m, size)).join("");
+  function liveCanasta(el, ctx, V) {
+    const K = kdk(V.k);
+    let d = draft.get(K);
+    if (!d) {
+      const team = {};
+      return setupLive(el, ctx, V, {
+        hint: "Zu zweit oder zu dritt spielt jeder f\xFCr sich, zu viert oder zu sechst in zwei Teams. Pro Runde tragt ihr Canastas, rote Dreien und Kartenpunkte ein. Die App rechnet.",
+        mount: ({ sel, box }) => {
+          const ids = kSort(sel), n = ids.length;
+          Object.keys(team).forEach((p) => {
+            if (!sel.has(p)) delete team[p];
+          });
+          if (n < 2) {
+            box.innerHTML = "";
+            return;
+          }
+          if (n === 5) {
+            box.innerHTML = '<p class="hint warn">Canasta geht zu zweit, dritt, viert oder sechst.</p>';
+            return;
+          }
+          if (n < 4) {
+            box.innerHTML = '<p class="hint">Jeder spielt f\xFCr sich.</p>';
+            return;
+          }
+          const half = n / 2, cnt = [0, 0];
+          ids.forEach((p) => {
+            if (team[p] != null && cnt[team[p]] < half) cnt[team[p]]++;
+            else team[p] = null;
+          });
+          ids.forEach((p) => {
+            if (team[p] == null) {
+              team[p] = cnt[0] < half ? 0 : 1;
+              cnt[team[p]]++;
+            }
+          });
+          const draw = () => {
+            box.innerHTML = `<span class="field-label">Teams</span><div class="team-grid">${ids.map((p) => `<div class="team-row"><span class="who">${kav(p)}${esc(knm(p))}</span><span class="team-btns">${[0, 1].map((t) => `<button type="button" class="tbtn t${t}" data-p="${p}" data-t="${t}" aria-pressed="${team[p] === t}">${"AB"[t]}</button>`).join("")}</span></div>`).join("")}</div><p class="hint">Partner sitzen sich gegen\xFCber. Jedes Team braucht ${half} Spieler.</p>`;
+            $$(".tbtn", box).forEach((b) => b.addEventListener("click", () => {
+              team[b.dataset.p] = +b.dataset.t;
+              draw();
+            }));
+          };
+          draw();
+        },
+        valid: ({ sel }) => {
+          const n = sel.size;
+          if (n === 5) return "Canasta geht zu zweit, dritt, viert oder sechst.";
+          if (n >= 4) {
+            const a = [...sel].filter((p) => team[p] === 0).length;
+            if (a !== n / 2) return `Jedes Team braucht ${n / 2} Spieler.`;
+          }
+          return null;
+        },
+        start: (b) => {
+          const P = b.players;
+          const sides = P.length >= 4 ? [0, 1].map((t) => ({ key: "AB"[t], members: P.filter((p) => team[p] === t) })) : P.map((p) => ({ key: p, members: [p] }));
+          return { ...b, mode: P.length >= 4 ? "teams" : "solo", sides, rounds: [] };
+        }
+      });
+    }
+    const S = d.sides, totals = cnTotals(d), plS = places(totals);
+    const isEnd = Object.values(totals).some((v) => v >= CN_TARGET);
+    const R = Object.fromEntries(S.map((s) => [s.key, { rein: 0, gem: 0, drei: 0, laid: "", hand: "", none: false }]));
+    let out = null, hidden = false;
+    const sOrder = [...S].sort((a, b) => plS[a.key] - plS[b.key]);
+    el.innerHTML = `${rulesPanel(kg, V.k)}
+      <section class="panel score-head"><div class="sh-top"><span>${fmtDate(d.date)}</span><span>${plural(d.rounds.length, "Runde", "Runden")} \xB7 Ziel ${fmtNum(CN_TARGET, 0)}</span></div>
+      <ol class="standings">${sOrder.map((s) => `<li class="${plS[s.key] === 1 && d.rounds.length ? "lead" : ""}"><span class="st-place">${plS[s.key]}.</span><span class="avs">${sideAv(s, null, "dot")}</span><span class="nm">${esc(sideName(s))}<small class="cn-min">Erstmeldung ab ${cnMin(totals[s.key])}</small></span><b>${fmtNum(totals[s.key], 0)}</b><span class="prog"><i style="width:${Math.min(100, Math.max(0, totals[s.key] / CN_TARGET * 100))}%"></i></span></li>`).join("")}</ol></section>
+      ${isEnd ? `<section class="panel end-note"><p><b>${esc(sOrder.filter((s) => plS[s.key] === 1).map((s) => sideName(s)).join(" & "))}</b> hat ${fmtNum(CN_TARGET, 0)} Punkte geknackt. Jetzt speichern!</p></section>` : `<section class="panel round-form"><h2 class="panel-title">Runde ${d.rounds.length + 1}</h2>
+      <div class="cn-sides">${S.map((s) => `<div class="cn-side" data-k="${s.key}"><div class="cn-h"><span class="who">${sideAv(s)}<b>${esc(sideName(s))}</b></span><b class="cn-sum" data-sum>0</b></div>
+        ${kStep("rein", 0, "Reine Canastas", "je 500")}${kStep("gem", 0, "Gemischte Canastas", "je 300")}${kStep("drei", 0, "Rote Dreien", "je 100, alle 4 = 800")}
+        <div class="cn-nums"><label><small>Kartenpunkte ausgelegt</small><input type="number" inputmode="numeric" min="0" data-n="laid" placeholder="0"></label><label><small>Kartenpunkte auf der Hand</small><input type="number" inputmode="numeric" min="0" data-n="hand" placeholder="0"></label></div>
+        <label class="tick"><input type="checkbox" data-none><span>Noch nichts ausgelegt (rote Dreien z\xE4hlen minus)</span></label></div>`).join("")}</div>
+      <div class="award"><span class="field-label">Wer hat ausgemacht?</span><div class="chips" data-outs>${S.map((s) => `<button type="button" class="chip" data-out="${s.key}" aria-pressed="false">${sideAv(s)}<span>${esc(sideName(s))}</span></button>`).join("")}<button type="button" class="chip" data-out="" aria-pressed="true"><span>Niemand</span></button></div>
+      <label class="tick"><input type="checkbox" data-hidden><span>Verdeckt ausgemacht (200 statt 100)</span></label></div>
+      <button class="btn btn-primary wide" type="button" data-add>Runde ${d.rounds.length + 1} eintragen</button></section>`}
+      ${d.rounds.length ? `<section class="panel"><h2 class="panel-title">Runden</h2><div class="table-wrap"><table class="rt"><thead><tr><th>#</th>${S.map((s) => `<th>${esc(sideName(s))}</th>`).join("")}</tr></thead>
+      <tbody>${d.rounds.map((r, i) => `<tr><td>${i + 1}</td>${S.map((s) => `<td>${fmtNum(r.pts[s.key], 0)}${r.out === s.key ? ` <span class="mk" title="${r.hidden ? "verdeckt ausgemacht" : "ausgemacht"}">${r.hidden ? "★★" : "★"}</span>` : ""}</td>`).join("")}</tr>`).join("")}</tbody>
+      <tfoot><tr><td>Σ</td>${S.map((s) => `<td><b>${fmtNum(totals[s.key], 0)}</b></td>`).join("")}</tr></tfoot></table></div></section>` : ""}
+      ${liveActions(d.rounds.length)}`;
+    const recalc = () => S.forEach((s) => {
+      const b = $(`.cn-side[data-k="${s.key}"] [data-sum]`, el);
+      if (b) b.textContent = fmtNum(cnScore(R[s.key], s.key, out, hidden), 0);
+    });
+    $$(".cn-side", el).forEach((box) => {
+      const k = box.dataset.k, r = R[k];
+      $$(".kstep", box).forEach((row) => row.addEventListener("click", (ev) => {
+        const b = ev.target.closest("[data-st]");
+        if (!b) return;
+        const f = row.dataset.f, mx = f === "drei" ? 4 : 20;
+        r[f] = Math.max(0, Math.min(mx, r[f] + +b.dataset.st));
+        $("b", row).textContent = r[f];
+        recalc();
+      }));
+      $$("[data-n]", box).forEach((i) => i.addEventListener("input", () => {
+        r[i.dataset.n] = Math.max(0, parseInt(i.value, 10) || 0);
+        recalc();
+      }));
+      $("[data-none]", box).addEventListener("change", (ev) => {
+        r.none = ev.target.checked;
+        box.classList.toggle("is-none", r.none);
+        recalc();
+      });
+    });
+    $$("[data-out]", el).forEach((b) => b.addEventListener("click", () => {
+      out = b.dataset.out || null;
+      $$("[data-out]", el).forEach((x) => x.setAttribute("aria-pressed", x === b));
+      recalc();
+    }));
+    $("[data-hidden]", el)?.addEventListener("change", (ev) => {
+      hidden = ev.target.checked;
+      recalc();
+    });
+    $("[data-add]", el)?.addEventListener("click", () => {
+      if (out && R[out].none) return toast("Wer ausmacht, muss etwas ausgelegt haben.");
+      if (out && R[out].rein + R[out].gem === 0) return toast("Ausmachen geht erst mit mindestens einem Canasta.");
+      if (S.every((s) => !R[s.key].rein && !R[s.key].gem && !R[s.key].drei && !R[s.key].laid && !R[s.key].hand)) return toast("Es ist noch nichts eingetragen.");
+      const pts = Object.fromEntries(S.map((s) => [s.key, cnScore(R[s.key], s.key, out, hidden)]));
+      const res = Object.fromEntries(S.map((s) => [s.key, { rein: R[s.key].rein, gem: R[s.key].gem, drei: R[s.key].drei, laid: +R[s.key].laid || 0, hand: +R[s.key].hand || 0, ...R[s.key].none ? { none: true } : {} }]));
+      d.rounds.push({ res, out, ...out && hidden ? { hidden: true } : {}, pts });
+      draft.set(K, d);
+      liveCanasta(el, ctx, V);
+      if (Object.values(cnTotals(d)).some((v) => v >= CN_TARGET)) toast("Spiel vorbei – jetzt beenden & speichern.");
+    });
+    bindLive(el, ctx, K, {
+      undo: () => {
+        d.rounds.pop();
+        draft.set(K, d);
+        liveCanasta(el, ctx, V);
+      },
+      finish: () => {
+        const P = d.players;
+        const pt = Object.fromEntries(P.map((p) => [p, totals[S.find((s) => s.members.includes(p)).key]]));
+        const top2 = Math.max(...Object.values(totals));
+        const winS = S.filter((s) => totals[s.key] === top2);
+        const winners = winS.flatMap((s) => s.members);
+        const m = { game: "karten", variant: V.k, date: d.date, players: P, mode: d.mode, sides: S, ...d.mode === "teams" ? { teams: S.map((s) => s.members) } : {}, rounds: d.rounds, totals: pt, places: places(pt), winners, tags: [V.n, d.mode === "teams" ? "Teams" : "Jeder f\xFCr sich", plural(d.rounds.length, "Runde", "Runden")] };
+        kSave(m, ctx, K, `<b>Gespeichert.</b> ${esc(winS.map((s) => sideName(s)).join(" & "))} ${winners.length > 1 ? "gewinnen" : "gewinnt"} mit ${fmtNum(top2, 0)} Punkten.`);
+      }
+    });
+  }
+  var SKT = { karo: { n: "Karo", b: 9, i: "♦", s: "d" }, herz: { n: "Herz", b: 10, i: "♥", s: "h" }, pik: { n: "Pik", b: 11, i: "♠", s: "s" }, kreuz: { n: "Kreuz", b: 12, i: "♣", s: "c" }, grand: { n: "Grand", b: 24, i: "G" }, null: { n: "Null", b: 23, i: "0" } };
+  var NULLV = [23, 35, 46, 59];
+  function skatCalc(G, n, sf) {
+    const nul = G.type === "null";
+    let base, mult, value;
+    if (nul) {
+      value = G.ouvert ? G.hand ? 59 : 46 : G.hand ? 35 : 23;
+      base = value;
+      mult = 1;
+    } else {
+      base = SKT[G.type].b;
+      mult = G.spitzen + 1 + (G.hand ? 1 : 0) + (G.schneider ? 1 : 0) + (G.sa ? 1 : 0) + (G.schwarz ? 1 : 0) + (G.swa ? 1 : 0) + (G.ouvert ? 1 : 0);
+      value = base * mult;
+    }
+    let won = G.won, over = false, missed = false;
+    if (!nul && won && (G.sa && !G.schneider || G.swa && !G.schwarz)) {
+      won = false;
+      missed = true;
+    }
+    const reiz = parseInt(G.reiz, 10) || 0;
+    if (reiz && value < reiz) {
+      won = false;
+      over = true;
+      value = nul ? NULLV.find((x) => x >= reiz) || reiz : Math.ceil(reiz / base) * base;
+      if (!nul) mult = value / base;
+      else base = value;
+    }
+    const pts = won ? value : -2 * value;
+    const delta = {};
+    return { nul, base, mult, value, won, over, missed, pts, sfBonus: sf ? won ? 50 : -50 : 0, opp: sf && !won ? n === 4 ? 30 : 40 : 0, delta };
+  }
+  function skatLabel(gm) {
+    if (gm.pass) return "Eingepasst";
+    const t = SKT[gm.type];
+    const bits = [t.n];
+    if (gm.type !== "null") bits.push(`${gm.ohne ? "ohne" : "mit"} ${gm.spitzen}`);
+    if (gm.hand) bits.push("Hand");
+    if (gm.ouvert) bits.push("ouvert");
+    if (gm.type !== "null") {
+      if (gm.schwarz) bits.push(gm.swa ? "Schwarz angesagt" : "Schwarz");
+      else if (gm.schneider) bits.push(gm.sa ? "Schneider angesagt" : "Schneider");
+      else if (gm.sa) bits.push("Schneider angesagt");
+    }
+    return bits.join(" \xB7 ");
+  }
+  var SKAT_SF_KEY = "kg.skat.sf";
+  function liveSkat(el, ctx, V) {
+    const K = kdk(V.k);
+    let d = draft.get(K);
+    if (!d) {
+      let sf = false;
+      try {
+        sf = localStorage.getItem(SKAT_SF_KEY) === "1";
+      } catch {
+      }
+      return setupLive(el, ctx, V, {
+        hint: "Zu viert setzt der Geber aus. Pro Spiel tragt ihr Alleinspieler, Spiel und Ergebnis ein. Die App rechnet den Spielwert.",
+        mount: ({ box }) => {
+          if (box.dataset.ok) return;
+          box.dataset.ok = "1";
+          box.innerHTML = `<span class="field-label">Abrechnung</span>${seg("sf", [["0", "Einfach"], ["1", "Seeger-Fabian"]], sf ? "1" : "0")}<p class="hint">Einfach: Spielwert gewonnen plus, verloren doppelt minus. Seeger-Fabian: zus\xE4tzlich \xB150 je Spiel und 40 (zu viert 30) f\xFCr jeden Gegner, wenn der Alleinspieler verliert.</p>`;
+          $('[data-seg="sf"]', box).addEventListener("click", (ev) => {
+            const b = ev.target.closest("button");
+            if (!b) return;
+            sf = b.dataset.v === "1";
+            $$('[data-seg="sf"] button', box).forEach((x) => x.setAttribute("aria-pressed", x === b));
+          });
+        },
+        start: (b) => {
+          try {
+            localStorage.setItem(SKAT_SF_KEY, sf ? "1" : "0");
+          } catch {
+          }
+          return { ...b, sf, games: [] };
+        }
+      });
+    }
+    const P = d.players, n = P.length;
+    const totals = Object.fromEntries(P.map((p) => [p, 0]));
+    d.games.forEach((gm) => P.forEach((p) => totals[p] += gm.delta?.[p] || 0));
+    const pl = places(totals);
+    const G = { decl: null, type: "kreuz", spitzen: 1, ohne: false, hand: false, ouvert: false, sa: false, swa: false, won: true, schneider: false, schwarz: false, reiz: "" };
+    el.innerHTML = `${rulesPanel(kg, V.k)}
+      <section class="panel score-head"><div class="sh-top"><span>${fmtDate(d.date)} \xB7 ${d.sf ? "Seeger-Fabian" : "Einfach"}</span><span>${plural(d.games.length, "Spiel", "Spiele")}</span></div>
+      ${standings(P, totals, pl, { lead: d.games.length > 0 })}</section>
+      <section class="panel round-form sk-form"><h2 class="panel-title">Spiel ${d.games.length + 1}</h2><div id="skForm"></div></section>
+      ${d.games.length ? `<section class="panel"><h2 class="panel-title">Skatliste</h2><div class="table-wrap"><table class="rt sk-list"><thead><tr><th>#</th><th class="l">Spiel</th>${P.map((p) => `<th>${esc(knm(p))}</th>`).join("")}</tr></thead>
+      <tbody>${d.games.map((gm, i) => `<tr class="${gm.pass ? "pass" : gm.won ? "" : "lost"}"><td>${i + 1}</td><td class="l">${gm.pass ? "Eingepasst" : `${esc(knm(gm.decl))}: ${esc(skatLabel(gm))}${gm.over ? " (\xFCberreizt)" : ""}`}</td>${P.map((p) => `<td>${gm.delta?.[p] ? (gm.delta[p] > 0 ? "+" : "") + gm.delta[p] : ""}</td>`).join("")}</tr>`).join("")}</tbody>
+      <tfoot><tr><td>Σ</td><td></td>${P.map((p) => `<td><b>${fmtNum(totals[p], 0)}</b></td>`).join("")}</tr></tfoot></table></div></section>` : ""}
+      ${liveActions(d.games.length, "Eintragung")}`;
+    const box = $("#skForm", el);
+    function drawForm() {
+      const nul = G.type === "null", maxSp = G.type === "grand" ? 4 : 11;
+      G.spitzen = Math.max(1, Math.min(maxSp, G.spitzen));
+      const c = skatCalc(G, n, d.sf);
+      const tog = (k, l, dis = false) => `<button type="button" class="chip tg" data-tg="${k}" aria-pressed="${!!G[k]}" ${dis ? "disabled" : ""}><span>${l}</span></button>`;
+      const playing = P;
+      box.innerHTML = `<span class="field-label">Alleinspieler</span><div class="chips">${playing.map((p) => `<button type="button" class="chip" data-decl="${p}" aria-pressed="${G.decl === p}">${kav(p)}<span>${esc(knm(p))}</span></button>`).join("")}<button type="button" class="chip" data-decl="pass" aria-pressed="${G.decl === "pass"}"><span>Eingepasst</span></button></div>
+      ${G.decl && G.decl !== "pass" ? `
+      <span class="field-label sk-l">Spiel</span><div class="sk-types">${Object.entries(SKT).map(([k, t]) => `<button type="button" class="sk-type ${t.s ? `s-${t.s}` : ""}" data-type="${k}" aria-pressed="${G.type === k}"><i>${t.i}</i><span>${t.n}</span><small>${t.b}</small></button>`).join("")}</div>
+      ${nul ? "" : `<div class="kstep sk-sp" data-f="spitzen"><span class="kstep-l">Spitzen ${seg("ohne", [["0", "mit"], ["1", "ohne"]], G.ohne ? "1" : "0", "sk-ohne")}<small>bei Grand h\xF6chstens 4</small></span><span class="step"><button type="button" data-st="-1" aria-label="weniger">−</button><b>${G.spitzen}</b><button type="button" data-st="1" aria-label="mehr">+</button></span></div>`}
+      <span class="field-label sk-l">Ansagen</span><div class="chips">${tog("hand", "Hand")}${tog("ouvert", "Ouvert")}${nul ? "" : tog("sa", "Schneider angesagt", !G.hand) + tog("swa", "Schwarz angesagt", !G.hand)}</div>
+      <span class="field-label sk-l">Ergebnis</span>${seg("won", [["1", "Gewonnen"], ["0", "Verloren"]], G.won ? "1" : "0", "sk-won")}
+      ${nul ? "" : `<div class="chips sk-res">${tog("schneider", "Schneider")}${tog("schwarz", "Schwarz")}</div><p class="hint">Schneider: eine Seite hat 90 Augen oder mehr. Schwarz: eine Seite hat keinen Stich.</p>`}
+      <label class="field sk-reiz"><span>Gereizt bis <small class="muted">(optional, f\xFCr \xDCberreizt)</small></span><input type="number" inputmode="numeric" min="18" id="skReiz" value="${esc(G.reiz)}" placeholder="z. B. 23"></label>
+      <div class="sk-calc ${c.won ? "won" : "lost"}"><span>${nul ? `${SKT.null.n}${G.hand ? " Hand" : ""}${G.ouvert ? " ouvert" : ""} = ${c.value}` : `${c.mult} \xD7 ${c.base} = ${c.value}`}${c.over ? " \xB7 \xFCberreizt" : ""}${c.missed ? " \xB7 Ansage nicht erf\xFCllt" : ""}</span><b>${c.pts > 0 ? "+" : ""}${c.pts + c.sfBonus}</b></div>
+      ${d.sf && c.opp ? `<p class="hint">Seeger-Fabian: Jeder Gegner bekommt +${c.opp}.</p>` : ""}` : ""}
+      <button class="btn btn-primary wide" type="button" data-add ${G.decl ? "" : "disabled"}>${G.decl === "pass" ? "Eingepasst eintragen" : `Spiel ${d.games.length + 1} eintragen`}</button>`;
+      $$("[data-decl]", box).forEach((b) => b.addEventListener("click", () => {
+        G.decl = b.dataset.decl;
+        drawForm();
+      }));
+      $$("[data-type]", box).forEach((b) => b.addEventListener("click", () => {
+        G.type = b.dataset.type;
+        if (G.type === "null") {
+          G.sa = G.swa = G.schneider = G.schwarz = false;
+        } else if (G.ouvert) {
+          G.hand = G.sa = G.swa = true;
+        }
+        drawForm();
+      }));
+      $('[data-seg="ohne"]', box)?.addEventListener("click", (ev) => {
+        const b = ev.target.closest("button");
+        if (!b) return;
+        ev.stopPropagation();
+        G.ohne = b.dataset.v === "1";
+        drawForm();
+      });
+      $(".sk-sp", box)?.addEventListener("click", (ev) => {
+        const b = ev.target.closest("[data-st]");
+        if (!b) return;
+        G.spitzen += +b.dataset.st;
+        drawForm();
+      });
+      $$("[data-tg]", box).forEach((b) => b.addEventListener("click", () => {
+        const k = b.dataset.tg;
+        G[k] = !G[k];
+        if (G.type !== "null") {
+          if (k === "ouvert" && G.ouvert) G.hand = G.sa = G.swa = true;
+          if (k === "hand" && !G.hand) G.sa = G.swa = G.ouvert = false;
+          if (k === "swa" && G.swa) G.sa = true;
+          if (k === "sa" && !G.sa) G.swa = G.ouvert = false;
+          if (k === "swa" && !G.swa) G.ouvert = false;
+          if (k === "schwarz" && G.schwarz) G.schneider = true;
+          if (k === "schneider" && !G.schneider) G.schwarz = false;
+        }
+        drawForm();
+      }));
+      $('[data-seg="won"]', box)?.addEventListener("click", (ev) => {
+        const b = ev.target.closest("button");
+        if (!b) return;
+        G.won = b.dataset.v === "1";
+        drawForm();
+      });
+      $("#skReiz", box)?.addEventListener("change", (ev) => {
+        G.reiz = ev.target.value;
+        drawForm();
+      });
+      $("[data-add]", box).onclick = () => {
+        let gm;
+        if (G.decl === "pass") gm = { pass: true, delta: {} };
+        else {
+          const c = skatCalc(G, n, d.sf);
+          const delta = Object.fromEntries(P.map((p) => [p, 0]));
+          delta[G.decl] = c.pts + c.sfBonus;
+          if (c.opp) P.filter((p) => p !== G.decl).forEach((p) => delta[p] += c.opp);
+          gm = { decl: G.decl, type: G.type, spitzen: G.type === "null" ? 0 : G.spitzen, ...G.ohne && G.type !== "null" ? { ohne: true } : {}, hand: G.hand, ouvert: G.ouvert, sa: G.sa, swa: G.swa, schneider: G.schneider, schwarz: G.schwarz, ...parseInt(G.reiz, 10) ? { reiz: parseInt(G.reiz, 10) } : {}, won: c.won, over: c.over, value: c.value, pts: c.pts, delta };
+          toast(`<b>${esc(knm(G.decl))} ${c.won ? "gewinnt" : "verliert"}: ${delta[G.decl] > 0 ? "+" : ""}${delta[G.decl]}</b>${esc(skatLabel(gm))}`);
+        }
+        d.games.push(gm);
+        draft.set(K, d);
+        liveSkat(el, ctx, V);
+      };
+    }
+    drawForm();
+    bindLive(el, ctx, K, {
+      undo: () => {
+        d.games.pop();
+        draft.set(K, d);
+        liveSkat(el, ctx, V);
+      },
+      finish: () => {
+        const top2 = Math.max(...Object.values(totals));
+        const winners = P.filter((p) => totals[p] === top2);
+        const m = { game: "karten", variant: V.k, date: d.date, players: P, sf: d.sf, games: d.games, totals, places: pl, winners, tags: [V.n, d.sf ? "Seeger-Fabian" : "Einfach", plural(d.games.length, "Spiel", "Spiele")] };
+        kSave(m, ctx, K, `<b>Gespeichert.</b> ${esc(winners.map((p) => knm(p)).join(" & "))} ${winners.length > 1 ? "gewinnen" : "gewinnt"} die Liste mit ${fmtNum(top2, 0)} Punkten.`);
+      }
+    });
+  }
+  var SW_KEY = "kg.schwimmen.lives";
+  function swState(d) {
+    const L = Object.fromEntries(d.players.map((p) => [p, d.lives])), outAt = {};
+    d.rounds.forEach((r, i) => {
+      for (const p of r.hit) {
+        if (L[p] > 0) L[p]--;
+        else outAt[p] = i + 1;
+      }
+    });
+    return { L, outAt, alive: d.players.filter((p) => outAt[p] == null) };
+  }
+  function swPlaces(d, st) {
+    const key = (p) => st.outAt[p] == null ? 1e3 + st.L[p] : st.outAt[p];
+    const pl = {};
+    const sorted = [...d.players].sort((a, b) => key(b) - key(a));
+    sorted.forEach((p, i) => pl[p] = i > 0 && key(p) === key(sorted[i - 1]) ? pl[sorted[i - 1]] : i + 1);
+    return pl;
+  }
+  var lifeDots = (n, max) => `<span class="lives" aria-label="${n} Leben">${Array.from({ length: max }, (_, i) => `<i class="${i < n ? "on" : ""}"></i>`).join("")}</span>`;
+  function liveSchwimmen(el, ctx, V) {
+    const K = kdk(V.k);
+    let d = draft.get(K);
+    if (!d) {
+      let lives = 3;
+      try {
+        lives = +localStorage.getItem(SW_KEY) || 3;
+      } catch {
+      }
+      return setupLive(el, ctx, V, {
+        hint: "Pro Runde tippt ihr an, wer ein Leben verliert. Bei Feuer (drei Asse) verlieren alle anderen eins. Mit 0 Leben schwimmt man, beim n\xE4chsten Verlust ist man raus.",
+        mount: ({ box }) => {
+          if (box.dataset.ok) return;
+          box.dataset.ok = "1";
+          box.innerHTML = kStep("lives", lives, "Leben pro Spieler", "danach schwimmt man noch eine Runde");
+          $(".kstep", box).addEventListener("click", (ev) => {
+            const b = ev.target.closest("[data-st]");
+            if (!b) return;
+            lives = Math.max(1, Math.min(6, lives + +b.dataset.st));
+            $(".kstep b", box).textContent = lives;
+          });
+        },
+        start: (b) => {
+          try {
+            localStorage.setItem(SW_KEY, lives);
+          } catch {
+          }
+          return { ...b, lives, rounds: [] };
+        }
+      });
+    }
+    const P = d.players, st = swState(d), pl = swPlaces(d, st);
+    const isEnd = st.alive.length <= 1;
+    const lost = /* @__PURE__ */ new Set();
+    let fire = null;
+    const status = (p) => st.outAt[p] != null ? `<span class="sw-tag out">raus</span>` : st.L[p] === 0 ? `<span class="sw-tag swim">schwimmt</span>` : "";
+    el.innerHTML = `${rulesPanel(kg, V.k)}
+      <section class="panel score-head"><div class="sh-top"><span>${fmtDate(d.date)}</span><span>${plural(d.rounds.length, "Runde", "Runden")} \xB7 noch ${st.alive.length} im Spiel</span></div>
+      ${standings(P, {}, pl, { lead: isEnd, right: (p) => `<span class="sw-r">${status(p)}${lifeDots(st.outAt[p] != null ? 0 : st.L[p], d.lives)}</span>` })}</section>
+      ${isEnd ? `<section class="panel end-note"><p>${st.alive.length ? `<b>${esc(knm(st.alive[0]))}</b> ist als Letzter \xFCbrig und gewinnt.` : "Niemand ist mehr \xFCbrig."} Jetzt speichern!</p></section>` : `<section class="panel round-form"><h2 class="panel-title">Runde ${d.rounds.length + 1}</h2>
+      <span class="field-label">Wer verliert ein Leben?</span><div class="chips" data-lost>${st.alive.map((p) => `<button type="button" class="chip" data-p="${p}" aria-pressed="false">${kav(p)}<span>${esc(knm(p))}</span></button>`).join("")}</div>
+      <p class="hint">Bei Gleichstand mehrere antippen.</p>
+      <div class="award"><span class="field-label">\u{1F525} Feuer! Wer hatte drei Asse?</span><div class="chips" data-fire>${st.alive.map((p) => `<button type="button" class="chip" data-p="${p}" aria-pressed="false">${kav(p)}<span>${esc(knm(p))}</span></button>`).join("")}</div></div>
+      <button class="btn btn-primary wide" type="button" data-add disabled>Runde ${d.rounds.length + 1} eintragen</button></section>`}
+      ${d.rounds.length ? `<section class="panel"><h2 class="panel-title">Runden</h2><ol class="sw-log">${d.rounds.map((r, i) => `<li><span class="muted">${i + 1}.</span> ${r.fire ? `\u{1F525} <b>${esc(knm(r.fire))}</b> hat Feuer – alle anderen verlieren ein Leben` : `${r.hit.map((p) => `<b>${esc(knm(p))}</b>`).join(", ")} ${r.hit.length > 1 ? "verlieren" : "verliert"} ein Leben`}</li>`).join("")}</ol></section>` : ""}
+      ${liveActions(d.rounds.length)}`;
+    const upd = () => {
+      const b = $("[data-add]", el);
+      if (b) b.disabled = !lost.size && !fire;
+    };
+    $$("[data-lost] [data-p]", el).forEach((b) => b.addEventListener("click", () => {
+      const p = b.dataset.p;
+      lost.has(p) ? lost.delete(p) : lost.add(p);
+      fire = null;
+      $$("[data-fire] [data-p]", el).forEach((x) => x.setAttribute("aria-pressed", "false"));
+      b.setAttribute("aria-pressed", lost.has(p));
+      upd();
+    }));
+    $$("[data-fire] [data-p]", el).forEach((b) => b.addEventListener("click", () => {
+      fire = fire === b.dataset.p ? null : b.dataset.p;
+      lost.clear();
+      $$("[data-lost] [data-p]", el).forEach((x) => x.setAttribute("aria-pressed", "false"));
+      $$("[data-fire] [data-p]", el).forEach((x) => x.setAttribute("aria-pressed", x.dataset.p === fire));
+      upd();
+    }));
+    $("[data-add]", el)?.addEventListener("click", () => {
+      const hit = fire ? st.alive.filter((p) => p !== fire) : st.alive.filter((p) => lost.has(p));
+      const wouldOut = hit.filter((p) => st.L[p] === 0);
+      if (wouldOut.length && wouldOut.length === st.alive.length) return toast("Dann w\xE4re niemand mehr \xFCbrig – spielt die Runde nochmal.");
+      d.rounds.push({ hit, ...fire ? { fire } : { lost: [...lost] } });
+      draft.set(K, d);
+      const st2 = swState(d);
+      const outs = hit.filter((p) => st2.outAt[p] != null), swim = hit.filter((p) => st2.L[p] === 0 && st2.outAt[p] == null);
+      if (outs.length) toast(`<b>${esc(outs.map((p) => knm(p)).join(", "))} ${outs.length > 1 ? "sind" : "ist"} raus.</b>`);
+      else if (swim.length) toast(`<b>${esc(swim.map((p) => knm(p)).join(", "))} ${swim.length > 1 ? "schwimmen" : "schwimmt"}!</b>`);
+      liveSchwimmen(el, ctx, V);
+    });
+    bindLive(el, ctx, K, {
+      undo: () => {
+        d.rounds.pop();
+        draft.set(K, d);
+        liveSchwimmen(el, ctx, V);
+      },
+      finish: () => {
+        const winners = st.alive.length === 1 ? st.alive : st.alive.filter((p) => st.L[p] === Math.max(...st.alive.map((x) => st.L[x])));
+        const m = { game: "karten", variant: V.k, date: d.date, players: P, lives: d.lives, rounds: d.rounds, places: pl, winners, tags: [V.n, plural(d.rounds.length, "Runde", "Runden")] };
+        kSave(m, ctx, K, `<b>Gespeichert.</b> ${esc(winners.map((p) => knm(p)).join(" & "))} ${winners.length > 1 ? "gewinnen" : "gewinnt"}.`);
+      }
+    });
+  }
+  function kStats(ms) {
+    const st = perPlayer(ms);
+    for (const s of st) {
+      Object.assign(s, { player: { id: s.id, name: s.name }, placeSum: 0, placeN: 0, lasts: 0, shits: 0, shitG: 0, firsts: 0, clean: 0, cleanBest: 0, pres: 0, vp: 0, volk: 0, va: 0, ass: 0, arRounds: 0, presRun: 0, falls: 0, rises: 0, bestRound: null, rein: 0, gem: 0, outs: 0, sDecl: 0, sWon: 0, sBest: null, grands: 0, nulls: 0, sTypes: {}, swLost: 0, swRounds: 0, fires: 0, comebacks: 0, swG: 0, byV: {} });
+      for (const { m, won } of s.results) {
+        const n = m.players.length, bv = s.byV[m.variant] || (s.byV[m.variant] = { g: 0, w: 0 });
+        bv.g++;
+        if (won) bv.w++;
+        if (m.places?.[s.id] != null) {
+          s.placeSum += m.places[s.id];
+          s.placeN++;
+        }
+        if (m.variant === "maumau" || m.variant === "bluff" || m.variant === "elfer") {
+          if (m.order?.length === n && m.order[n - 1] === s.id) s.lasts++;
+        } else if (m.variant === "shithead") {
+          s.shitG++;
+          if (m.loser === s.id) {
+            s.shits++;
+            s.clean = 0;
+          } else {
+            s.clean++;
+            s.cleanBest = Math.max(s.cleanBest, s.clean);
+          }
+          if (m.first === s.id) s.firsts++;
+        } else if (m.variant === "arschloch") {
+          const T = titlesFor(n);
+          let run = 0, prev = null;
+          for (const r of m.rounds || []) {
+            const i = r.order.indexOf(s.id);
+            if (i < 0) continue;
+            s.arRounds++;
+            const t = TSHORT[T[i]];
+            if (t === "P") {
+              s.pres++;
+              run++;
+              s.presRun = Math.max(s.presRun, run);
+            } else run = 0;
+            if (t === "VP") s.vp++;
+            if (t === "V") s.volk++;
+            if (t === "VA") s.va++;
+            if (t === "A") s.ass++;
+            if (prev === 0 && i === n - 1) s.falls++;
+            if (prev === n - 1 && i === 0) s.rises++;
+            prev = i;
+          }
+        } else if (m.variant === "canasta") {
+          const side = (m.sides || []).find((x) => x.members.includes(s.id));
+          if (side) for (const r of m.rounds || []) {
+            const v = r.pts?.[side.key];
+            if (v != null) s.bestRound = s.bestRound == null ? v : Math.max(s.bestRound, v);
+            s.rein += +(r.res?.[side.key]?.rein || 0);
+            s.gem += +(r.res?.[side.key]?.gem || 0);
+            if (r.out === side.key) s.outs++;
+          }
+        } else if (m.variant === "skat") {
+          for (const gm of m.games || []) {
+            if (gm.pass || gm.decl !== s.id) continue;
+            s.sDecl++;
+            s.sTypes[gm.type] = (s.sTypes[gm.type] || 0) + 1;
+            if (gm.type === "grand") s.grands++;
+            if (gm.type === "null") s.nulls++;
+            if (gm.won) {
+              s.sWon++;
+              s.sBest = Math.max(s.sBest ?? 0, gm.value);
+            }
+          }
+        } else if (m.variant === "schwimmen") {
+          s.swG++;
+          let L = m.lives ?? 3, swam = false;
+          for (const r of m.rounds || []) {
+            if (r.fire === s.id) s.fires++;
+            if (r.hit.includes(s.id)) {
+              s.swLost++;
+              if (L > 0) {
+                L--;
+                if (L === 0) swam = true;
+              }
+            }
+          }
+          if (won && swam) s.comebacks++;
+        }
+      }
+      s.avgPlace = s.placeN ? s.placeSum / s.placeN : null;
+      s.shitRate = s.shitG ? s.shits / s.shitG : null;
+      s.sRate = s.sDecl ? s.sWon / s.sDecl : null;
+      s.presRate = s.arRounds ? s.pres / s.arRounds : null;
+      s.lostAvg = s.swG ? s.swLost / s.swG : null;
+      const ft = Object.entries(s.sTypes).sort((a, b) => b[1] - a[1])[0];
+      s.favType = ft ? ft[0] : null;
+      s.favTypeN = ft ? ft[1] : 0;
+      const fv = Object.entries(s.byV).sort((a, b) => b[1].g - a[1].g)[0];
+      s.favV = fv ? fv[0] : null;
+    }
+    return st;
+  }
+  function kLine(m) {
+    const V = kvOf(m.variant);
+    if (!V) return rankedLine(kg, m);
+    if (V.kind === "shithead") return `<p class="winline">\u{1F4A9} <b>${esc(knm(m.loser, m))}</b> ist der Shit Head</p>${m.first ? `<p class="others">Zuerst raus: ${kav(m.first, m, "mini")}${esc(knm(m.first, m))}</p>` : ""}<p class="others">Dabei: ${m.players.filter((p) => p !== m.loser && p !== m.first).map((p) => `${kav(p, m, "mini")}${esc(knm(p, m))}`).join(" \xB7 ") || "–"}</p>`;
+    if (V.kind === "canasta" && m.sides && m.mode === "teams") {
+      return `<ol class="res">${[...m.sides].sort((a, b) => (m.totals[b.members[0]] ?? 0) - (m.totals[a.members[0]] ?? 0)).map((s) => `<li class="${(m.winners || []).includes(s.members[0]) ? "win" : ""}"><span class="avs">${sideAv(s, m)}</span><span class="nm">${esc(sideName(s, m))}</span><b>${fmtNum(m.totals[s.members[0]], 0)}</b></li>`).join("")}</ol>`;
+    }
+    let extra = "";
+    if (V.kind === "arschloch" && m.rounds?.length) {
+      const n = m.players.length, cnt = (p, i) => m.rounds.filter((r) => r.order[i] === p).length;
+      extra = `<p class="others">Pr\xE4sident: ${m.players.filter((p) => cnt(p, 0)).sort((a, b) => cnt(b, 0) - cnt(a, 0)).map((p) => `${esc(knm(p, m))} ${cnt(p, 0)}\xD7`).join(" \xB7 ")} — Arschloch: ${m.players.filter((p) => cnt(p, n - 1)).sort((a, b) => cnt(b, n - 1) - cnt(a, n - 1)).map((p) => `${esc(knm(p, m))} ${cnt(p, n - 1)}\xD7`).join(" \xB7 ")}</p>`;
+    }
+    if (V.kind === "skat" && m.games?.length) {
+      const best = m.games.filter((g2) => g2.won && !g2.pass).sort((a, b) => b.value - a.value)[0];
+      if (best) extra = `<p class="others">H\xF6chstes Spiel: ${esc(knm(best.decl, m))} – ${esc(skatLabel(best))} (${best.value})</p>`;
+    }
+    if (V.kind === "schwimmen" && m.rounds) {
+      const fires = m.rounds.filter((r) => r.fire);
+      if (fires.length) extra = `<p class="others">\u{1F525} Feuer: ${fires.map((r) => esc(knm(r.fire, m))).join(", ")}</p>`;
+    }
+    return rankedLine(kg, m) + extra;
+  }
+  function kDash(el, ctx) {
+    const v = kview.v, ms = kms(v);
+    const running = KV.filter((x) => draft.get(kdk(x.k)) && (v === "all" || v === x.k));
+    const runBox = running.length ? `<section class="panel kv-running"><h2 class="panel-title">L\xE4uft gerade</h2><div class="chips">${running.map((x) => `<button type="button" class="chip" data-resume="${x.k}">${pcard(x.r, x.s, "mini")}<span>${esc(x.n)} fortsetzen</span></button>`).join("")}</div></section>` : "";
+    const head = `${kvBar(v, true)}${rulesPanel(kg, v)}${runBox}`;
+    const bindAll = () => {
+      bindKV(el, () => kDash(el, ctx));
+      $$("[data-resume]", el).forEach((b) => b.addEventListener("click", () => {
+        setKV(b.dataset.resume);
+        ctx.go("neu");
+      }));
+      $("[data-new]", el)?.addEventListener("click", () => ctx.go("neu"));
+      $("[data-all]", el)?.addEventListener("click", () => ctx.go("verlauf"));
+    };
+    if (!ms.length) {
+      el.innerHTML = `${head}<div class="empty-state panel"><p>Noch keine Partie${v !== "all" ? ` ${esc(kName(v))}` : ""}.</p><button class="btn btn-primary" type="button" data-new>Partie eintragen</button></div>`;
+      return bindAll();
+    }
+    const st = kStats(ms);
+    const T = (title, key, fmt, opts = {}) => {
+      const r = top(st, key, opts);
+      return statTile(title, r ? fmt(r.value) : "–", r ? whoList(kg, r.who) : '<span class="muted">noch niemand</span>', opts.note || "");
+    };
+    const kind = v === "all" ? "all" : kvOf(v).kind;
+    let tiles;
+    if (kind === "all") {
+      const byV = KV.map((x) => ({ x, n: ms.filter((m) => m.variant === x.k).length })).filter((o) => o.n).sort((a, b) => b.n - a.n);
+      tiles = [
+        T("Kartenk\xF6nig", "wins", (v2) => plural(v2, "Sieg", "Siege"), { note: "\xFCber alle Kartenspiele" }),
+        T("Beste Siegquote", "rate", fmtPct, { min: 5, note: "ab 5 Partien" }),
+        statTile("Lieblingsspiel", esc(byV[0].x.n), `<span class="muted">${plural(byV[0].n, "Partie", "Partien")}</span>`),
+        T("Meiste Partien", "games", (v2) => v2),
+        T("L\xE4ngste Siegesserie", "streak", (v2) => plural(v2, "Sieg", "Siege"), { filter: (s) => s.streak > 0 }),
+        T("Meiste Shit Heads", "shits", (v2) => `${v2}\xD7`, { filter: (s) => s.shits > 0, note: "die Schande-Wertung" })
+      ];
+    } else if (kind === "order") tiles = [
+      T("Meiste Siege", "wins", (v2) => v2),
+      T("Beste Siegquote", "rate", fmtPct, { min: 3, note: "ab 3 Partien" }),
+      T("Bester \xD8-Platz", "avgPlace", (v2) => fmtNum(v2), { low: true, min: 3, note: "ab 3 Partien" }),
+      T("L\xE4ngste Siegesserie", "streak", (v2) => plural(v2, "Sieg", "Siege"), { filter: (s) => s.streak > 0 }),
+      T("Rote Laterne", "lasts", (v2) => `${v2}\xD7 Letzter`, { filter: (s) => s.lasts > 0, note: "nur Partien mit voller Reihenfolge" }),
+      T("Meiste Partien", "games", (v2) => v2)
+    ];
+    else if (kind === "shithead") tiles = [
+      T("Meiste Shit Heads", "shits", (v2) => `${v2}\xD7`, { filter: (s) => s.shits > 0 }),
+      T("Seltenster Shit Head", "shitRate", fmtPct, { low: true, min: 3, note: "ab 3 Partien" }),
+      T("Am \xF6ftesten zuerst raus", "firsts", (v2) => `${v2}\xD7`, { filter: (s) => s.firsts > 0 }),
+      T("L\xE4ngste weiße Weste", "cleanBest", (v2) => plural(v2, "Partie", "Partien"), { filter: (s) => s.cleanBest > 0, note: "in Folge kein Shit Head" }),
+      T("Meiste Partien", "games", (v2) => v2)
+    ];
+    else if (kind === "arschloch") tiles = [
+      T("Meiste Siege", "wins", (v2) => v2),
+      T("Meiste Pr\xE4sidentschaften", "pres", (v2) => `${v2}\xD7`, { filter: (s) => s.pres > 0 }),
+      T("L\xE4ngste Amtszeit", "presRun", (v2) => plural(v2, "Runde", "Runden"), { filter: (s) => s.presRun > 0, note: "in Folge Pr\xE4sident" }),
+      T("Meiste Arschloch-Runden", "ass", (v2) => `${v2}\xD7`, { filter: (s) => s.ass > 0 }),
+      T("Tiefster Fall", "falls", (v2) => `${v2}\xD7`, { filter: (s) => s.falls > 0, note: "vom Pr\xE4sidenten direkt zum Arschloch" }),
+      T("Vom Tellerw\xE4scher …", "rises", (v2) => `${v2}\xD7`, { filter: (s) => s.rises > 0, note: "vom Arschloch direkt zum Pr\xE4sidenten" })
+    ];
+    else if (kind === "canasta") tiles = [
+      T("Meiste Siege", "wins", (v2) => v2),
+      T("Beste Siegquote", "rate", fmtPct, { min: 3, note: "ab 3 Partien" }),
+      T("H\xF6chster Endstand", "best", (v2) => fmtNum(v2, 0)),
+      T("Beste Runde", "bestRound", (v2) => fmtNum(v2, 0)),
+      T("Meiste reine Canastas", "rein", (v2) => `${v2}\xD7`, { filter: (s) => s.rein > 0 }),
+      T("Meiste Partien", "games", (v2) => v2)
+    ];
+    else if (kind === "skat") tiles = [
+      T("Meiste Listen gewonnen", "wins", (v2) => v2),
+      T("H\xF6chster Endstand", "best", (v2) => fmtNum(v2, 0)),
+      T("Meiste Spiele gewonnen", "sWon", (v2) => v2, { filter: (s) => s.sWon > 0, note: "als Alleinspieler" }),
+      T("Beste Quote als Alleinspieler", "sRate", fmtPct, { filter: (s) => s.sDecl >= 5, note: "ab 5 Spielen" }),
+      T("H\xF6chstes Spiel", "sBest", (v2) => v2, { filter: (s) => s.sBest > 0, note: "gewonnen" }),
+      T("Grand-K\xF6nig", "grands", (v2) => `${v2}\xD7 Grand`, { filter: (s) => s.grands > 0 })
+    ];
+    else tiles = [
+      T("Meiste Siege", "wins", (v2) => v2),
+      T("Beste Siegquote", "rate", fmtPct, { min: 3, note: "ab 3 Partien" }),
+      T("Vom Schwimmen zum Sieg", "comebacks", (v2) => `${v2}\xD7`, { filter: (s) => s.comebacks > 0, note: "gewonnen, obwohl schon geschwommen" }),
+      T("Meiste Feuer", "fires", (v2) => `${v2}\xD7`, { filter: (s) => s.fires > 0, note: "drei Asse" }),
+      T("Wenigste Leben verloren", "lostAvg", (v2) => `\xD8 ${fmtNum(v2)}`, { low: true, min: 3, note: "pro Partie, ab 3 Partien" }),
+      T("Meiste Partien", "games", (v2) => v2)
+    ];
+    const recent = [...ms].reverse().slice(0, 4);
+    el.innerHTML = `${head}<div class="stats-grid">${tiles.join("")}</div>
+      <section class="panel"><h2 class="panel-title">Zuletzt gespielt</h2>${recent.map((m) => `<div class="mini-hist"><span class="hist-date">${fmtDate(m.date)} \xB7 ${esc(kName(m.variant))}</span>${kLine(m)}</div>`).join("")}
+      <button class="btn btn-ghost wide" type="button" data-all>Alle Partien</button></section>`;
+    bindAll();
+  }
+  function kStat(el, ctx) {
+    const v = kview.v, ms = kms(v);
+    const head = kvBar(v, true);
+    if (!ms.length) {
+      el.innerHTML = `${head}<div class="empty-state panel"><p>Noch keine Partien in dieser Auswahl.</p></div>`;
+      bindKV(el, () => kStat(el, ctx));
+      return;
+    }
+    const st = kStats(ms);
+    const kind = v === "all" ? "all" : kvOf(v).kind;
+    const C = (key, label, fmt) => ({ key, label, fmt });
+    const pct = (x) => x == null ? "–" : fmtPct(x);
+    const num = (x) => x == null ? "–" : fmtNum(x);
+    const cols = {
+      all: [C("games", "Partien"), C("wins", "Siege"), C("rate", "Quote", fmtPct), C("streak", "Serie")],
+      order: [C("games", "Partien"), C("wins", "Siege"), C("rate", "Quote", fmtPct), C("avgPlace", "\xD8 Platz", num), C("lasts", "Letzter")],
+      shithead: [C("games", "Partien"), C("shits", "Shit Head"), C("shitRate", "Quote", pct), C("firsts", "Zuerst raus"), C("cleanBest", "Weste")],
+      arschloch: [C("games", "Partien"), C("wins", "Siege"), C("pres", "Pr\xE4s."), C("ass", "Arschl."), C("presRate", "Pr\xE4s.-Quote", pct)],
+      canasta: [C("games", "Partien"), C("wins", "Siege"), C("rate", "Quote", fmtPct), C("avg", "\xD8 Endstand", num), C("bestRound", "Beste Runde", num)],
+      skat: [C("games", "Listen"), C("wins", "Siege"), C("avg", "\xD8 Punkte", num), C("sDecl", "Spiele"), C("sRate", "Gewonnen", pct), C("sBest", "H\xF6chstes", num)],
+      schwimmen: [C("games", "Partien"), C("wins", "Siege"), C("rate", "Quote", fmtPct), C("lostAvg", "\xD8 Leben weg", num), C("fires", "Feuer")]
+    }[kind];
+    const sortKey = kind === "shithead" ? "shits" : "wins";
+    const bar = (list2, key, o = {}) => barChart(list2.map((s) => ({ label: s.name, value: o.val ? o.val(s) : s[key], icon: kg.avatar(s, "mini"), color: kg.colorOf(s.id), note: o.note ? o.note(s) : "" })), { unit: o.unit || "", digits: o.digits ?? 1, max: o.max });
+    let more = "";
+    if (kind === "all") {
+      const ids = [...new Set(ms.flatMap((m) => m.players))];
+      const series = ids.map((id) => {
+        let c = 0;
+        const pts = [];
+        ms.forEach((m, i) => {
+          if (m.players.includes(id)) {
+            if (m.winners?.includes(id)) c++;
+            pts.push({ i, y: c, label: fmtDate(m.date, { day: "2-digit", month: "2-digit" }) + " \xB7 Siege:" });
+          }
+        });
+        return { name: knm(id, ms.find((m) => m.players.includes(id))), color: kg.colorOf(id), points: pts };
+      });
+      const used = KV.filter((x) => ms.some((m) => m.variant === x.k));
+      more = `<h3 class="sub-h">Siege je Kartenspiel</h3><div class="table-wrap"><table class="lb"><thead><tr><th class="l">Spieler</th>${used.map((x) => `<th>${esc(x.n)}</th>`).join("")}</tr></thead><tbody>
+        ${st.map((s) => `<tr><td class="l">${kg.avatar(s, "mini")}<span class="nm">${esc(s.name)}</span></td>${used.map((x) => {
+        const o = s.byV[x.k];
+        return `<td>${o ? `${x.kind === "shithead" ? s.shits : o.w}<small> / ${o.g}</small>` : "–"}</td>`;
+      }).join("")}</tr>`).join("")}</tbody></table></div><p class="hint">Bei Shit Head steht hier, wie oft jemand der Shit Head war.</p>
+        <h3 class="sub-h">Was wird am meisten gespielt?</h3>${barChart(used.map((x) => ({ label: x.n, value: ms.filter((m) => m.variant === x.k).length, icon: pcard(x.r, x.s, "mini") })).sort((a, b) => b.value - a.value), { digits: 0 })}
+        <h3 class="sub-h">Siege im Zeitverlauf</h3>${lineChart(series, { yLabel: "Siege gesamt", xLabels: ms.map((m) => fmtDate(m.date, { day: "2-digit", month: "2-digit" })) })}
+        <h3 class="sub-h">Lieblingsspiel je Spieler</h3><ul class="kings">${st.filter((s) => s.favV).map((s) => `<li><span class="who">${kg.avatar(s, "mini")}${esc(s.name)}</span><span class="k-cat">spielt am liebsten</span><b>${esc(kName(s.favV))} (${s.byV[s.favV].g}\xD7)</b></li>`).join("")}</ul>`;
+    } else if (kind === "order") {
+      more = `<h3 class="sub-h">\xD8 Platz (kleiner ist besser)</h3>${bar([...st].filter((s) => s.avgPlace != null).sort((a, b) => a.avgPlace - b.avgPlace), "avgPlace", { note: (s) => plural(s.placeN, "Partie", "Partien") })}
+        <h3 class="sub-h">L\xE4ngste Siegesserie</h3>${bar([...st].filter((s) => s.streak).sort((a, b) => b.streak - a.streak), "streak", { digits: 0, note: (s) => s.current ? `aktuell ${s.current}` : "" })}`;
+    } else if (kind === "shithead") {
+      more = `<h3 class="sub-h">Shit-Head-Quote</h3>${bar([...st].sort((a, b) => b.shitRate - a.shitRate), "", { val: (s) => (s.shitRate || 0) * 100, unit: " %", digits: 0, max: 100, note: (s) => `${s.shits} von ${s.shitG}` })}
+        <h3 class="sub-h">Zuerst raus</h3>${st.some((s) => s.firsts) ? bar([...st].filter((s) => s.firsts).sort((a, b) => b.firsts - a.firsts), "firsts", { digits: 0 }) : '<p class="empty">Wird angezeigt, sobald ihr „zuerst raus“ eintragt.</p>'}`;
+    } else if (kind === "arschloch") {
+      const COL = { P: "#D4A017", VP: "#9DB36B", V: "#8E9AAF", VA: "#C9785D", A: "#7A3B2E" };
+      more = `<h3 class="sub-h">Titel je Spieler</h3><div class="titles">${st.filter((s) => s.arRounds).map((s) => `<div class="t-row"><span class="who">${kg.avatar(s, "mini")}${esc(s.name)}</span>${stackBar([["P", "Pr\xE4sident", s.pres], ["VP", "Vize-Pr\xE4sident", s.vp], ["V", "Volk", s.volk], ["VA", "Vize-Arschloch", s.va], ["A", "Arschloch", s.ass]].map(([k, l, val]) => ({ label: l, value: val, color: COL[k] })), { label: s.name })}</div>`).join("")}</div>
+        <div class="legend">${[["P", "Pr\xE4sident"], ["VP", "Vize-Pr\xE4sident"], ["V", "Volk"], ["VA", "Vize-Arschloch"], ["A", "Arschloch"]].map(([k, l]) => `<span><i style="background:${COL[k]}"></i>${l}</span>`).join("")}</div>
+        <h3 class="sub-h">Pr\xE4sidenten-Quote</h3>${bar([...st].filter((s) => s.arRounds).sort((a, b) => b.presRate - a.presRate), "", { val: (s) => s.presRate * 100, unit: " %", digits: 0, max: 100, note: (s) => `${s.pres} von ${s.arRounds} Runden` })}
+        <h3 class="sub-h">Rangpunkte im Verlauf</h3>${trendChart(kg, ms, (m, id) => m.totals?.[id], { colors: (id) => kg.colorOf(id), label: "Rangpunkte" })}`;
+    } else if (kind === "canasta") {
+      more = `<h3 class="sub-h">Endst\xE4nde im Verlauf</h3>${trendChart(kg, ms, (m, id) => m.totals?.[id], { colors: (id) => kg.colorOf(id), label: "Punkte" })}
+        <h3 class="sub-h">Canastas (rein / gemischt)</h3>${bar([...st].filter((s) => s.rein + s.gem).sort((a, b) => b.rein + b.gem - (a.rein + a.gem)), "", { val: (s) => s.rein + s.gem, digits: 0, note: (s) => `${s.rein} rein, ${s.gem} gemischt` })}
+        <h3 class="sub-h">Wie oft ausgemacht</h3>${bar([...st].filter((s) => s.outs).sort((a, b) => b.outs - a.outs), "outs", { digits: 0 })}`;
+    } else if (kind === "skat") {
+      const all = {};
+      st.forEach((s) => Object.entries(s.sTypes).forEach(([k, n]) => all[k] = (all[k] || 0) + n));
+      const TC = { karo: "#E0632A", herz: "#C8102E", pik: "#2F7D5B", kreuz: "#1D1D22", grand: "#D4A017", null: "#8E9AAF" };
+      more = `<h3 class="sub-h">Gespielte Spiele</h3>${stackBar(Object.entries(all).map(([k, n]) => ({ label: SKT[k].n, value: n, color: TC[k] })), { label: "Spielarten" })}<div class="legend">${Object.keys(all).map((k) => `<span><i style="background:${TC[k]}"></i>${SKT[k].n}</span>`).join("")}</div>
+        <h3 class="sub-h">Gewonnen als Alleinspieler</h3>${bar([...st].filter((s) => s.sDecl).sort((a, b) => b.sRate - a.sRate), "", { val: (s) => s.sRate * 100, unit: " %", digits: 0, max: 100, note: (s) => `${s.sWon} von ${s.sDecl} Spielen` })}
+        <h3 class="sub-h">Lieblingsspiel</h3><ul class="kings">${st.filter((s) => s.favType).map((s) => `<li><span class="who">${kg.avatar(s, "mini")}${esc(s.name)}</span><span class="k-cat">spielt am liebsten</span><b>${SKT[s.favType].n} (${s.favTypeN}\xD7)</b></li>`).join("")}</ul>
+        <h3 class="sub-h">Endst\xE4nde im Verlauf</h3>${trendChart(kg, ms, (m, id) => m.totals?.[id], { colors: (id) => kg.colorOf(id), label: "Punkte" })}`;
+    } else {
+      more = `<h3 class="sub-h">\xD8 verlorene Leben pro Partie</h3>${bar([...st].filter((s) => s.lostAvg != null).sort((a, b) => a.lostAvg - b.lostAvg), "lostAvg", { note: () => "weniger ist besser" })}
+        <h3 class="sub-h">Feuer (drei Asse)</h3>${st.some((s) => s.fires) ? bar([...st].filter((s) => s.fires).sort((a, b) => b.fires - a.fires), "fires", { digits: 0 }) : '<p class="empty">Noch kein Feuer.</p>'}
+        <h3 class="sub-h">\xD8 Platz</h3>${bar([...st].filter((s) => s.avgPlace != null).sort((a, b) => a.avgPlace - b.avgPlace), "avgPlace", { note: () => "kleiner ist besser" })}`;
+    }
+    el.innerHTML = `${head}
+      <section class="panel"><h2 class="panel-title">${kind === "shithead" ? "Schande-Tabelle" : "Rangliste"}</h2>${leaderboard(kg, st, cols, { sort: sortKey })}${kind === "shithead" ? '<p class="hint">Sortiert nach Shit Heads – oben steht, wer am h\xE4ufigsten verloren hat.</p>' : ""}</section>
+      <section class="panel">${details("Mehr Statistiken", `${more}<h3 class="sub-h">Kopf an Kopf</h3><div id="h2h"></div>`)}</section>`;
+    bindKV(el, () => kStat(el, ctx));
+    h2hBlock($("#h2h", el), kg, ms);
+  }
+  function kHist(el, ctx) {
+    const v = kview.v;
+    el.innerHTML = `${kvBar(v, true)}<div id="kHist"></div>`;
+    bindKV(el, () => kHist(el, ctx));
+    const box = $("#kHist", el), ms = kms(v);
+    historyList(box, ctx, { matches: ms, line: kLine, onEdit: (m) => {
+      kEditing = m;
+      ctx.go("neu");
+    } });
+    $$(".hist-item", box).forEach((li) => {
+      const m = ms.find((x) => x.id === li.dataset.id);
+      const kind = kvOf(m?.variant)?.kind;
+      if (kind !== "order" && kind !== "shithead") li.querySelector("[data-edit]")?.remove();
+    });
+  }
+  kg.tabs = { dashboard: kDash, neu: kNeu, statistik: kStat, verlauf: kHist };
+  var karten_default = kg;
+
+  // js/games/ligretto.js
+  var LCOL = { r: "#E3262E", g: "#1FA64A", b: "#1C6FD8", y: "#F5B800" };
+  var lcard = (n, c, cls = "") => `<span class="lc ${cls}" style="--c:${LCOL[c] || c}"><b>${n}</b></span>`;
+  var LPAL = [
+    { n: 1, c: "r" }, { n: 5, c: "b" }, { n: 7, c: "g" }, { n: 10, c: "y" }, { n: 3, c: "g" }, { n: 8, c: "r" },
+    { n: 2, c: "y" }, { n: 9, c: "b" }, { n: 4, c: "r" }, { n: 6, c: "y" }, { n: 10, c: "g" }, { n: 1, c: "b" }
+  ];
+  var LCHART = ["#E3262E", "#1C6FD8", "#1FA64A", "#D99A00", "#0F8A7E", "#B3123F", "#6C4BD8", "#2E9BD6", "#F06A2A", "#7A9A0F", "#C2389B", "#3D4A5C"];
+  var LEND_KEY = "kg.ligretto.end";
+  var lEnd = () => {
+    try {
+      const v = JSON.parse(localStorage.getItem(LEND_KEY));
+      if (v?.mode) return v;
+    } catch {
+    }
+    return { mode: "open", rounds: 5, points: 100 };
+  };
+  var lEndTxt = (e) => e.mode === "rounds" ? `${e.rounds} Runden` : e.mode === "points" ? `bis ${e.points} Punkte` : "offen";
+  var lgg = {
+    id: "ligretto",
+    name: "Ligretto",
+    theme: "theme-ligretto",
+    themeColor: "#FFF4E0",
+    dot: "#E3262E",
+    avatar: (p, size = "dot") => {
+      const x = pickFor("ligretto", LPAL, p.id);
+      return `<span class="av av-${size}" aria-hidden="true">${lcard(x.n, x.c)}</span>`;
+    },
+    icons: { pal: LPAL, current: (p) => pickFor("ligretto", LPAL, p.id), render: (x) => lcard(x.n, x.c) },
+    colorOf: (id) => LCHART[LPAL.indexOf(pickFor("ligretto", LPAL, id))] || "#E3262E",
+    winIcon: () => lcard("\u2605", "g", "toast-lc"),
+    logo: () => `<div class="lg-ligretto">${lcard(1, "r", "c1")}${lcard(2, "b", "c2")}${lcard(3, "g", "c3")}${lcard(4, "y", "c4")}<span class="nm">Ligretto</span></div>`,
+    header: () => `<div class="lt-burst" aria-hidden="true">${[[10, "r"], [7, "b"], [4, "y"], [1, "g"], [9, "r"], [2, "b"]].map(([n, c], i) => lcard(n, c, `b${i}`)).join("")}</div><h1 class="g-title">Ligretto</h1><p class="g-sub">Alle gleichzeitig – bis einer „Stop!“ ruft</p>`
+  };
+  var lnm = (p, m) => playerName(p, m);
+  var lav = (p, m, size = "dot") => lgg.avatar({ id: p, name: lnm(p, m) }, size);
+  var lTotals = (d) => {
+    const t = Object.fromEntries(d.players.map((p) => [p, 0]));
+    for (const r of d.rounds) for (const p of d.players) t[p] += r.pts[p] || 0;
+    return t;
+  };
+  function lEnded(d, totals) {
+    if (d.end.mode === "rounds") return d.rounds.length >= d.end.rounds;
+    if (d.end.mode === "points") return Object.values(totals).some((v) => v >= d.end.points);
+    return false;
+  }
+  function lNeu(el, ctx) {
+    const K = "ligretto";
+    let d = draft.get(K);
+    if (!d) {
+      const sel = /* @__PURE__ */ new Set(), E = lEnd();
+      el.innerHTML = `${rulesPanel(lgg)}<section class="panel">
+        <div class="setup-grid"><label class="field"><span>Gespielt am</span><input type="date" id="lDate" value="${today()}"></label></div>
+        <div id="lPick" class="kpick"></div>
+        <span class="field-label lt-l">Wann ist Schluss?</span>${seg("lend", [["rounds", "Runden"], ["points", "Punkte"], ["open", "Offen"]], E.mode)}
+        <div id="lEndBox"></div>
+        <button class="btn btn-primary wide" type="button" id="lStart" disabled>Spiel starten</button>
+        <p class="hint">Pro Runde tragt ihr ein, wie viele Karten jeder in der Mitte hat und wie viele noch im Ligretto-Stapel liegen. Die App rechnet: +1 je Karte in der Mitte, −2 je Karte im Stapel.</p>
+      </section>`;
+      const btn = $("#lStart", el);
+      playerPicker($("#lPick", el), { game: lgg, selected: sel, min: 2, max: 12, onChange: () => btn.disabled = sel.size < 2 });
+      const drawEnd = () => {
+        const box = $("#lEndBox", el);
+        box.innerHTML = E.mode === "rounds" ? kStep("rounds", E.rounds, "Anzahl Runden") : E.mode === "points" ? kStep("points", E.points, "Zielpunkte", "in 10er-Schritten") : '<p class="hint">Ihr beendet das Spiel, wann ihr wollt.</p>';
+        $(".kstep", box)?.addEventListener("click", (ev) => {
+          const b = ev.target.closest("[data-st]");
+          if (!b) return;
+          if (E.mode === "rounds") E.rounds = Math.max(1, Math.min(30, E.rounds + +b.dataset.st));
+          else E.points = Math.max(10, Math.min(500, E.points + 10 * b.dataset.st));
+          $(".kstep b", box).textContent = E.mode === "rounds" ? E.rounds : E.points;
+        });
+      };
+      drawEnd();
+      $('[data-seg="lend"]', el).addEventListener("click", (ev) => {
+        const b = ev.target.closest("button");
+        if (!b) return;
+        E.mode = b.dataset.v;
+        $$('[data-seg="lend"] button', el).forEach((x) => x.setAttribute("aria-pressed", x === b));
+        drawEnd();
+      });
+      btn.onclick = () => {
+        try {
+          localStorage.setItem(LEND_KEY, JSON.stringify(E));
+        } catch {
+        }
+        draft.set(K, { date: $("#lDate", el).value || today(), players: kSort(sel), end: { ...E }, rounds: [] });
+        ctx.rerender();
+      };
+      return;
+    }
+    const P = d.players, totals = lTotals(d), pl = places(totals), isEnd = lEnded(d, totals);
+    const R = Object.fromEntries(P.map((p) => [p, { mid: "", rest: 10 }]));
+    let caller = null;
+    const sc = (p) => (parseInt(R[p].mid, 10) || 0) - 2 * (p === caller ? 0 : R[p].rest);
+    const order = [...P].sort((a, b) => pl[a] - pl[b]);
+    const prog = (p) => d.end.mode === "points" ? `<span class="prog"><i style="width:${Math.min(100, Math.max(0, totals[p] / d.end.points * 100))}%"></i></span>` : "";
+    el.innerHTML = `${rulesPanel(lgg)}
+      <section class="panel score-head"><div class="sh-top"><span>${fmtDate(d.date)}</span><span>${d.end.mode === "rounds" ? `Runde ${Math.min(d.rounds.length, d.end.rounds)} von ${d.end.rounds}` : plural(d.rounds.length, "Runde", "Runden")}${d.end.mode === "points" ? ` \xB7 Ziel ${d.end.points}` : ""}</span></div>
+      <ol class="standings">${order.map((p) => `<li class="${pl[p] === 1 && d.rounds.length ? "lead" : ""}"><span class="st-place">${pl[p]}.</span>${lav(p)}<span class="nm">${esc(lnm(p))}</span><b>${fmtNum(totals[p], 0)}</b>${prog(p)}</li>`).join("")}</ol></section>
+      ${isEnd ? `<section class="panel end-note"><p><b>${esc(order.filter((p) => pl[p] === 1).map((p) => lnm(p)).join(" & "))}</b> ${d.end.mode === "points" ? `hat ${d.end.points} Punkte geknackt` : "liegt vorne – alle Runden sind gespielt"}. Jetzt speichern!</p></section>` : `<section class="panel round-form"><h2 class="panel-title">Runde ${d.rounds.length + 1}</h2>
+      <div class="lt-rows">${P.map((p) => `<div class="lt-row" data-p="${p}">
+        <span class="rin-name">${lav(p)}${esc(lnm(p))}</span>
+        <label class="lt-mid"><small>Mitte</small><input type="number" inputmode="numeric" min="0" max="40" data-mid="${p}" placeholder="0" aria-label="Karten in der Mitte ${esc(lnm(p))}"></label>
+        <span class="lt-rest"><small>Ligretto-Stapel</small><span class="step"><button type="button" data-st="-1" aria-label="eine weniger">−</button><b data-rest>10</b><button type="button" data-st="1" aria-label="eine mehr">+</button></span></span>
+        <label class="lt-stop"><input type="radio" name="lstop" value="${p}"><span>Stop!</span></label>
+        <b class="lt-sum" data-sum>0</b>
+      </div>`).join("")}</div>
+      <p class="hint">„Stop!“ antippen bei dem, der zuerst seinen Ligretto-Stapel leer hatte – dessen Stapel z\xE4hlt dann 0.</p>
+      <button class="btn btn-primary wide" type="button" data-add>Runde ${d.rounds.length + 1} eintragen</button></section>`}
+      ${d.rounds.length ? `<section class="panel"><h2 class="panel-title">Runden</h2><div class="table-wrap"><table class="rt"><thead><tr><th>#</th>${P.map((p) => `<th>${esc(lnm(p))}</th>`).join("")}</tr></thead>
+      <tbody>${d.rounds.map((r, i) => `<tr><td>${i + 1}</td>${P.map((p) => `<td>${fmtNum(r.pts[p], 0)}${r.caller === p ? ' <span class="mk" title="Ligretto Stop!">★</span>' : ""}<small class="lt-det">${r.mid[p]} / ${r.rest[p]}</small></td>`).join("")}</tr>`).join("")}</tbody>
+      <tfoot><tr><td>Σ</td>${P.map((p) => `<td><b>${fmtNum(totals[p], 0)}</b></td>`).join("")}</tr></tfoot></table></div><p class="hint">Kleine Zahlen: Karten in der Mitte / Rest im Stapel. ★ = hat „Stop!“ gerufen.</p></section>` : ""}
+      ${liveActions(d.rounds.length)}`;
+    const paint = (p) => {
+      const row = $(`.lt-row[data-p="${p}"]`, el);
+      if (!row) return;
+      $("[data-rest]", row).textContent = p === caller ? 0 : R[p].rest;
+      row.classList.toggle("is-stop", p === caller);
+      const v = sc(p);
+      $("[data-sum]", row).textContent = (v > 0 ? "+" : "") + v;
+      $("[data-sum]", row).classList.toggle("neg", v < 0);
+    };
+    P.forEach(paint);
+    $$(".lt-row", el).forEach((row) => {
+      const p = row.dataset.p;
+      $("[data-mid]", row).addEventListener("input", (ev) => {
+        R[p].mid = ev.target.value;
+        paint(p);
+      });
+      $(".lt-rest", row).addEventListener("click", (ev) => {
+        const b = ev.target.closest("[data-st]");
+        if (!b || p === caller) return;
+        R[p].rest = Math.max(0, Math.min(10, R[p].rest + +b.dataset.st));
+        paint(p);
+      });
+      $('input[name="lstop"]', row).addEventListener("click", (ev) => {
+        const prev = caller;
+        if (prev === p) {
+          ev.target.checked = false;
+          caller = null;
+        } else caller = p;
+        if (prev && prev !== p) paint(prev);
+        paint(p);
+      });
+    });
+    $("[data-add]", el)?.addEventListener("click", () => {
+      const mid = {}, rest = {}, pts = {};
+      for (const p of P) {
+        mid[p] = Math.max(0, Math.min(40, parseInt(R[p].mid, 10) || 0));
+        rest[p] = p === caller ? 0 : R[p].rest;
+        pts[p] = mid[p] - 2 * rest[p];
+      }
+      if (P.every((p) => !mid[p]) && !caller) return toast("Es ist noch nichts eingetragen.");
+      d.rounds.push({ mid, rest, caller, pts });
+      draft.set(K, d);
+      lNeu(el, ctx);
+      if (lEnded(d, lTotals(d))) toast("Spiel vorbei – jetzt beenden & speichern.");
+    });
+    bindLive(el, ctx, K, {
+      undo: () => {
+        d.rounds.pop();
+        draft.set(K, d);
+        lNeu(el, ctx);
+      },
+      finish: async () => {
+        const winners = P.filter((p) => pl[p] === 1);
+        const m = { game: "ligretto", date: d.date, players: P, end: d.end, rounds: d.rounds, totals, places: pl, winners, tags: [plural(d.rounds.length, "Runde", "Runden"), lEndTxt(d.end)] };
+        try {
+          await saveMatch(m);
+          draft.clear(K);
+          toast(`<b>Ligretto!</b> ${esc(winners.map((p) => lnm(p)).join(" & "))} ${winners.length > 1 ? "gewinnen" : "gewinnt"} mit ${fmtNum(totals[winners[0]], 0)} Punkten.`, { icon: lgg.winIcon() });
+          ctx.go("verlauf");
+        } catch (err) {
+          toast(esc(err.message));
+        }
+      }
+    });
+  }
+  function lStats(ms) {
+    const st = perPlayer(ms);
+    for (const s of st) {
+      const rs = [];
+      let calls = 0, mid = 0, rest = 0;
+      for (const { m } of s.results) for (const r of m.rounds || []) {
+        if (r.pts?.[s.id] == null) continue;
+        rs.push(r.pts[s.id]);
+        mid += r.mid[s.id] || 0;
+        rest += r.rest[s.id] || 0;
+        if (r.caller === s.id) calls++;
+      }
+      Object.assign(s, {
+        player: { id: s.id, name: s.name },
+        rounds: rs.length,
+        avgRound: rs.length ? rs.reduce((a, b) => a + b, 0) / rs.length : null,
+        bestRound: rs.length ? Math.max(...rs) : null,
+        worstRound: rs.length ? Math.min(...rs) : null,
+        calls,
+        callRate: rs.length ? calls / rs.length : null,
+        avgMid: rs.length ? mid / rs.length : null,
+        avgRest: rs.length ? rest / rs.length : null
+      });
+    }
+    return st;
+  }
+  function lDash(el, ctx) {
+    const ms = matchesOf("ligretto"), running = !!draft.get("ligretto");
+    const head = `${rulesPanel(lgg)}${running ? '<section class="panel kv-running"><h2 class="panel-title">L\xE4uft gerade</h2><button class="btn btn-primary" type="button" data-new>Spiel fortsetzen</button></section>' : ""}`;
+    if (!ms.length) {
+      el.innerHTML = `${head}<div class="empty-state panel"><p>Noch keine Partie gespielt.</p>${running ? "" : '<button class="btn btn-primary" type="button" data-new>Spiel starten</button>'}</div>`;
+      $$("[data-new]", el).forEach((b) => b.onclick = () => ctx.go("neu"));
+      return;
+    }
+    const st = lStats(ms);
+    const T = (title, key, fmt, opts = {}) => {
+      const r = top(st, key, opts);
+      return statTile(title, r ? fmt(r.value) : "–", r ? whoList(lgg, r.who) : '<span class="muted">noch niemand</span>', opts.note || "");
+    };
+    const tiles = [
+      T("Meiste Siege", "wins", (v) => v),
+      T("Beste Siegquote", "rate", fmtPct, { min: 3, note: "ab 3 Partien" }),
+      T("Schnellste H\xE4nde", "calls", (v) => `${v}\xD7 Stop!`, { filter: (s) => s.calls > 0, note: "am h\xE4ufigsten zuerst fertig" }),
+      T("Beste Runde", "bestRound", (v) => (v > 0 ? "+" : "") + fmtNum(v, 0)),
+      T("Meiste Karten in der Mitte", "avgMid", (v) => `\xD8 ${fmtNum(v)}`, { filter: (s) => s.rounds >= 3, note: "pro Runde, ab 3 Runden" }),
+      T("Meiste Partien", "games", (v) => v)
+    ];
+    const recent = [...ms].reverse().slice(0, 3);
+    el.innerHTML = `${head}<div class="stats-grid">${tiles.join("")}</div>
+      <section class="panel"><h2 class="panel-title">Zuletzt gespielt</h2>${recent.map((m) => `<div class="mini-hist"><span class="hist-date">${fmtDate(m.date)}</span>${rankedLine(lgg, m)}</div>`).join("")}
+      <button class="btn btn-ghost wide" type="button" data-all>Alle Partien</button></section>`;
+    $$("[data-new]", el).forEach((b) => b.onclick = () => ctx.go("neu"));
+    $("[data-all]", el).onclick = () => ctx.go("verlauf");
+  }
+  function lStat(el, ctx) {
+    const ms = matchesOf("ligretto");
+    if (!ms.length) {
+      el.innerHTML = '<div class="empty-state panel"><p>Noch keine Partien – hier erscheinen bald Ranglisten.</p></div>';
+      return;
+    }
+    const st = lStats(ms);
+    const num = (v) => v == null ? "–" : fmtNum(v);
+    const cols = [{ key: "games", label: "Partien" }, { key: "wins", label: "Siege" }, { key: "rate", label: "Quote", fmt: fmtPct }, { key: "avg", label: "\xD8 Endstand", fmt: num }, { key: "avgRound", label: "\xD8 / Runde", fmt: num }, { key: "calls", label: "Stop!" }];
+    const bar = (list2, val, o = {}) => barChart(list2.map((s) => ({ label: s.name, value: val(s), icon: lgg.avatar(s, "mini"), color: lgg.colorOf(s.id), note: o.note ? o.note(s) : "" })), { unit: o.unit || "", digits: o.digits ?? 1, max: o.max });
+    const R = st.filter((s) => s.rounds);
+    const more = `
+      <h3 class="sub-h">Endst\xE4nde im Verlauf</h3>${trendChart(lgg, ms, (m, id) => m.totals?.[id], { colors: (id) => lgg.colorOf(id), label: "Endstand" })}
+      <h3 class="sub-h">„Stop!“ gerufen</h3>${bar([...R].sort((a, b) => b.callRate - a.callRate), (s) => s.callRate * 100, { unit: " %", digits: 0, max: 100, note: (s) => `${s.calls} von ${s.rounds} Runden` })}
+      <h3 class="sub-h">\xD8 Karten in der Mitte pro Runde</h3>${bar([...R].sort((a, b) => b.avgMid - a.avgMid), (s) => s.avgMid)}
+      <h3 class="sub-h">\xD8 Rest im Ligretto-Stapel</h3>${bar([...R].sort((a, b) => a.avgRest - b.avgRest), (s) => s.avgRest, { note: () => "weniger ist besser" })}
+      <h3 class="sub-h">Schlechteste Runde</h3>${bar([...R].sort((a, b) => a.worstRound - b.worstRound), (s) => Math.abs(Math.min(0, s.worstRound)), { digits: 0, note: (s) => `${s.worstRound} Punkte` })}
+      <h3 class="sub-h">L\xE4ngste Siegesserie</h3>${bar([...st].filter((s) => s.streak).sort((a, b) => b.streak - a.streak), (s) => s.streak, { digits: 0, note: (s) => s.current ? `aktuell ${s.current}` : "" })}
+      <h3 class="sub-h">Kopf an Kopf</h3><div id="h2h"></div>`;
+    el.innerHTML = `<section class="panel"><h2 class="panel-title">Rangliste</h2>${leaderboard(lgg, st, cols)}<p class="hint">Sortiert nach Siegen. Mehr Punkte sind besser.</p></section>
+      <section class="panel">${details("Mehr Statistiken", more)}</section>`;
+    h2hBlock($("#h2h", el), lgg, ms);
+  }
+  function lHist(el, ctx) {
+    historyList(el, ctx, { matches: matchesOf("ligretto"), line: (m) => {
+      const calls = {};
+      (m.rounds || []).forEach((r) => {
+        if (r.caller) calls[r.caller] = (calls[r.caller] || 0) + 1;
+      });
+      return rankedLine(lgg, m) + (Object.keys(calls).length ? `<p class="others">Stop! gerufen: ${Object.entries(calls).sort((a, b) => b[1] - a[1]).map(([p, n]) => `${esc(lnm(p, m))} ${n}\xD7`).join(" \xB7 ")}</p>` : "");
+    } });
+  }
+  lgg.tabs = { dashboard: lDash, neu: lNeu, statistik: lStat, verlauf: lHist };
+  var ligretto_default = lgg;
+
   // js/games/registry.js
-  var GAMES = [floriferous_default, skyjo_default, flip7_default, feuilles_default, virus_default, dog_default, wizard_default, dominion_default, catan_default, schiffe_default];
+  var GAMES = [floriferous_default, skyjo_default, flip7_default, feuilles_default, virus_default, dog_default, wizard_default, dominion_default, catan_default, schiffe_default, karten_default, ligretto_default];
   var gameById = (id) => GAMES.find((g2) => g2.id === id);
 
   // js/global.js
@@ -3018,7 +4682,7 @@
 
   // js/app.js
   var app;
-  var APP_VERSION = "2.1";
+  var APP_VERSION = "2.2";
   var TABS = [["dashboard", "Dashboard"], ["neu", "Neues Spiel"], ["statistik", "Statistik"], ["verlauf", "Verlauf"]];
   var current = null;
   function parse() {
