@@ -3018,7 +3018,7 @@
 
   // js/app.js
   var app;
-  var APP_VERSION = "2.0";
+  var APP_VERSION = "2.1";
   var TABS = [["dashboard", "Dashboard"], ["neu", "Neues Spiel"], ["statistik", "Statistik"], ["verlauf", "Verlauf"]];
   var current = null;
   function parse() {

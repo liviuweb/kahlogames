@@ -15,7 +15,7 @@
   // Lädt Dateien aus Unterordnern (css/, js/, assets/) – oder, falls alles in einem Ordner liegt, direkt daneben.
   (function () {
     // Version hochzählen, wenn Dateien ersetzt werden – dann lädt jeder Browser sofort die neuen
-    var V = '2.0';
+    var V = '2.1';
     function tryLoad(paths, make, done) {
       var i = 0;
       (function next() {
@@ -29,14 +29,19 @@
     var css = function (p) { var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = p + '?v=' + V; return l; };
     var js = function (p) { var s = document.createElement('script'); s.src = p + '?v=' + V; return s; };
     ['app.css', 'floriferous.css', 'games.css'].forEach(function (f) { tryLoad(['css/' + f, f], css); });
-    tryLoad(['assets/icon.svg', 'icon.svg'], function (p) { var l = document.createElement('link'); l.rel = 'icon'; l.type = 'image/svg+xml'; l.href = p; return l; });
+    // Tab-Symbol (das K): liegt in assets/ oder – bei flacher Ablage – direkt daneben
+    function icons(base) {
+      [['icon', 'image/png', 'icon-32.png'], ['icon', 'image/svg+xml', 'icon.svg'], ['apple-touch-icon', '', 'icon-180.png']].forEach(function (x) {
+        var l = document.createElement('link'); l.rel = x[0]; if (x[1]) l.type = x[1]; l.href = base + x[2] + '?v=' + V; document.head.appendChild(l);
+      });
+    }
     tryLoad(['js/config.js', 'config.js'], js, function () {
       var paths = ['js/app.bundle.js', 'app.bundle.js'], i = 0;
       (function next() {
         if (i >= paths.length) { document.getElementById('app').innerHTML = '<p style="font:16px system-ui;padding:40px 22px;color:#B42318">Die Datei app.bundle.js wurde nicht gefunden. Bitte alle Dateien hochladen.</p>'; return; }
         var p = paths[i++];
         window.KG_ASSETS = p.indexOf('js/') === 0 ? 'assets/flori/' : '';
-        var s = js(p); s.onerror = function () { s.remove(); next(); }; document.head.appendChild(s);
+        var s = js(p); s.onload = function () { icons(p.indexOf('js/') === 0 ? 'assets/' : ''); }; s.onerror = function () { s.remove(); next(); }; document.head.appendChild(s);
       })();
     });
   })();
