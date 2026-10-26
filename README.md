@@ -55,6 +55,7 @@ Solange `API_URL` leer ist, läuft alles im **Demo-Modus**: Daten werden nur im 
 - **Wizard:** pro Runde Ansage und Stiche je Spieler eintragen, die App rechnet die Punkte (richtig: 20 + 10 je Stich, falsch: −10 je Stich Abweichung) und prüft, ob die Stiche zur Runde passen. Das Spiel endet nach 60 ÷ Spielerzahl Runden.
 - **Dominion & Catan:** Siegpunkte am Ende je Spieler eintragen. Bei Gleichstand wählt man den Sieger oder „Geteilter Sieg“. Bei Catan „Normal“ kann man zusätzlich Längste Handelsstraße und Größte Rittermacht festhalten.
 - **Schiffe versenken:** Spielfeld (z. B. 10×10) und Anzahl je Schiffstyp festlegen – die letzte Einstellung wird gemerkt. Dann pro Spieler antippen, welche gegnerischen Schiffe er versenkt hat. Optional: Schüsse und wer angefangen hat – daraus entstehen Treffsicherheit, schnellster Sieg und die Frage, ob sich der erste Schuss lohnt.
+  - **Online-Spiel:** [liviuweb.github.io/schiffe-versenken](https://liviuweb.github.io/schiffe-versenken/) trägt Online-Duelle und Einzelspiele (gegen den Computer, Flottenjagd, Tagesmission, Letzte Granate) automatisch in dieselbe Tabelle ein. In KahloGames schaltet man oben zwischen **Duelle** und **Einzelspieler** um und filtert nach Klassisch / Mit Fähigkeiten.
 - **Floriferous:** Solo und Multiplayer werden getrennt ausgewertet, Standard und Extended ebenfalls (Extended bringt mehr Punkte). Die Stimmung (Anxious … Nirvana) wird nach der Tabelle aus dem Regelheft berechnet.
 
 ## Ablage

@@ -329,9 +329,9 @@
   function lineChart(series, { height = 200, yLabel = "", xLabels = [] } = {}) {
     tip();
     const W = 640, H = height, L = 36, R = 12, T = 12, B = 26;
-    const all = series.flatMap((s) => s.points.map((p) => p.y));
-    if (!all.length) return '<p class="empty">Noch keine Daten.</p>';
-    let lo = Math.min(...all), hi = Math.max(...all);
+    const all2 = series.flatMap((s) => s.points.map((p) => p.y));
+    if (!all2.length) return '<p class="empty">Noch keine Daten.</p>';
+    let lo = Math.min(...all2), hi = Math.max(...all2);
     if (lo === hi) {
       lo -= 1;
       hi += 1;
@@ -445,9 +445,13 @@
     <tbody>${sorted.map((s, i) => `<tr><td class="l"><span class="rank">${i + 1}</span>${game.avatar({ id: s.id, name: s.name }, "mini")}<span class="nm">${esc(s.name)}</span></td>${cols.map((c) => `<td>${c.fmt ? c.fmt(s[c.key], s) : s[c.key] ?? "\u2013"}</td>`).join("")}</tr>`).join("")}</tbody>
   </table></div>`;
   }
-  function historyList(el, ctx, { matches, line: line2, onEdit }) {
+  function historyList(el, ctx, { matches, line: line2, onEdit, empty }) {
     const g2 = ctx.game;
     const list2 = [...matches].reverse();
+    if (!list2.length && empty) {
+      el.innerHTML = empty;
+      return;
+    }
     if (!list2.length) {
       el.innerHTML = `<div class="empty-state"><p>Noch keine Partie eingetragen.</p><button class="btn btn-primary" type="button" data-new>Erste Partie eintragen</button></div>`;
       $("[data-new]", el).onclick = () => ctx.go("neu");
@@ -884,8 +888,8 @@
   }
   function dashboard(el, ctx) {
     const g2 = ctx.game;
-    const all = matchesOf("floriferous");
-    const ms = all.filter(filt(view.mode, view.size));
+    const all2 = matchesOf("floriferous");
+    const ms = all2.filter(filt(view.mode, view.size));
     const st = floriStats(ms);
     const solo = view.mode === "solo";
     const tiles = [];
@@ -1419,17 +1423,17 @@
   // js/games/wins.js
   function makeWinsGame(def) {
     const g2 = { ...def };
-    const view2 = { variant: "all" };
+    const view3 = { variant: "all" };
     const vName = (k) => (def.variants || []).find(([v]) => v === k)?.[1] || "";
-    const filterBar2 = () => def.variants ? `<div class="filters">${seg("variant", [["all", "Alle"], ...def.variants], view2.variant)}</div>` : "";
+    const filterBar3 = () => def.variants ? `<div class="filters">${seg("variant", [["all", "Alle"], ...def.variants], view3.variant)}</div>` : "";
     const bind = (el, redraw) => $$('[data-seg="variant"]', el).forEach((s) => s.addEventListener("click", (e) => {
       const b = e.target.closest("button");
       if (b) {
-        view2.variant = b.dataset.v;
+        view3.variant = b.dataset.v;
         redraw();
       }
     }));
-    const list2 = () => matchesOf(def.id, (m) => view2.variant === "all" || m.variant === view2.variant);
+    const list2 = () => matchesOf(def.id, (m) => view3.variant === "all" || m.variant === view3.variant);
     function stats2(ms) {
       var _a;
       const st = perPlayer(ms);
@@ -1462,7 +1466,7 @@
         return statTile(title, r ? fmt(r.value) : "\u2013", r ? whoList(g2, r.who) : '<span class="muted">noch niemand</span>', opts.note || "");
       };
       if (!ms.length) {
-        el.innerHTML = `${filterBar2()}<div class="empty-state panel"><p>Noch keine Partie${view2.variant !== "all" ? ` in ${esc(vName(view2.variant))}` : ""}.</p><button class="btn btn-primary" type="button" data-new>Sieg eintragen</button></div>`;
+        el.innerHTML = `${filterBar3()}<div class="empty-state panel"><p>Noch keine Partie${view3.variant !== "all" ? ` in ${esc(vName(view3.variant))}` : ""}.</p><button class="btn btn-primary" type="button" data-new>Sieg eintragen</button></div>`;
         $("[data-new]", el).onclick = () => ctx.go("neu");
         bind(el, () => dashboard3(el, ctx));
         return;
@@ -1475,7 +1479,7 @@
         ...def.teams ? [T("Meiste Teamsiege", "teamWins", (v) => v, { filter: (s) => s.teamWins > 0 }), T("Meiste Einzelsiege", "soloWins", (v) => v, { filter: (s) => s.soloWins > 0 })] : []
       ];
       const recent = [...ms].reverse().slice(0, 4);
-      el.innerHTML = `${filterBar2()}<div class="stats-grid">${tiles.join("")}</div>
+      el.innerHTML = `${filterBar3()}<div class="stats-grid">${tiles.join("")}</div>
       <section class="panel"><h2 class="panel-title">Zuletzt gewonnen</h2>${recent.map(line2).join("")}<button class="btn btn-ghost wide" type="button" data-all>Alle Partien</button></section>`;
       $("[data-all]", el).onclick = () => ctx.go("verlauf");
       bind(el, () => dashboard3(el, ctx));
@@ -1495,7 +1499,7 @@
         id: e?.id,
         created: e?.created,
         date: e?.date || today(),
-        variant: e?.variant || (def.variants ? view2.variant !== "all" ? view2.variant : def.variants[0][0] : null),
+        variant: e?.variant || (def.variants ? view3.variant !== "all" ? view3.variant : def.variants[0][0] : null),
         sel: new Set(e?.players || []),
         mode: e?.mode || "teams",
         team: {},
@@ -1626,7 +1630,7 @@
     function statistik3(el, ctx) {
       const ms = list2(), st = stats2(ms);
       if (!ms.length) {
-        el.innerHTML = `${filterBar2()}<div class="empty-state panel"><p>Noch keine Partien in dieser Auswahl.</p></div>`;
+        el.innerHTML = `${filterBar3()}<div class="empty-state panel"><p>Noch keine Partien in dieser Auswahl.</p></div>`;
         bind(el, () => statistik3(el, ctx));
         return;
       }
@@ -1666,9 +1670,9 @@
         return `<td>${o ? `${fmtPct(o.w / o.g)}<small> (${o.g})</small>` : "\u2013"}</td>`;
       }).join("")}</tr>`).join("")}</tbody></table></div>
       ${def.teams ? `<h3 class="sub-h">Bester Partner</h3><ul class="kings">${st.filter((s) => s.bestPartner).map((s) => `<li><span class="who">${g2.avatar(s, "mini")}${esc(s.name)}</span><span class="k-cat">mit</span><span class="who">${g2.avatar(s.bestPartner, "mini")}${esc(s.bestPartner.name)}</span><b>${s.bestPartner.wins}/${s.bestPartner.games}</b></li>`).join("") || '<li class="muted">Noch keine Teamspiele.</li>'}</ul>` : ""}
-      ${def.variants && view2.variant === "all" ? `<h3 class="sub-h">Siege je Variante</h3>${variantTable(ms, st)}` : ""}
+      ${def.variants && view3.variant === "all" ? `<h3 class="sub-h">Siege je Variante</h3>${variantTable(ms, st)}` : ""}
       <h3 class="sub-h">Kopf an Kopf</h3><div id="h2h"></div>`;
-      el.innerHTML = `${filterBar2()}
+      el.innerHTML = `${filterBar3()}
       <section class="panel"><h2 class="panel-title">Rangliste</h2>${leaderboard(g2, st, cols)}</section>
       <section class="panel"><h2 class="panel-title">Siegquote</h2>${barChart([...st].sort((a, b) => b.rate - a.rate).map((s) => ({ label: s.name, value: s.rate * 100, icon: g2.avatar(s, "mini"), color: def.colorOf(s.id), note: `${s.wins} von ${s.games}` })), { unit: " %", digits: 0, max: 100 })}</section>
       <section class="panel">${details("Mehr Statistiken", more)}</section>`;
@@ -1832,18 +1836,18 @@
   // js/games/scores.js
   function makeScoreGame(def) {
     const g2 = { ...def };
-    const view2 = { variant: "all" };
+    const view3 = { variant: "all" };
     const vName = (k) => (def.variants || []).find(([v]) => v === k)?.[1] || "";
     const awardsOf = (v) => def.awards?.[v] || [];
-    const filterBar2 = () => def.variants ? `<div class="filters">${seg("variant", [["all", "Alle"], ...def.variants], view2.variant)}</div>` : "";
+    const filterBar3 = () => def.variants ? `<div class="filters">${seg("variant", [["all", "Alle"], ...def.variants], view3.variant)}</div>` : "";
     const bind = (el, redraw) => $$('[data-seg="variant"]', el).forEach((s) => s.addEventListener("click", (e) => {
       const b = e.target.closest("button");
       if (b) {
-        view2.variant = b.dataset.v;
+        view3.variant = b.dataset.v;
         redraw();
       }
     }));
-    const list2 = () => matchesOf(def.id, (m) => view2.variant === "all" || m.variant === view2.variant);
+    const list2 = () => matchesOf(def.id, (m) => view3.variant === "all" || m.variant === view3.variant);
     const unit = def.unit || "Punkte";
     const theme = (v) => {
       if (def.variantTheme) {
@@ -1863,10 +1867,10 @@
       return st;
     }
     function dashboard3(el, ctx) {
-      theme(view2.variant);
+      theme(view3.variant);
       const ms = list2(), st = stats2(ms);
       if (!ms.length) {
-        el.innerHTML = `${filterBar2()}<div class="empty-state panel"><p>Noch keine Partie${view2.variant !== "all" ? ` in ${esc(vName(view2.variant))}` : ""}.</p><button class="btn btn-primary" type="button" data-new>Partie eintragen</button></div>`;
+        el.innerHTML = `${filterBar3()}<div class="empty-state panel"><p>Noch keine Partie${view3.variant !== "all" ? ` in ${esc(vName(view3.variant))}` : ""}.</p><button class="btn btn-primary" type="button" data-new>Partie eintragen</button></div>`;
         $("[data-new]", el).onclick = () => ctx.go("neu");
         bind(el, () => dashboard3(el, ctx));
         return;
@@ -1884,7 +1888,7 @@
         T("L\xE4ngste Siegesserie", "streak", (v) => plural(v, "Sieg", "Siege"), { filter: (s) => s.streak > 0 })
       ];
       const recent = [...ms].reverse().slice(0, 3);
-      el.innerHTML = `${filterBar2()}<div class="stats-grid">${tiles.join("")}</div>
+      el.innerHTML = `${filterBar3()}<div class="stats-grid">${tiles.join("")}</div>
       <section class="panel"><h2 class="panel-title">Zuletzt gespielt</h2>${recent.map((m) => `<div class="mini-hist"><span class="hist-date">${fmtDate(m.date)}${m.variant ? ` \xB7 ${esc(vName(m.variant))}` : ""}</span>${rankedLine(g2, m)}</div>`).join("")}
       <button class="btn btn-ghost wide" type="button" data-all>Alle Partien</button></section>`;
       $("[data-all]", el).onclick = () => ctx.go("verlauf");
@@ -1898,7 +1902,7 @@
         id: e?.id,
         created: e?.created,
         date: e?.date || today(),
-        variant: e?.variant || (def.variants ? view2.variant !== "all" ? view2.variant : def.variants[0][0] : null),
+        variant: e?.variant || (def.variants ? view3.variant !== "all" ? view3.variant : def.variants[0][0] : null),
         sel: new Set(e?.players || []),
         pts: { ...e?.totals || {} },
         awards: { ...e?.awards || {} },
@@ -2007,7 +2011,7 @@
         try {
           await saveMatch(m);
           toast(`<b>Gespeichert.</b> ${esc(winners.map((p) => playerName(p)).join(" & "))} ${winners.length > 1 ? "gewinnen" : "gewinnt"} mit ${fmtNum(totals[winners[0]], 0)} ${esc(unit)}.`, { icon: def.winIcon?.() || "" });
-          view2.variant = def.variants ? S.variant : "all";
+          view3.variant = def.variants ? S.variant : "all";
           ctx.go("dashboard");
         } catch (err) {
           toast(esc(err.message));
@@ -2015,10 +2019,10 @@
       };
     }
     function statistik3(el, ctx) {
-      theme(view2.variant);
+      theme(view3.variant);
       const ms = list2(), st = stats2(ms);
       if (!ms.length) {
-        el.innerHTML = `${filterBar2()}<div class="empty-state panel"><p>Noch keine Partien in dieser Auswahl.</p></div>`;
+        el.innerHTML = `${filterBar3()}<div class="empty-state panel"><p>Noch keine Partien in dieser Auswahl.</p></div>`;
         bind(el, () => statistik3(el, ctx));
         return;
       }
@@ -2035,9 +2039,9 @@
       <h3 class="sub-h">\xD8 ${esc(unit)} nach Spielerzahl</h3>${barChart(Object.entries(groups).sort().map(([n, v]) => ({ label: `${n} Spieler`, value: v.reduce((a, b) => a + b, 0) / v.length })))}
       <h3 class="sub-h">L\xE4ngste Siegesserie</h3>${barChart([...st].filter((s) => s.streak).sort((a, b) => b.streak - a.streak).map((s) => ({ label: s.name, value: s.streak, icon: g2.avatar(s, "mini"), color: def.colorOf(s.id), note: s.current ? `aktuell ${s.current}` : "" })), { digits: 0 })}
       ${allAwards.map((a) => `<h3 class="sub-h">${esc(a)}</h3>${barChart(st.filter((s) => s.awards[a]).sort((x, y) => y.awards[a] - x.awards[a]).map((s) => ({ label: s.name, value: s.awards[a], icon: g2.avatar(s, "mini"), color: def.colorOf(s.id) })), { digits: 0 })}`).join("")}
-      ${def.variants && view2.variant === "all" ? `<h3 class="sub-h">Siege je Variante</h3>${variantTable(ms, st)}` : ""}
+      ${def.variants && view3.variant === "all" ? `<h3 class="sub-h">Siege je Variante</h3>${variantTable(ms, st)}` : ""}
       <h3 class="sub-h">Kopf an Kopf</h3><div id="h2h"></div>`;
-      el.innerHTML = `${filterBar2()}
+      el.innerHTML = `${filterBar3()}
       <section class="panel"><h2 class="panel-title">Rangliste</h2>${leaderboard(g2, st, cols)}</section>
       <section class="panel"><h2 class="panel-title">\xD8 ${esc(unit)}</h2>${barChart([...st].sort((a, b) => b.avg - a.avg).map((s) => ({ label: s.name, value: s.avg, icon: g2.avatar(s, "mini"), color: def.colorOf(s.id), note: `Rekord ${s.best}` })))}</section>
       <section class="panel">${details("Mehr Statistiken", more)}</section>`;
@@ -2052,7 +2056,7 @@
       }).join("")}</tr>`).join("")}</tbody></table></div>`;
     }
     function verlauf3(el, ctx) {
-      theme(view2.variant);
+      theme(view3.variant);
       historyList(el, ctx, { matches: matchesOf(def.id), line: (m) => rankedLine(g2, m) + (m.awards ? `<p class="others">${Object.entries(m.awards).map(([a, p]) => `${esc(a)}: <b>${esc(playerName(p, m))}</b>`).join(" \xB7 ")}</p>` : ""), onEdit: (m) => {
         editing3 = m;
         ctx.go("neu");
@@ -2340,20 +2344,194 @@
     colorOf: (id) => FLAG_COLOR[FLAGS.indexOf(pickFor("schiffe", FLAGS, id))] || "#4F7CC2",
     winIcon: () => shipSvg("traeger", 5, { cls: "toast-ship" }),
     logo: () => `<div class="lg-schiffe"><div class="sv-grid"></div>${shipSvg("schlacht", 4, { cls: "s1" })}${shipSvg("patrouille", 2, { sunk: true, cls: "s2" })}<i class="peg w p1"></i><i class="peg w p2"></i><i class="peg r p3"></i><span class="nm">Schiffe versenken</span></div>`,
-    header: () => `<div class="sv-radar" aria-hidden="true"><i class="sweep"></i><i class="blip b1"></i><i class="blip b2"></i><i class="blip b3"></i></div><h1 class="g-title">Schiffe<br>versenken</h1><p class="g-sub">Treffer. Versenkt.</p>`
+    header: () => `<div class="sv-radar" aria-hidden="true"><i class="sweep"></i><i class="blip b1"></i><i class="blip b2"></i><i class="blip b3"></i></div><h1 class="g-title">Schiffe<br>versenken</h1><p class="g-sub">Treffer. Versenkt.</p>${onlineLink("Online spielen", "sv-online-head")}`
   };
-  var list = () => matchesOf("schiffe");
+  var ONLINE_URL = "https://liviuweb.github.io/schiffe-versenken/";
+  var VARIANTS = [["all", "Alle"], ["klassisch", "Klassisch"], ["faehigkeiten", "Mit F\xE4higkeiten"]];
+  var VARIANT_NAME = { klassisch: "Klassisch", faehigkeiten: "Mit F\xE4higkeiten" };
+  var LEVELS = [["leicht", "Leicht"], ["mittel", "Mittel"], ["schwer", "Schwer"]];
+  var levelName = (k) => (LEVELS.find(([id]) => id === k) || LEVELS[1])[1];
+  var isSolo = (m) => m.mode === "solo";
+  var variantOf = (m) => m.variant || "klassisch";
+  var view2 = { mode: "duell", variant: "all" };
+  var all = () => matchesOf("schiffe");
+  var inVariant = (m) => view2.variant === "all" || m.solo === "wellen" || variantOf(m) === view2.variant;
+  var list = () => all().filter((m) => !isSolo(m) && (m.players || []).length >= 2 && inVariant(m));
+  var soloList = (kind) => all().filter((m) => isSolo(m) && m.players?.[0] && (!kind || m.solo === kind) && inVariant(m));
+  var linkIco = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>';
+  function onlineLink(label = "Online spielen", cls = "") {
+    return `<a class="sv-online ${cls}" href="${ONLINE_URL}" target="_blank" rel="noopener">${label}${linkIco}</a>`;
+  }
+  var onlinePanel = (text) => `<section class="panel sv-onl"><div><h2 class="panel-title">Online spielen</h2><p>${text}</p></div>${onlineLink("Zum Online-Spiel")}</section>`;
+  function filterBar2() {
+    return `<div class="filters">${seg("mode", [["duell", "Duelle"], ["solo", "Einzelspieler"]], view2.mode, "seg-big")}${seg("variant", VARIANTS, view2.variant)}</div>`;
+  }
+  function withFilters(el, ctx, views) {
+    el.innerHTML = `${filterBar2()}<div data-body></div>`;
+    $$("[data-seg]", el).forEach((s) => s.addEventListener("click", (e) => {
+      const b = e.target.closest("button");
+      if (!b) return;
+      view2[s.dataset.seg] = b.dataset.v;
+      withFilters(el, ctx, views);
+    }));
+    views[view2.mode]($("[data-body]", el), ctx);
+  }
+  function dailyTable(ms) {
+    const by = /* @__PURE__ */ new Map();
+    for (const m of ms) {
+      if (m.solo !== "jagd" || !m.daily) continue;
+      const pid = m.players[0], rows = by.get(m.daily) || [];
+      const r = { pid, name: playerName(pid, m), moves: +m.moves || 0, score: +m.score || 0 };
+      const ex = rows.find((x) => x.pid === pid);
+      if (!ex) rows.push(r);
+      else if (r.score > ex.score) Object.assign(ex, r);
+      by.set(m.daily, rows);
+    }
+    return [...by.entries()].sort((a, b) => b[0].localeCompare(a[0])).map(([date, rows]) => {
+      rows.sort((a, b) => b.score - a.score || a.moves - b.moves);
+      rows.forEach((r) => {
+        r.best = rows.length > 1 && r.score === rows[0].score;
+      });
+      return { date, rows };
+    });
+  }
+  function soloStats(ms) {
+    const map = /* @__PURE__ */ new Map();
+    for (const m of ms) {
+      const pid = m.players[0];
+      if (!map.has(pid)) map.set(pid, {
+        id: pid,
+        name: playerName(pid, m),
+        games: 0,
+        cpuG: 0,
+        cpuW: 0,
+        lv: Object.fromEntries(LEVELS.map(([k]) => [k, { g: 0, w: 0 }])),
+        cpuFewest: null,
+        cpuStartG: 0,
+        cpuStartW: 0,
+        jagdG: 0,
+        jagdBest: null,
+        jagdScores: [],
+        jagdMoves: null,
+        dailyG: 0,
+        dailyWins: 0,
+        wellenG: 0,
+        wellenShips: null,
+        wellenWave: null,
+        wellenAll: [],
+        shots: 0,
+        hits: 0
+      });
+      const s = map.get(pid);
+      s.games++;
+      const sh = +m.shots?.[pid] || 0, h = +m.hits;
+      if (sh > 0 && Number.isFinite(h)) {
+        s.shots += sh;
+        s.hits += h;
+      }
+      if (m.solo === "cpu") {
+        const w = m.result === "win", l = s.lv[m.level] || s.lv.mittel;
+        s.cpuG++;
+        l.g++;
+        if (w) {
+          s.cpuW++;
+          l.w++;
+          if (sh && (s.cpuFewest == null || sh < s.cpuFewest)) s.cpuFewest = sh;
+        }
+        if (m.starter === pid) {
+          s.cpuStartG++;
+          if (w) s.cpuStartW++;
+        }
+      } else if (m.solo === "jagd") {
+        const sc = +m.score || 0;
+        s.jagdG++;
+        s.jagdScores.push(sc);
+        if (m.daily) s.dailyG++;
+        if (s.jagdBest == null || sc > s.jagdBest) {
+          s.jagdBest = sc;
+          s.jagdBestMoves = +m.moves || 0;
+          s.jagdBestBoard = boardTxt(boardOf(m));
+        }
+        if (s.jagdMoves == null || +m.moves < s.jagdMoves) s.jagdMoves = +m.moves;
+      } else if (m.solo === "wellen") {
+        const n = +m.ships || 0, wv = (+m.waves || 0) + 1;
+        s.wellenG++;
+        s.wellenAll.push(n);
+        if (s.wellenShips == null || n > s.wellenShips || n === s.wellenShips && wv > s.wellenWave) {
+          s.wellenShips = n;
+          s.wellenWave = wv;
+        }
+      }
+    }
+    for (const d of dailyTable(ms)) for (const r of d.rows) if (r.best && map.has(r.pid)) map.get(r.pid).dailyWins++;
+    const avg = (a) => a.length ? a.reduce((x, y) => x + y, 0) / a.length : null;
+    for (const s of map.values()) {
+      Object.assign(s, {
+        player: { id: s.id, name: s.name },
+        cpuRate: s.cpuG ? s.cpuW / s.cpuG : null,
+        schwerW: s.lv.schwer.w,
+        soloAcc: s.shots ? s.hits / s.shots : null,
+        jagdAvg: avg(s.jagdScores),
+        wellenAvg: avg(s.wellenAll)
+      });
+      for (const [k] of LEVELS) s[`lv_${k}`] = s.lv[k].g ? s.lv[k].w / s.lv[k].g : null;
+    }
+    return [...map.values()];
+  }
+  var wl = (o) => o.g ? `${o.w}<small class="muted">/${o.g}</small>` : '<span class="muted">\u2013</span>';
+  function levelTable(st) {
+    const rows = st.filter((s) => s.cpuG).sort((a, b) => b.cpuW - a.cpuW || b.cpuRate - a.cpuRate);
+    if (!rows.length) return '<p class="empty">Noch keine Partie gegen den Computer.</p>';
+    return `<div class="table-wrap"><table class="lb"><thead><tr><th class="l">Spieler</th>${LEVELS.map(([, n]) => `<th>${n}</th>`).join("")}<th>Quote</th></tr></thead><tbody>
+    ${rows.map((s) => `<tr><td class="l">${g.avatar(s.player, "mini")}<span class="nm">${esc(s.name)}</span></td>${LEVELS.map(([k]) => `<td>${wl(s.lv[k])}</td>`).join("")}<td>${fmtPct(s.cpuRate)}</td></tr>`).join("")}</tbody></table></div>
+    <p class="hint">Siege / Partien je Stufe.</p>`;
+  }
+  function dailyBlock(ms, max = 5) {
+    const days = dailyTable(ms).slice(0, max);
+    if (!days.length) return '<p class="empty">Noch keine Tagesmission gespielt.</p>';
+    return `<ul class="sv-days">${days.map((d) => `<li><span class="sv-day">${fmtDate(d.date)}</span><span class="sv-dayrows">${d.rows.map((r) => `<span class="sv-dr ${r.best ? "best" : ""}">${g.avatar({ id: r.pid, name: r.name }, "mini")}<span class="nm">${esc(r.name)}</span><b>${r.score}</b><small>${plural(r.moves, "Zug", "Z\xFCge")}</small></span>`).join("")}</span></li>`).join("")}</ul>
+    <p class="hint">Alle spielen am selben Tag dasselbe R\xE4tsel. Punkte: 100 = so gut wie blind geschossen, mehr ist besser.</p>`;
+  }
+  function soloLine(m) {
+    const pid = m.players[0], nm = playerName(pid, m), sh = +m.shots?.[pid] || 0;
+    const who2 = `<span class="who">${g.avatar({ id: pid, name: nm }, "mini")}${esc(nm)}</span>`;
+    const acc = sh && m.hits != null ? `<small class="muted">${fmtPct(m.hits / sh)} Treffer</small>` : "";
+    let head, res;
+    if (m.solo === "cpu") {
+      const win = m.result === "win";
+      head = `Gegen den Computer \xB7 ${levelName(m.level)}`;
+      res = `<b class="${win ? "sv-ok" : "sv-bad"}">${win ? "Sieg" : "Niederlage"}${m.resigned ? " (aufgegeben)" : ""}</b><small class="muted">${countSunk(m, pid)}:${m.lost ?? "\u2013"} Schiffe</small>`;
+    } else if (m.solo === "jagd") {
+      head = m.daily ? m.daily === m.date ? "Tagesmission" : `Tagesmission vom ${fmtDate(m.daily)}` : `Flottenjagd \xB7 ${boardTxt(boardOf(m))}`;
+      res = `<b>${m.score} Punkte</b><small class="muted">${plural(+m.moves || 0, "Zug", "Z\xFCge")}${m.penalties ? ` (+${m.penalties} Strafe)` : ""}</small>`;
+    } else {
+      head = "Letzte Granate";
+      res = `<b>${plural(+m.ships || 0, "Schiff", "Schiffe")}</b><small class="muted">bis Welle ${(+m.waves || 0) + 1}${m.crates ? ` \xB7 ${plural(m.crates, "Kiste", "Kisten")}` : ""}</small>`;
+    }
+    const v = m.solo !== "wellen" && !m.daily && m.variant ? ` \xB7 ${VARIANT_NAME[m.variant] || m.variant}` : "";
+    return `<div class="mini-hist sv-solo"><span class="hist-date">${fmtDate(m.date)} \xB7 ${head}${v}</span><div class="sv-srow">${who2}<span class="sv-res">${res}${acc}</span></div></div>`;
+  }
+  var tileOf = (st) => (title, key, fmt, opts = {}) => {
+    const r = top(st, key, opts);
+    return statTile(title, r ? fmt(r.value) : "\u2013", r ? whoList(g, r.who) : '<span class="muted">noch niemand</span>', typeof opts.note === "function" ? r ? opts.note(r) : "" : opts.note || "");
+  };
+  var ONLINE_TXT = "Zwei Handys, zwei Flotten \u2013 auch aus verschiedenen St\xE4dten. Oder allein gegen den Computer, Flottenjagd, Tagesmission und Letzte Granate. Die Ergebnisse landen automatisch hier.";
   function dashboard2(el, ctx) {
-    const ms = list(), st = stats(ms);
-    if (!ms.length) {
-      el.innerHTML = `<div class="empty-state panel"><p>Noch keine Seeschlacht eingetragen.</p><button class="btn btn-primary" type="button" data-new>Partie eintragen</button></div>`;
+    if (!all().length) {
+      el.innerHTML = `<div class="empty-state panel"><p>Noch keine Seeschlacht eingetragen.</p><button class="btn btn-primary" type="button" data-new>Partie eintragen</button></div>${onlinePanel(ONLINE_TXT)}`;
       $("[data-new]", el).onclick = () => ctx.go("neu");
       return;
     }
-    const T = (title, key, fmt, opts = {}) => {
-      const r = top(st, key, opts);
-      return statTile(title, r ? fmt(r.value) : "\u2013", r ? whoList(g, r.who) : '<span class="muted">noch niemand</span>', typeof opts.note === "function" ? r ? opts.note(r) : "" : opts.note || "");
-    };
+    withFilters(el, ctx, { duell: duelDashboard, solo: soloDashboard });
+  }
+  function duelDashboard(el, ctx) {
+    const ms = list(), st = stats(ms);
+    if (!ms.length) {
+      el.innerHTML = `<div class="empty-state panel"><p>Keine Duelle${view2.variant !== "all" ? " in dieser Auswahl" : ""}.</p><button class="btn btn-primary" type="button" data-new>Partie eintragen</button> ${onlineLink()}</div>`;
+      $("[data-new]", el).onclick = () => ctx.go("neu");
+      return;
+    }
+    const T = tileOf(st);
     const tiles = [
       T("Meiste Siege", "wins", (v) => v),
       T("Beste Siegquote", "rate", fmtPct, { min: 3, note: "ab 3 Partien" }),
@@ -2366,15 +2544,40 @@
     ];
     const starts = ms.filter((m) => m.starter && m.winners?.length);
     const startRate = starts.length ? starts.filter((m) => m.winners.includes(m.starter)).length / starts.length : null;
+    const online = ms.filter((m) => m.online).length;
     const recent = [...ms].reverse().slice(0, 3);
     el.innerHTML = `<div class="stats-grid">${tiles.join("")}</div>
     ${startRate != null ? `<section class="panel first"><h2 class="panel-title">Lohnt sich der erste Schuss?</h2><p class="big-q"><b>${fmtPct(startRate)}</b> der Partien gewinnt, wer anf\xE4ngt <span class="muted">(${plural(starts.length, "Partie", "Partien")})</span></p></section>` : ""}
-    <section class="panel"><h2 class="panel-title">Zuletzt</h2>${recent.map(line).join("")}<button class="btn btn-ghost wide" type="button" data-all>Alle Partien</button></section>`;
+    <section class="panel"><h2 class="panel-title">Zuletzt</h2><p class="hint sv-split">${plural(ms.length, "Duell", "Duelle")} \xB7 ${online} online \xB7 ${ms.length - online} am Brett</p>${recent.map(line).join("")}<button class="btn btn-ghost wide" type="button" data-all>Alle Partien</button></section>`;
+    $("[data-all]", el).onclick = () => ctx.go("verlauf");
+  }
+  function soloDashboard(el, ctx) {
+    const ms = soloList();
+    if (!ms.length) {
+      el.innerHTML = `<div class="empty-state panel"><p>Noch keine Einzelspieler-Ergebnisse${view2.variant !== "all" ? " in dieser Auswahl" : ""}.</p><p class="hint">Gegen den Computer, Flottenjagd, Tagesmission und Letzte Granate spielt man im Online-Spiel \u2013 die Ergebnisse landen automatisch hier.</p>${onlineLink()}</div>`;
+      return;
+    }
+    const st = soloStats(ms), T = tileOf(st);
+    const tiles = [
+      T("Siege gegen den Computer", "cpuW", (v) => v, { filter: (s) => s.cpuG > 0 }),
+      T("Beste Quote gegen den Computer", "cpuRate", fmtPct, { filter: (s) => s.cpuG >= 3, note: "ab 3 Partien" }),
+      T("Bezwinger von \u201ESchwer\u201C", "schwerW", (v) => `${v}\xD7`, { filter: (s) => s.schwerW > 0, note: "Siege auf der schwersten Stufe" }),
+      T("Beste Flottenjagd", "jagdBest", (v) => `${v} Punkte`, { filter: (s) => s.jagdG > 0, note: (r) => r.who.length === 1 ? `${plural(r.who[0].jagdBestMoves, "Zug", "Z\xFCge")} auf ${r.who[0].jagdBestBoard}` : "" }),
+      T("Tagessiege", "dailyWins", (v) => `${v}\xD7`, { filter: (s) => s.dailyWins > 0, note: "beste Tagesmission des Tages" }),
+      T("Rekord Letzte Granate", "wellenShips", (v) => plural(v, "Schiff", "Schiffe"), { filter: (s) => s.wellenG > 0, note: (r) => r.who.length === 1 ? `bis Welle ${r.who[0].wellenWave}` : "" }),
+      T("Treffsicherste Hand", "soloAcc", fmtPct, { filter: (s) => s.shots >= 30, note: "Treffer pro Schuss, alle Einzelspiele" }),
+      T("Flei\xDFigster Kapit\xE4n", "games", (v) => plural(v, "Spiel", "Spiele"), { note: "Einzelspiele insgesamt" })
+    ];
+    const recent = [...ms].reverse().slice(0, 4);
+    el.innerHTML = `<div class="stats-grid">${tiles.join("")}</div>
+    <section class="panel"><h2 class="panel-title">Tagesmission</h2>${dailyBlock(ms, 3)}</section>
+    <section class="panel"><h2 class="panel-title">Gegen den Computer</h2>${levelTable(st)}</section>
+    <section class="panel"><h2 class="panel-title">Zuletzt</h2>${recent.map(soloLine).join("")}<button class="btn btn-ghost wide" type="button" data-all>Alle Ergebnisse</button></section>`;
     $("[data-all]", el).onclick = () => ctx.go("verlauf");
   }
   function line(m) {
     const f = fleetOf(m), opp = m.players.length - 1, total = fleetCount(f) * opp;
-    return `<div class="mini-hist sv-line"><span class="hist-date">${fmtDate(m.date)} \xB7 ${boardTxt(boardOf(m))} \xB7 ${plural(fleetCount(f), "Schiff", "Schiffe")}</span>
+    return `<div class="mini-hist sv-line"><span class="hist-date">${fmtDate(m.date)} \xB7 ${boardTxt(boardOf(m))} \xB7 ${plural(fleetCount(f), "Schiff", "Schiffe")}${m.online ? ` \xB7 <span class="sv-tag">Online${m.variant === "faehigkeiten" ? " \xB7 F\xE4higkeiten" : ""}</span>` : ""}</span>
     ${[...m.players].sort((a, b) => countSunk(m, b) - countSunk(m, a)).map((p) => `<div class="sv-row ${m.winners?.includes(p) ? "win" : ""}">
       <span class="who">${g.avatar({ id: p, name: playerName(p, m) }, "mini")}${esc(playerName(p, m))}</span>
       <span class="sv-mini">${SHIPS.flatMap((sh) => Array.from({ length: (+f[sh.k] || 0) * opp }, (_, i) => `<i class="${i < (sunkOf(m, p)[sh.k] || 0) ? "hit" : ""}" style="--l:${sh.len}" title="${esc(sh.n)}"></i>`)).join("")}</span>
@@ -2400,10 +2603,11 @@
       winner: e ? e.winners?.length ? e.winners[0] : "none" : null,
       winnerTouched: !!e
     };
-    if (!e) SHIPS.forEach((sh) => {
-      S.fleet[sh.k] = +base.fleet[sh.k] || 0;
+    SHIPS.forEach((sh) => {
+      S.fleet[sh.k] = +normSunk(base.fleet)[sh.k] || 0;
     });
-    el.innerHTML = `<section class="panel"><div class="setup-grid">
+    el.innerHTML = `${e?.online ? `<p class="notice sv-note">Diese Partie wurde online gespielt. \xC4nderungen hier \xFCberschreiben das Ergebnis aus dem Online-Spiel.</p>` : e ? "" : `<section class="panel sv-onl sm"><p>Online-Duelle und Einzelspiele tr\xE4gt das <b>Online-Spiel</b> automatisch ein. Hier nur Partien am echten Spielbrett eintragen.</p></section>`}
+    <section class="panel"><div class="setup-grid">
       <label class="field"><span>Gespielt am</span><input type="date" id="vDate" value="${S.date}"></label>
       <div><span class="field-label">Spielfeld</span>
         <div class="sv-size"><input type="number" inputmode="numeric" min="4" max="30" id="vW" value="${S.w}" aria-label="Breite"><span>\xD7</span><input type="number" inputmode="numeric" min="4" max="30" id="vH" value="${S.h}" aria-label="H\xF6he"></div>
@@ -2556,7 +2760,9 @@
         winners,
         ...Object.keys(shots).length ? { shots } : {},
         ...S.starter && P.includes(S.starter) ? { starter: S.starter } : {},
-        tags: [`${S.w}\xD7${S.h}`, plural(fleetCount(fleet), "Schiff", "Schiffe"), ...winners.length ? [] : ["abgebrochen"]]
+        ...e?.online ? { online: true } : {},
+        ...e?.variant ? { variant: e.variant } : {},
+        tags: [`${S.w}\xD7${S.h}`, plural(fleetCount(fleet), "Schiff", "Schiffe"), ...e?.variant ? [VARIANT_NAME[e.variant] || e.variant] : [], ...e?.online ? ["Online"] : [], ...e?.tags?.includes("aufgegeben") ? ["aufgegeben"] : [], ...winners.length ? [] : ["abgebrochen"]]
       };
       try {
         await saveMatch(m);
@@ -2569,9 +2775,16 @@
     };
   }
   function statistik2(el, ctx) {
+    if (!all().length) {
+      el.innerHTML = '<div class="empty-state panel"><p>Noch keine Partien.</p></div>';
+      return;
+    }
+    withFilters(el, ctx, { duell: duelStatistik, solo: soloStatistik });
+  }
+  function duelStatistik(el, ctx) {
     const ms = list(), st = stats(ms);
     if (!ms.length) {
-      el.innerHTML = '<div class="empty-state panel"><p>Noch keine Partien.</p></div>';
+      el.innerHTML = '<div class="empty-state panel"><p>Keine Duelle in dieser Auswahl.</p></div>';
       return;
     }
     const cols = [
@@ -2604,11 +2817,42 @@
     <section class="panel">${details("Mehr Statistiken", more)}</section>`;
     h2hBlock($("#h2h", el), g, ms);
   }
+  function soloStatistik(el, ctx) {
+    const ms = soloList(), st = soloStats(ms);
+    if (!ms.length) {
+      el.innerHTML = `<div class="empty-state panel"><p>Noch keine Einzelspieler-Ergebnisse.</p>${onlineLink()}</div>`;
+      return;
+    }
+    const bar = (rows, key, opts = {}, note) => barChart(rows.filter((s) => s[key] != null).sort((a, b) => opts.low ? a[key] - b[key] : b[key] - a[key]).map((s) => ({ label: s.name, value: opts.pct ? s[key] * 100 : s[key], icon: g.avatar(s.player, "mini"), color: g.colorOf(s.id), note: note ? note(s) : "" })), opts.pct ? { unit: " %", digits: 0, max: 100 } : { digits: opts.digits ?? 0 });
+    const cpu = st.filter((s) => s.cpuG), jagd = st.filter((s) => s.jagdG), wel = st.filter((s) => s.wellenG);
+    const cpuMs = ms.filter((m) => m.solo === "cpu");
+    const lvRows = LEVELS.map(([k, n]) => {
+      const x = cpuMs.filter((m) => (m.level || "mittel") === k);
+      return { k, n, g: x.length, w: x.filter((m) => m.result === "win").length };
+    }).filter((r) => r.g);
+    const meStart = cpuMs.filter((m) => m.starter && m.starter !== "cpu"), cpuStart = cpuMs.filter((m) => m.starter === "cpu");
+    const rate = (a) => a.length ? fmtPct(a.filter((m) => m.result === "win").length / a.length) : "\u2013";
+    const more = `
+    <h3 class="sub-h">Siegquote je Stufe (alle zusammen)</h3>${lvRows.length ? barChart(lvRows.map((r) => ({ label: r.n, value: r.w / r.g * 100, note: `${r.w} von ${r.g}` })), { unit: " %", digits: 0, max: 100 }) : '<p class="empty">Noch keine Partie gegen den Computer.</p>'}
+    ${cpuMs.length ? `<h3 class="sub-h">Lohnt sich der erste Schuss gegen den Computer?</h3><p class="big-q">Selbst angefangen: <b>${rate(meStart)}</b> Siege <span class="muted">(${meStart.length})</span> \xB7 Computer f\xE4ngt an: <b>${rate(cpuStart)}</b> <span class="muted">(${cpuStart.length})</span></p>` : ""}
+    <h3 class="sub-h">Wenigste Sch\xFCsse bis zum Sieg gegen den Computer</h3>${bar(cpu, "cpuFewest", { low: true })}
+    <h3 class="sub-h">Treffsicherheit (alle Einzelspiele)</h3>${bar(st.filter((s) => s.shots), "soloAcc", { pct: true }, (s) => `${s.shots} Sch\xFCsse`)}
+    <h3 class="sub-h">Tagesmission \u2013 letzte 14 Tage</h3>${dailyBlock(ms, 14)}`;
+    el.innerHTML = `
+    <section class="panel"><h2 class="panel-title">Gegen den Computer</h2>${levelTable(st)}</section>
+    <section class="panel"><h2 class="panel-title">Flottenjagd</h2>${jagd.length ? leaderboard(g, jagd, [{ key: "jagdG", label: "Spiele" }, { key: "jagdBest", label: "Best" }, { key: "jagdAvg", label: "\xD8", fmt: (v) => fmtNum(v, 0) }, { key: "jagdMoves", label: "Min. Z\xFCge" }, { key: "dailyWins", label: "Tages\xADsiege" }], { sort: "jagdBest" }) : '<p class="empty">Noch keine Flottenjagd.</p>'}<p class="hint">Flottenjagd: die versteckte Flotte mit m\xF6glichst wenigen Z\xFCgen finden. Punkte: 100 = so gut wie blind geschossen, mehr ist besser \u2013 so lassen sich verschiedene Spielfelder vergleichen. Best = bester Wert, \xD8 = Durchschnitt.</p></section>
+    <section class="panel"><h2 class="panel-title">Letzte Granate</h2>${wel.length ? leaderboard(g, wel, [{ key: "wellenG", label: "Spiele" }, { key: "wellenShips", label: "Rekord" }, { key: "wellenWave", label: "Welle" }, { key: "wellenAvg", label: "\xD8", fmt: (v) => fmtNum(v, 1) }], { sort: "wellenShips" }) : '<p class="empty">Noch keine Partie Letzte Granate.</p>'}<p class="hint">Rekord = meiste versenkte Schiffe in einer Partie, Welle = bis zu welcher Welle es dabei ging.</p></section>
+    <section class="panel">${details("Mehr Statistiken", more)}</section>`;
+  }
   function verlauf2(el, ctx) {
-    historyList(el, ctx, { matches: list(), line: (m) => line(m) + `<p class="others">Flotte: ${esc(fleetTxt(fleetOf(m)))}</p>` + (m.shots ? `<p class="others">Sch\xFCsse: ${Object.entries(m.shots).map(([p, n]) => `${esc(playerName(p, m))} ${n}`).join(" \xB7 ")}</p>` : ""), onEdit: (m) => {
-      editing2 = m;
-      ctx.go("neu");
-    } });
+    if (!all().length) return historyList(el, ctx, { matches: [], line });
+    withFilters(el, ctx, {
+      duell: (b) => historyList(b, ctx, { matches: list(), line: (m) => line(m) + `<p class="others">Flotte: ${esc(fleetTxt(fleetOf(m)))}</p>` + (m.shots ? `<p class="others">Sch\xFCsse: ${Object.entries(m.shots).map(([p, n]) => `${esc(playerName(p, m))} ${n}`).join(" \xB7 ")}</p>` : ""), onEdit: (m) => {
+        editing2 = m;
+        ctx.go("neu");
+      } }),
+      solo: (b) => historyList(b, ctx, { matches: soloList(), line: soloLine, empty: `<div class="empty-state panel"><p>Noch keine Einzelspieler-Ergebnisse.</p>${onlineLink()}</div>` })
+    });
   }
   g.tabs = { dashboard: dashboard2, neu, statistik: statistik2, verlauf: verlauf2 };
   var schiffe_default = g;
@@ -2774,7 +3018,7 @@
 
   // js/app.js
   var app;
-  var APP_VERSION = "1.9";
+  var APP_VERSION = "2.0";
   var TABS = [["dashboard", "Dashboard"], ["neu", "Neues Spiel"], ["statistik", "Statistik"], ["verlauf", "Verlauf"]];
   var current = null;
   function parse() {
