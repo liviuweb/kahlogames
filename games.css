@@ -678,3 +678,14 @@ body.theme-ligretto {
 .dh-bar.s7 { background: var(--accent); }
 .dh-exp { position: absolute; left: -2px; right: -2px; height: 0; border-top: 2.5px dashed var(--ink); opacity: .7; }
 .dh-col b { font: 700 13px/1 var(--num); font-variant-numeric: tabular-nums; }
+.ct-modes { margin-bottom: 10px; }
+.ct-modes + .filters { margin-top: 0; }
+.ct-solo-line { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.ct-solo-line .who { font-weight: 700; }
+.ct-res { font-size: 12.5px; font-weight: 800; padding: 3px 9px; border-radius: 999px; }
+.ct-res.win { background: #2E8B57; color: #fff; }
+.ct-res.loss { background: color-mix(in srgb, var(--ink) 14%, var(--card)); color: var(--ink); }
+.ct-solo-pl { margin-left: auto; color: var(--muted); font-size: 14px; }
+.ct-solo-pl b { color: var(--ink); font-size: 16px; }
+.ct-bots small { opacity: .8; }
+.ct-modes { grid-template-columns: 1fr !important; }

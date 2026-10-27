@@ -2056,15 +2056,22 @@
     const vName = (k) => (def.variants || []).find(([v]) => v === k)?.[1] || "";
     const awardsOf = (v) => def.awards?.[v] || [];
     view3.src = "all";
-    const filterBar3 = () => def.variants || def.sources ? `<div class="filters">${def.variants ? seg("variant", [["all", "Alle"], ...def.variants], view3.variant) : ""}${def.sources ? seg("src", def.sources, view3.src) : ""}</div>` : "";
-    const bind = (el, redraw) => $$('[data-seg="variant"], [data-seg="src"]', el).forEach((s) => s.addEventListener("click", (e) => {
+    view3.mode = def.modes ? def.modes[0][0] : null;
+    const soloMode = () => !!def.modes && view3.mode === "solo";
+    const modeBar = () => def.modes ? `<div class="filters ct-modes">${seg("mode", def.modes, view3.mode, "seg-big")}</div>` : "";
+    const filterBar3 = () => {
+      const parts = [!soloMode() && def.variants ? seg("variant", [["all", "Alle"], ...def.variants], view3.variant) : "", !soloMode() && def.sources ? seg("src", def.sources, view3.src) : ""].filter(Boolean);
+      return modeBar() + (parts.length ? `<div class="filters">${parts.join("")}</div>` : "");
+    };
+    const bind = (el, redraw) => $$('[data-seg="variant"], [data-seg="src"], [data-seg="mode"]', el).forEach((s) => s.addEventListener("click", (e) => {
       const b = e.target.closest("button");
       if (b) {
-        view3[s.dataset.seg === "src" ? "src" : "variant"] = b.dataset.v;
+        view3[s.dataset.seg] = b.dataset.v;
         redraw();
       }
     }));
-    const list2 = () => matchesOf(def.id, (m) => (view3.variant === "all" || m.variant === view3.variant) && (!def.sourceOf || view3.src === "all" || def.sourceOf(m) === view3.src));
+    const soloApi = (el, again) => ({ bar: filterBar3(), modeBar: modeBar(), bind: (e2, r) => bind(e2, r), again });
+    const list2 = () => matchesOf(def.id, (m) => (!def.isSolo || !def.isSolo(m)) && (view3.variant === "all" || m.variant === view3.variant) && (!def.sourceOf || view3.src === "all" || def.sourceOf(m) === view3.src));
     const unit = def.unit || "Punkte";
     const theme = (v) => {
       if (def.variantTheme) {
@@ -2085,6 +2092,7 @@
       return st;
     }
     function dashboard3(el, ctx) {
+      if (soloMode()) return def.solo.dashboard(el, ctx, soloApi(el, () => dashboard3(el, ctx)));
       theme(view3.variant);
       const ms = list2(), st = stats2(ms);
       if (!ms.length) {
@@ -2240,6 +2248,7 @@
       };
     }
     function statistik3(el, ctx) {
+      if (soloMode()) return def.solo.statistik(el, ctx, soloApi(el, () => statistik3(el, ctx)));
       theme(view3.variant);
       const ms = list2(), st = stats2(ms);
       if (!ms.length) {
@@ -2278,8 +2287,15 @@
       }).join("")}</tr>`).join("")}</tbody></table></div>`;
     }
     function verlauf3(el, ctx) {
+      if (soloMode()) return def.solo.verlauf(el, ctx, soloApi(el, () => verlauf3(el, ctx)));
       theme(view3.variant);
-      historyList(el, ctx, { matches: matchesOf(def.id), line: (m) => rankedLine(g2, m) + (def.lineExtra ? def.lineExtra(m) : "") + (m.awards ? `<p class="others">${Object.entries(m.awards).map(([a, p]) => `${esc(a)}: <b>${esc(playerName(p, m))}</b>`).join(" \xB7 ")}</p>` : ""), onEdit: (m) => {
+      if (def.modes) {
+        const outer = el;
+        outer.innerHTML = `${modeBar()}<div data-h></div>`;
+        bind(outer, () => verlauf3(outer, ctx));
+        el = $("[data-h]", outer);
+      }
+      historyList(el, ctx, { matches: matchesOf(def.id, (m) => !def.isSolo || !def.isSolo(m)), line: (m) => rankedLine(g2, m) + (def.lineExtra ? def.lineExtra(m) : "") + (m.awards ? `<p class="others">${Object.entries(m.awards).map(([a, p]) => `${esc(a)}: <b>${esc(playerName(p, m))}</b>`).join(" \xB7 ")}</p>` : ""), onEdit: (m) => {
         editing3 = m;
         ctx.go("neu");
       } });
@@ -2375,7 +2391,122 @@
     <div class="dice-hist">${ks.map((k) => `<div class="dh-col" data-tip="<b>${k}</b><br>${d[k]}\xD7 (${fmtPct(d[k] / total)})<br>erwartet ${fmtPct(exp(k))}"><span class="dh-track"><span class="dh-bar ${k === 7 ? "s7" : ""}" style="height:${d[k] / total / max * 100}%"></span><i class="dh-exp" style="bottom:${exp(k) / max * 100}%"></i></span><b>${k}</b></div>`).join("")}</div>
     <p class="hint">Balken: so oft fiel die Zahl. Strich: so oft f\xE4llt sie im Schnitt. Die 7 kam ${fmtPct(seven)} statt ${fmtPct(1 / 6)}.</p>`;
   }
+  var KC_LEVEL = { leicht: "Leicht", mittel: "Mittel", schwer: "Schwer" };
+  var KC_ED = { seefahrer: "Seefahrer", staedte: "St\xE4dte & Ritter", haendler: "H\xE4ndler & Barbaren", piraten: "Piraten & Entdecker", raumfahrer: "Raumfahrer" };
+  var kcLV_KEYS = [["leicht", "Leicht"], ["mittel", "Mittel"], ["schwer", "Schwer"], ["gemischt", "Gemischt"]];
+  var kcIsSoloCat = (m) => m?.mode === "solo";
+  var kcSoloMe = (m) => m.players?.[0];
+  var kcSoloWon = (m) => m.result ? m.result === "win" : (m.winners || []).includes(kcSoloMe(m));
+  var kcLvList = (m) => String(m.level || "").split("/").filter(Boolean);
+  var kcLvKey = (m) => {
+    const l = kcLvList(m);
+    return l.length === 1 ? l[0] : l.length ? "gemischt" : "mittel";
+  };
+  var kcLvTxt = (m) => kcLvList(m).map((k) => KC_LEVEL[k] || k).join(" & ") || "–";
+  var kcSoloSeats = (m) => m.kahlo?.mitspieler?.length || (+m.computer || 0) + 1;
+  var kcSoloList = () => matchesOf("catan", kcIsSoloCat);
+  function kcSoloStats(ms) {
+    const st = perPlayer(ms);
+    for (const s of st) {
+      const lv = Object.fromEntries(kcLV_KEYS.map(([k]) => [k, { g: 0, w: 0 }]));
+      let fast = null, hard = 0, pl = [], opp = 0;
+      for (const { m } of s.results) {
+        const w = kcSoloWon(m), k = kcLvKey(m), r = kcNum(m.kahlo?.runden);
+        (lv[k] || lv.gemischt).g++;
+        if (w) (lv[k] || lv.gemischt).w++;
+        if (w && r != null) fast = fast == null ? r : Math.min(fast, r);
+        if (w && kcLvList(m).includes("schwer")) hard++;
+        if (m.places?.[s.id] != null) pl.push(+m.places[s.id]);
+        opp += kcSoloSeats(m) - 1;
+      }
+      Object.assign(s, { player: { id: s.id, name: s.name }, lv, fastWin: fast, hardWins: hard, avgPlace: pl.length ? kcAvg(pl) : null, avgOpp: s.games ? opp / s.games : null });
+    }
+    return st;
+  }
+  function kcSoloLine(m) {
+    const me = kcSoloMe(m), w = kcSoloWon(m), n = kcSoloSeats(m);
+    return `<div class="ct-solo-line"><span class="who">${catan_default.avatar({ id: me, name: playerName(me, m) }, "mini")}${esc(playerName(me, m))}</span><span class="ct-res ${w ? "win" : "loss"}">${w ? "Sieg" : "Niederlage"}</span><span class="ct-solo-pl">Platz ${m.places?.[me] ?? "–"} von ${n} \xB7 <b>${m.totals?.[me] ?? "–"}</b> SP</span></div>
+    <p class="others">gegen ${plural(n - 1, "Computer", "Computer")} \xB7 ${esc(kcLvTxt(m))}</p>${CATAN_HOOKS.lineExtra(m)}`;
+  }
+  var kcSoloEmpty = (msg) => `<div class="empty-state panel"><p>${msg}</p><p class="hint">In Kahlo-Catan „Gegen den Computer“ spielen – die Ergebnisse landen automatisch hier.</p>${ctLink("Zum Online-Spiel")}</div>`;
+  function kcSoloDash(el, ctx, api) {
+    document.body.dataset.variant && delete document.body.dataset.variant;
+    const ms = kcSoloList();
+    if (!ms.length) {
+      el.innerHTML = `${api.bar}${rulesPanel(catan_default, "normal")}${kcSoloEmpty("Noch keine Einzelspieler-Partie gegen den Computer.")}`;
+      return api.bind(el, api.again);
+    }
+    const st = kcSoloStats(ms);
+    const T = (title, key, fmt, opts = {}) => {
+      const r = top(st, key, opts);
+      return statTile(title, r ? fmt(r.value) : "–", r ? whoList(catan_default, r.who) : '<span class="muted">noch niemand</span>', opts.note || "");
+    };
+    const tiles = [
+      T("Meiste Siege", "wins", (v) => v, { note: "gegen den Computer" }),
+      T("Beste Siegquote", "rate", fmtPct, { min: 3, note: "ab 3 Partien" }),
+      T("Siege auf Schwer", "hardWins", (v) => `${v}\xD7`, { filter: (s) => s.hardWins > 0, note: "gegen schwere Computer" }),
+      T("Schnellster Sieg", "fastWin", (v) => plural(v, "Runde", "Runden"), { low: true, filter: (s) => s.fastWin != null }),
+      T("Bester \xD8-Platz", "avgPlace", (v) => fmtNum(v), { low: true, min: 3, note: "ab 3 Partien" }),
+      T("Meiste Partien", "games", (v) => v)
+    ];
+    const wins = ms.filter(kcSoloWon).length;
+    const recent = [...ms].reverse().slice(0, 4);
+    el.innerHTML = `${api.bar}${rulesPanel(catan_default, "normal")}<div class="stats-grid">${tiles.join("")}</div>
+      <section class="panel"><div class="ct-kc-head"><h2 class="panel-title">Mensch gegen Maschine</h2>${ctLink("Online spielen", "sm")}</div>
+      <p class="big-q"><b>${fmtPct(wins / ms.length)}</b> der ${plural(ms.length, "Partie", "Partien")} gegen den Computer gewonnen</p>
+      ${kcLevelTable(st, ms)}</section>
+      <section class="panel"><h2 class="panel-title">Zuletzt gespielt</h2>${recent.map((m) => `<div class="mini-hist"><span class="hist-date">${fmtDate(m.date)}</span>${kcSoloLine(m)}</div>`).join("")}
+      <button class="btn btn-ghost wide" type="button" data-all>Alle Partien</button></section>`;
+    $("[data-all]", el).onclick = () => ctx.go("verlauf");
+    api.bind(el, api.again);
+  }
+  function kcLevelTable(st, ms) {
+    const used = kcLV_KEYS.filter(([k]) => ms.some((m) => kcLvKey(m) === k));
+    return `<h3 class="sub-h">Siege je Computer-Stufe</h3><div class="table-wrap"><table class="lb"><thead><tr><th class="l">Spieler</th>${used.map(([, n]) => `<th>${n}</th>`).join("")}</tr></thead><tbody>
+      ${st.map((s) => `<tr><td class="l">${catan_default.avatar(s, "mini")}<span class="nm">${esc(s.name)}</span></td>${used.map(([k]) => `<td>${s.lv[k].g ? `${s.lv[k].w}<small> / ${s.lv[k].g}</small>` : "–"}</td>`).join("")}</tr>`).join("")}</tbody></table></div><p class="hint">Siege / Partien. „Gemischt“ hei\xDFt: Computer verschiedener Stufen in einer Partie.</p>`;
+  }
+  function kcSoloStat(el, ctx, api) {
+    document.body.dataset.variant && delete document.body.dataset.variant;
+    const ms = kcSoloList();
+    if (!ms.length) {
+      el.innerHTML = `${api.bar}${kcSoloEmpty("Noch keine Einzelspieler-Partien.")}`;
+      return api.bind(el, api.again);
+    }
+    const st = kcSoloStats(ms);
+    const num = (v) => v == null ? "–" : fmtNum(v);
+    const cols = [{ key: "games", label: "Partien" }, { key: "wins", label: "Siege" }, { key: "rate", label: "Quote", fmt: fmtPct }, { key: "avgPlace", label: "\xD8 Platz", fmt: num }, { key: "avg", label: "\xD8 SP", fmt: num }, { key: "best", label: "Rekord", fmt: num }];
+    const bars = (list2, val, o = {}) => barChart(list2.map((s) => ({ label: s.name, value: val(s), icon: catan_default.avatar(s, "mini"), color: catan_default.colorOf(s.id), note: o.note ? o.note(s) : "" })), { digits: o.digits ?? 1, unit: o.unit || "", max: o.max });
+    const lvAll = kcLV_KEYS.map(([k, n]) => {
+      const mm = ms.filter((m) => kcLvKey(m) === k);
+      return { label: n, g: mm.length, w: mm.filter(kcSoloWon).length };
+    }).filter((x) => x.g);
+    const more = `
+      <h3 class="sub-h">Siegquote je Stufe (alle Spieler)</h3>${barChart(lvAll.map((x) => ({ label: x.label, value: x.w / x.g * 100, note: `${x.w} von ${x.g}`, color: "#B5371F" })), { unit: " %", digits: 0, max: 100 })}
+      ${kcLevelTable(st, ms)}
+      <h3 class="sub-h">Siegpunkte im Verlauf</h3>${trendChart(catan_default, ms, (m, id) => m.totals?.[id], { colors: (id) => catan_default.colorOf(id), label: "Siegpunkte" })}
+      ${st.some((s) => s.fastWin != null) ? `<h3 class="sub-h">Schnellster Sieg (Runden)</h3>${bars(st.filter((s) => s.fastWin != null).sort((a, b) => a.fastWin - b.fastWin), (s) => s.fastWin, { digits: 0, note: () => "weniger ist besser" })}` : ""}
+      <h3 class="sub-h">\xD8 Platz</h3>${bars(st.filter((s) => s.avgPlace != null).sort((a, b) => a.avgPlace - b.avgPlace), (s) => s.avgPlace, { note: (s) => `\xD8 ${fmtNum(s.avgOpp)} Computer` })}
+      <h3 class="sub-h">L\xE4ngste Siegesserie</h3>${bars(st.filter((s) => s.streak).sort((a, b) => b.streak - a.streak), (s) => s.streak, { digits: 0, note: (s) => s.current ? `aktuell ${s.current}` : "" })}
+      ${diceHist(kcDice(ms))}`;
+    el.innerHTML = `${api.bar}<section class="panel"><h2 class="panel-title">Rangliste gegen den Computer</h2>${leaderboard(catan_default, st, cols)}<p class="hint">Platz = Platz unter allen Spielern der Partie, Computer eingerechnet.</p></section>
+      <section class="panel">${details("Mehr Statistiken", more)}</section>`;
+    api.bind(el, api.again);
+  }
+  function kcSoloHist(el, ctx, api) {
+    el.innerHTML = `${api.modeBar}<div data-h></div>`;
+    api.bind(el, api.again);
+    const box = $("[data-h]", el);
+    const ms = kcSoloList();
+    if (!ms.length) {
+      box.innerHTML = kcSoloEmpty("Noch keine Einzelspieler-Partien.");
+      return;
+    }
+    historyList(box, ctx, { matches: ms, line: kcSoloLine });
+  }
   var CATAN_HOOKS = {
+    modes: [["multi", "Mehrspieler"], ["solo", "Einzelspieler"]],
+    isSolo: kcIsSoloCat,
+    solo: { dashboard: kcSoloDash, statistik: kcSoloStat, verlauf: kcSoloHist },
     sources: [["all", "Alle Partien"], ["app", "Kahlo-Catan"], ["brett", "Am Brett"]],
     sourceOf: (m) => isKC(m) ? "app" : "brett",
     statsExtra(st) {
@@ -2422,6 +2553,7 @@
     lineExtra(m) {
       if (!isKC(m)) return "";
       const k = m.kahlo || {}, bits = [];
+      (k.editionen || []).forEach((e) => bits.push(esc(KC_ED[e] || e)));
       if (kcMap(m)) bits.push(esc(kcMap(m)));
       if (kcNum(k.runden) != null) bits.push(plural(+k.runden, "Runde", "Runden"));
       if (kcNum(k.minuten) != null) bits.push(`${k.minuten} Min`);
@@ -2429,7 +2561,8 @@
       if (m.tags?.includes("Team")) bits.push("Team");
       if (k.drache) bits.push(`\u{1F409} ${KC_DRACHE[k.drache.art] || "Drache"}`);
       bits.push(m.online ? "online" : "ein Ger\xE4t");
-      return `<p class="others ct-meta"><span class="ct-tag">Kahlo-Catan</span>${bits.join(" \xB7 ")}</p>${k.drache?.hort ? `<p class="others">Drachenhort: <b>${esc(playerName(k.drache.hort, m))}</b></p>` : ""}`;
+      const bots = (k.mitspieler || []).filter((x) => x.computer);
+      return `<p class="others ct-meta"><span class="ct-tag">Kahlo-Catan</span>${bits.join(" \xB7 ")}</p>${bots.length ? `<p class="others ct-bots">\u{1F916} ${bots.map((x) => `${esc(x.name)} <small>(${esc(KC_LEVEL[x.computer] || x.computer)})</small> ${x.sp ?? "\u2013"}`).join(" \xB7 ")}</p>` : ""}${k.drache?.hort ? `<p class="others">Drachenhort: <b>${k.drache.hort === "computer" ? "ein Computer" : esc(playerName(k.drache.hort, m))}</b></p>` : ""}`;
     },
     neuNote: (e) => e && isKC(e) ? '<p class="notice ct-note">Diese Partie kommt aus Kahlo-Catan. \xC4nderungen hier \xFCberschreiben das Ergebnis aus der App.</p>' : e ? "" : `<section class="panel ct-onl sm"><p>Partien aus <b>Kahlo-Catan</b> tr\xE4gt die App selbst ein. Hier nur Partien am echten Spielbrett eintragen.</p>${ctLink("Online spielen")}</section>`,
     keep: (e) => e && isKC(e) ? { ...e.online != null ? { online: e.online } : {}, ...e.kahlo ? { kahlo: e.kahlo } : {} } : {},
@@ -4682,7 +4815,7 @@
 
   // js/app.js
   var app;
-  var APP_VERSION = "2.2";
+  var APP_VERSION = "2.3";
   var TABS = [["dashboard", "Dashboard"], ["neu", "Neues Spiel"], ["statistik", "Statistik"], ["verlauf", "Verlauf"]];
   var current = null;
   function parse() {
