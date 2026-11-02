@@ -382,17 +382,46 @@
   }
 
   // js/games/common.js
+  var PREMIUM_NAMES = ["roland", "andrea", "tristan", "livius"];
+  var isPremium = (p) => p?.looks?.premium != null ? !!p.looks.premium : PREMIUM_NAMES.includes(String(p?.name || "").trim().toLowerCase());
+  var HEART_NAMES = ["julia"];
+  var hasHeart = (p) => p?.looks?.heart != null ? !!p.looks.heart : HEART_NAMES.includes(String(p?.name || "").trim().toLowerCase());
+  var heartBadge = (cls = "") => `<svg class="hbadge ${cls}" viewBox="0 0 24 24" role="img" aria-label="Herz"><title>Herz</title><path d="M12 21s-7.5-4.6-9.6-9.3C1 8.4 3 5 6.4 5c2.1 0 3.6 1.2 4.6 2.7h2C14 6.2 15.5 5 17.6 5 21 5 23 8.4 21.6 11.7 19.5 16.4 12 21 12 21z" fill="#E0263C"/><path d="M6.6 7.4c-1.3.2-2.2 1.2-2.4 2.4" stroke="#fff" stroke-opacity=".55" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg>`;
+  var nameBadges = (p, cls = "") => `${isPremium(p) ? kBadge(cls) : ""}${hasHeart(p) ? heartBadge(cls) : ""}`;
+  var K_PATH = "M40 0V660H202V378Q250 394 286.5 423.5Q323 453 349.0 491.0Q375 529 392.0 572.5Q409 616 418 660H600Q588 603 565.5 552.5Q543 502 509.0 460.0Q475 418 430.0 385.5Q385 353 328 332V324Q389 329 429.0 316.5Q469 304 494.0 280.0Q519 256 533.5 225.5Q548 195 558 164L611 0H431L393 147Q384 183 367.5 205.5Q351 228 325.0 238.0Q299 248 259 248H202V0Z";
+  var kBadge = (cls = "") => `<svg class="kbadge ${cls}" viewBox="0 0 64 64" role="img" aria-label="Premium"><title>Premium</title><rect width="64" height="64" rx="14" fill="#1C1B19"/><rect x="2.5" y="2.5" width="59" height="59" rx="12" fill="none" stroke="#E2B53E" stroke-width="3"/><path transform="translate(12.27 52.00) scale(0.06061 -0.06061)" fill="#E9BE45" d="${K_PATH}"/></svg>`;
   function playerPicker(el, { game, selected, min = 1, max = 8, single = false, label = "Wer hat mitgespielt?", onChange: onChange2 = () => {
   } }) {
+    let open = false, q = "";
+    const chip = (p) => `<button class="chip" type="button" data-id="${p.id}" aria-pressed="${selected.has(p.id)}">${game.avatar(p, "dot")}<span>${esc(p.name)}</span>${nameBadges(p)}</button>`;
+    const parts = () => {
+      const ps = playersByCreated(), prem = ps.filter(isPremium);
+      const split = prem.length > 0 && ps.length > prem.length;
+      if (!split) return { split, main: ps, rest: [] };
+      const main = [...prem, ...ps.filter((p) => !isPremium(p) && selected.has(p.id))];
+      return { split, main, rest: ps.filter((p) => !isPremium(p) && !selected.has(p.id)) };
+    };
+    const restChips = (rest) => {
+      const l = q ? rest.filter((p) => p.name.toLowerCase().includes(q.toLowerCase())) : rest;
+      return l.map(chip).join("") || '<span class="muted small">Niemand gefunden.</span>';
+    };
     const draw = () => {
-      const ps = playersByCreated();
+      const { split, main, rest } = parts();
       el.innerHTML = `<span class="field-label">${esc(label)}</span>
-      <div class="chips">${ps.map((p) => `<button class="chip" type="button" data-id="${p.id}" aria-pressed="${selected.has(p.id)}">${game.avatar(p, "dot")}<span>${esc(p.name)}</span></button>`).join("")}
+      <div class="chips">${main.map(chip).join("")}
+      ${split && rest.length ? `<button class="chip more-p" type="button" data-more aria-expanded="${open}"><span>${open ? "Weniger anzeigen" : `Weitere Spieler (${rest.length})`}</span><i class="chev-d" aria-hidden="true"></i></button>` : ""}
       <button class="chip add" type="button" data-add aria-expanded="false">+ Neuer Spieler</button></div>
+      ${split && open && rest.length ? `<div class="pp-more">${rest.length > 8 ? `<input class="pp-q" data-q placeholder="Spieler suchen …" value="${esc(q)}" aria-label="Spieler suchen" autocomplete="off">` : ""}<div class="chips" data-rest>${restChips(rest)}</div></div>` : ""}
       <form class="add-row hidden" data-form><input placeholder="Name" maxlength="24" autocomplete="off" aria-label="Name des neuen Spielers"><button class="btn btn-primary" type="submit">Hinzuf\xFCgen</button></form>
-      ${!single && max < 99 ? `<p class="hint">${min === max ? `${min} Spieler` : `${min}\u2013${max} Spieler`}</p>` : ""}`;
+      ${!single && max < 99 ? `<p class="hint">${min === max ? `${min} Spieler` : `${min}–${max} Spieler`}</p>` : ""}`;
     };
     draw();
+    el.addEventListener("input", (e) => {
+      if (!e.target.matches("[data-q]")) return;
+      q = e.target.value.trim();
+      const box = $("[data-rest]", el);
+      if (box) box.innerHTML = restChips(parts().rest);
+    });
     el.addEventListener("click", (e) => {
       const c = e.target.closest(".chip[data-id]");
       if (c) {
@@ -408,6 +437,13 @@
         }
         draw();
         onChange2();
+        return;
+      }
+      if (e.target.closest("[data-more]")) {
+        open = !open;
+        if (!open) q = "";
+        draw();
+        if (open) $("[data-q]", el)?.focus();
         return;
       }
       if (e.target.closest("[data-add]")) {
@@ -4815,7 +4851,7 @@
 
   // js/app.js
   var app;
-  var APP_VERSION = "2.3";
+  var APP_VERSION = "2.5";
   var TABS = [["dashboard", "Dashboard"], ["neu", "Neues Spiel"], ["statistik", "Statistik"], ["verlauf", "Verlauf"]];
   var current = null;
   function parse() {
@@ -4968,7 +5004,7 @@
       </form>
       ${ps.length ? `<ul class="plist">${ps.map((p) => {
       const n = store.matches.filter((m) => (m.players || []).includes(p.id)).length;
-      return `<li><button type="button" class="prow" data-id="${p.id}"><span class="pname">${esc(p.name)}</span><span class="pmeta">${plural(n, "Partie", "Partien")}</span><span class="chev">${backIcon}</span></button></li>`;
+      return `<li><button type="button" class="prow" data-id="${p.id}"><span class="pname">${esc(p.name)}${nameBadges(p, "in-list")}</span><span class="pmeta">${plural(n, "Partie", "Partien")}</span><span class="chev">${backIcon}</span></button></li>`;
     }).join("")}</ul>` : '<p class="empty">Noch keine Spieler. Leg oben den ersten an.</p>'}
     </section>
     <section class="s-block">
@@ -4994,7 +5030,9 @@
     if (!p) return;
     await modal({
       title: p.name,
-      body: `<label class="field"><span>Name</span><input id="pName" value="${esc(p.name)}" maxlength="24"></label>`,
+      body: `<label class="field"><span>Name</span><input id="pName" value="${esc(p.name)}" maxlength="24"></label>
+      <label class="tick prem-tick"><input type="checkbox" id="pPrem" ${isPremium(p) ? "checked" : ""}><span>${kBadge()} Premium: steht beim Ausw\xE4hlen immer oben, alle anderen unter \u201EWeitere Spieler\u201C</span></label>
+      <label class="tick prem-tick"><input type="checkbox" id="pHeart" ${hasHeart(p) ? "checked" : ""}><span>${heartBadge()} Herzchen hinter dem Namen</span></label>`,
       actions: [
         { label: "L\xF6schen", danger: true, handler: async () => {
           await removePlayer(p);
@@ -5004,8 +5042,10 @@
         { label: "Speichern", primary: true, handler: async (w) => {
           const name = $("#pName", w).value.trim();
           if (!name) return false;
+          const prem = $("#pPrem", w).checked, heart = $("#pHeart", w).checked;
+          const lk = { ...p.looks || {}, ...prem !== isPremium(p) ? { premium: prem } : {}, ...heart !== hasHeart(p) ? { heart } : {} };
           try {
-            await updatePlayer({ id: p.id, name });
+            await updatePlayer({ id: p.id, name, ...prem !== isPremium(p) || heart !== hasHeart(p) ? { looks: lk } : {} });
             toast("Gespeichert.");
           } catch (e) {
             toast(esc(e.message));
