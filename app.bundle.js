@@ -797,6 +797,13 @@
 
   // js/games/rules.js
   var RULES = {
+    sudoku: { goal: "Das 9\xD79-Feld so f\xFCllen, dass in jeder Zeile, jeder Spalte und jedem 3\xD73-Block jede Zahl von 1 bis 9 genau einmal steht.", items: [
+      "Gespielt wird in der Sudoku-App. Sie l\xE4uft nach dem ersten \xD6ffnen auch ohne Internet.",
+      "Stufen: Leicht (etwa 40 vorgegebene Zahlen), Mittel (32), Schwer (27), Experte (23, braucht mehr als die einfachen Techniken).",
+      "Tagesr\xE4tsel: Jeden Tag gibt es f\xFCr alle dasselbe R\xE4tsel (Stufe Mittel). Die schnellste gel\xF6ste Zeit gewinnt den Tag.",
+      "Fehler und Hinweise werden mitgez\xE4hlt. Perfekt ist ein R\xE4tsel ohne beides.",
+      "Offline gel\xF6ste R\xE4tsel werden \xFCbertragen, sobald das Handy wieder Internet hat und die App offen ist."
+    ] },
     floriferous: { goal: "Nach drei Tagen im Garten die meisten Punkte haben.", items: [
       "Das Spiel dauert 3 Tage. Jeden Tag liegt ein Raster aus Karten aus (offen, verdeckt und Steine).",
       "Pro Zug nimmst du eine Karte aus der nächsten Spalte. Wer höher in der Spalte nimmt, ist im nächsten Zug früher dran.",
@@ -976,6 +983,14 @@
         "Wer als Letzter übrig ist, gewinnt."
       ] }
     },
+    carcassonne: { goal: "Nach dem letzten Pl\xE4ttchen und der Schlusswertung die meisten Punkte haben.", items: [
+      "Zug: ein Pl\xE4ttchen ziehen und passend anlegen, Stra\xDFe an Stra\xDFe, Stadt an Stadt, Wiese an Wiese.",
+      "Danach darf man einen eigenen Meeple auf das neue Pl\xE4ttchen setzen: als Wegelagerer, Ritter, M\xF6nch oder Bauer. Nur in ein Gebiet, in dem noch keiner steht.",
+      "Fertige Stra\xDFe: 1 Punkt je Pl\xE4ttchen. Fertige Stadt: 2 Punkte je Pl\xE4ttchen und 2 je Wappen. Fertiges Kloster (ringsum 8 Pl\xE4ttchen): 9 Punkte. Danach kommen die Meeple zur\xFCck.",
+      "Stehen mehrere Meeple in einem Gebiet, punktet, wer dort die meisten hat. Bei Gleichstand bekommen alle Beteiligten die vollen Punkte.",
+      "Ist das letzte Pl\xE4ttchen gelegt, folgt die Schlusswertung: unfertige Stra\xDFen, St\xE4dte und Kl\xF6ster bringen 1 Punkt je Pl\xE4ttchen (und je Wappen), Bauern 3 Punkte je fertiger Stadt an ihrer Wiese.",
+      "Die Wertungstafel geht bis 49. Wer dar\xFCber hinaus zieht, nimmt ein 50/100-Pl\xE4ttchen. Hier dr\xFCckt ihr daf\xFCr +50."
+    ] },
     ligretto: { goal: "Nach den vereinbarten Runden die meisten Punkte haben.", items: [
       "Jeder hat ein eigenes Kartenspiel (4 Farben, 1 bis 10). Vor sich: der Ligretto-Stapel mit 10 Karten und eine Reihe offener Karten. Der Rest ist auf der Hand.",
       "Alle spielen gleichzeitig, ohne Reihenfolge!",
@@ -2091,6 +2106,9 @@
     const view3 = { variant: "all" };
     const vName = (k) => (def.variants || []).find(([v]) => v === k)?.[1] || "";
     const awardsOf = (v) => def.awards?.[v] || [];
+    const vOf = (m) => def.variantOf ? def.variantOf(m) : m?.variant;
+    const CN = def.counters || null;
+    const cnOn = (v) => !!CN && CN.variants.includes(v);
     view3.src = "all";
     view3.mode = def.modes ? def.modes[0][0] : null;
     const soloMode = () => !!def.modes && view3.mode === "solo";
@@ -2107,7 +2125,7 @@
       }
     }));
     const soloApi = (el, again) => ({ bar: filterBar3(), modeBar: modeBar(), bind: (e2, r) => bind(e2, r), again });
-    const list2 = () => matchesOf(def.id, (m) => (!def.isSolo || !def.isSolo(m)) && (view3.variant === "all" || m.variant === view3.variant) && (!def.sourceOf || view3.src === "all" || def.sourceOf(m) === view3.src));
+    const list2 = () => matchesOf(def.id, (m) => (!def.isSolo || !def.isSolo(m)) && (view3.variant === "all" || vOf(m) === view3.variant) && (!def.sourceOf || view3.src === "all" || def.sourceOf(m) === view3.src));
     const unit = def.unit || "Punkte";
     const theme = (v) => {
       if (def.variantTheme) {
@@ -2152,7 +2170,7 @@
       ];
       const recent = [...ms].reverse().slice(0, 3);
       el.innerHTML = `${filterBar3()}${rulesPanel(g2, view3.variant)}<div class="stats-grid">${tiles.join("")}</div>${def.dashExtra ? def.dashExtra(ms, st) : ""}
-      <section class="panel"><h2 class="panel-title">Zuletzt gespielt</h2>${def.recentNote ? def.recentNote(ms) : ""}${recent.map((m) => `<div class="mini-hist"><span class="hist-date">${fmtDate(m.date)}${m.variant ? ` \xB7 ${esc(vName(m.variant))}` : ""}</span>${rankedLine(g2, m)}${def.lineExtra ? def.lineExtra(m) : ""}</div>`).join("")}
+      <section class="panel"><h2 class="panel-title">Zuletzt gespielt</h2>${def.recentNote ? def.recentNote(ms) : ""}${recent.map((m) => `<div class="mini-hist"><span class="hist-date">${fmtDate(m.date)}${vOf(m) ? ` \xB7 ${esc(vName(vOf(m)))}` : ""}</span>${rankedLine(g2, m)}${def.lineExtra ? def.lineExtra(m) : ""}</div>`).join("")}
       <button class="btn btn-ghost wide" type="button" data-all>Alle Partien</button></section>`;
       $("[data-all]", el).onclick = () => ctx.go("verlauf");
       bind(el, () => dashboard3(el, ctx));
@@ -2165,11 +2183,13 @@
         id: e?.id,
         created: e?.created,
         date: e?.date || today(),
-        variant: e?.variant || (def.variants ? view3.variant !== "all" ? view3.variant : def.variants[0][0] : null),
+        variant: vOf(e) || (def.variants ? view3.variant !== "all" ? view3.variant : def.variants[0][0] : null),
         sel: new Set(e?.players || []),
         pts: { ...e?.totals || {} },
         awards: { ...e?.awards || {} },
-        tie: e?.winners?.length > 1 ? "shared" : e?.winners?.[0] || null
+        tie: e?.winners?.length > 1 ? "shared" : e?.winners?.[0] || null,
+        cnt: CN ? JSON.parse(JSON.stringify(CN.get(e) || {})) : {},
+        end: CN && e ? CN.endOf(e) : "sp"
       };
       theme(S.variant);
       el.innerHTML = `${rulesPanel(g2, S.variant)}${def.neuNote ? def.neuNote(e) : ""}<section class="panel"><div class="setup-grid">
@@ -2190,10 +2210,13 @@
         draw();
       });
       const ids = () => playersByCreated().filter((p) => S.sel.has(p.id)).map((p) => p.id).concat([...S.sel].filter((id) => !playersByCreated().some((p) => p.id === id)));
+      const byBag = () => cnOn(S.variant) && S.end === "beutel";
+      const score = (p) => byBag() ? CN.bal(S.cnt[p]) * 1e3 + (+S.pts[p] || 0) : +S.pts[p] || 0;
       function leaders() {
-        const v = ids().map((p) => +S.pts[p] || 0);
+        if (byBag() && Math.max(...ids().map((p) => CN.bal(S.cnt[p]))) <= 0) return [];
+        const v = ids().map(score);
         const mx = Math.max(...v);
-        return ids().filter((p) => (+S.pts[p] || 0) === mx);
+        return ids().filter((p) => score(p) === mx);
       }
       function draw() {
         const box = $("#sPts", el), P = ids();
@@ -2207,12 +2230,29 @@
           <span class="rin-num">${def.negative ? `<button type="button" class="pm" data-pm="${p}" aria-label="Vorzeichen umdrehen">\xB1</button>` : ""}<input type="${def.negative ? "text" : "number"}" inputmode="numeric" pattern="-?[0-9]*" data-pts="${p}" value="${S.pts[p] ?? ""}" placeholder="0" aria-label="${esc(unit)} ${esc(playerName(p, e))}"></span>
         </div>`).join("")}</div>
         ${def.hint ? `<p class="hint">${def.hint(S.variant)}</p>` : ""}
+        ${cnOn(S.variant) ? `<div class="cn-box"><h3 class="sub-h">${esc(CN.title)}</h3><div class="cn-rows">${P.map((p) => `<div class="cn-row"><span class="rin-name">${g2.avatar({ id: p, name: playerName(p, e) }, "dot")}${esc(playerName(p, e))}</span>${CN.keys.map(([k, lab, cls]) => `<label class="cn-in ${cls}"><i aria-hidden="true"></i><span>${esc(lab)}</span><input type="number" inputmode="numeric" min="0" max="${CN.max || 99}" data-cn="${p}" data-k="${k}" value="${S.cnt[p]?.[k] ?? ""}" placeholder="0" aria-label="${esc(lab)} ${esc(playerName(p, e))}"></label>`).join("")}</div>`).join("")}</div>
+          <p class="hint">${CN.hint}</p>
+          <div class="cn-end"><span class="field-label">Spielende</span>${seg("cnEnd", CN.ends, S.end)}</div><p class="hint" id="cnEndHint">${CN.endHint(S.end)}</p></div>` : ""}
         ${aw.map((a) => `<div class="award"><span class="field-label">${esc(a)}</span><div class="chips" data-award="${esc(a)}">${P.map((p) => `<button type="button" class="chip" data-id="${p}" aria-pressed="${S.awards[a] === p}">${g2.avatar({ id: p, name: playerName(p, e) }, "mini")}<span>${esc(playerName(p, e))}</span></button>`).join("")}</div></div>`).join("")}
         <div id="sTie"></div>`;
         $$("[data-pts]", box).forEach((i) => i.addEventListener("input", () => {
           S.pts[i.dataset.pts] = parseInt(i.value, 10);
           tie();
         }));
+        $$("[data-cn]", box).forEach((i) => i.addEventListener("input", () => {
+          const o = S.cnt[i.dataset.cn] || (S.cnt[i.dataset.cn] = {}), v = parseInt(i.value, 10);
+          if (Number.isFinite(v) && v >= 0) o[i.dataset.k] = v;
+          else delete o[i.dataset.k];
+          tie();
+        }));
+        $('[data-seg="cnEnd"]', box)?.addEventListener("click", (ev) => {
+          const b = ev.target.closest("button");
+          if (!b) return;
+          S.end = b.dataset.v;
+          $$('[data-seg="cnEnd"] button', box).forEach((x) => x.setAttribute("aria-pressed", x === b));
+          $("#cnEndHint", box).innerHTML = CN.endHint(S.end);
+          tie();
+        });
         $$("[data-pm]", box).forEach((b) => b.addEventListener("click", () => {
           const i = $(`[data-pts="${b.dataset.pm}"]`, box);
           const v = parseInt(i.value || "0", 10) || 0;
@@ -2234,6 +2274,11 @@
         const box = $("#sTie", el);
         if (!box) return;
         const L = leaders(), any = ids().some((p) => S.pts[p]);
+        if (byBag() && !L.length && any) {
+          box.innerHTML = `<p class="notice cn-none">${CN.noWinner}</p>`;
+          S.tie = null;
+          return;
+        }
         if (L.length < 2 || !any) {
           box.innerHTML = "";
           S.tie = null;
@@ -2254,7 +2299,8 @@
         const L = leaders();
         if (L.length > 1 && !S.tie) return toast("Gleichstand: W\xE4hle, wer gewonnen hat.");
         const winners = L.length > 1 ? S.tie === "shared" ? L : [S.tie] : L;
-        const pl = places(totals);
+        const pl = places(byBag() ? Object.fromEntries(P.map((p) => [p, score(p)])) : totals);
+        const cnt = cnOn(S.variant) ? Object.fromEntries(P.filter((p) => CN.keys.some(([k]) => Number.isFinite(S.cnt[p]?.[k]))).map((p) => [p, Object.fromEntries(CN.keys.map(([k]) => [k, S.cnt[p]?.[k] || 0]))])) : {};
         if (winners.length === 1 && L.length > 1) L.forEach((p) => {
           if (p !== winners[0]) pl[p] = 2;
         });
@@ -2271,11 +2317,13 @@
           ...def.variants ? { variant: S.variant } : {},
           ...Object.keys(awards).length ? { awards } : {},
           ...def.keep ? def.keep(e) : {},
-          tags: [...def.variants ? [vName(S.variant)] : [], plural(P.length, "Spieler", "Spieler"), ...def.keepTags ? def.keepTags(e) : []]
+          ...Object.keys(cnt).length ? { [CN.field]: cnt } : {},
+          ...byBag() ? { ende: "beutel" } : {},
+          tags: [...def.variants ? [vName(S.variant)] : [], plural(P.length, "Spieler", "Spieler"), ...byBag() ? ["Beutel leer"] : [], ...def.keepTags ? def.keepTags(e).filter((t) => t !== "Beutel leer") : []]
         };
         try {
           await saveMatch(m);
-          toast(`<b>Gespeichert.</b> ${esc(winners.map((p) => playerName(p)).join(" & "))} ${winners.length > 1 ? "gewinnen" : "gewinnt"} mit ${fmtNum(totals[winners[0]], 0)} ${esc(unit)}.`, { icon: def.winIcon?.() || "" });
+          toast(!winners.length ? "<b>Gespeichert.</b> Diesmal hat niemand gewonnen." : byBag() ? `<b>Gespeichert.</b> ${esc(winners.map((p) => playerName(p)).join(" & "))} ${winners.length > 1 ? "gewinnen" : "gewinnt"} mit der besten Kraftwerks-Bilanz.` : `<b>Gespeichert.</b> ${esc(winners.map((p) => playerName(p)).join(" & "))} ${winners.length > 1 ? "gewinnen" : "gewinnt"} mit ${fmtNum(totals[winners[0]], 0)} ${esc(unit)}.`, { icon: def.winIcon?.() || "" });
           view3.variant = def.variants ? S.variant : "all";
           ctx.go("dashboard");
         } catch (err) {
@@ -2298,7 +2346,7 @@
         var _a;
         (groups[_a = m.players.length] || (groups[_a] = [])).push(...Object.values(m.totals || {}));
       });
-      const allAwards = [...new Set((def.variants || [[null]]).flatMap(([v]) => awardsOf(v)))];
+      const allAwards = [...new Set((def.variants && view3.variant !== "all" ? [[view3.variant]] : def.variants || [[null]]).flatMap(([v]) => awardsOf(v)))];
       const more = `
       <h3 class="sub-h">${esc(unit)} im Verlauf</h3>${trendChart(g2, ms, (m, id) => m.totals?.[id], { colors: (id) => def.colorOf(id), label: unit })}
       <h3 class="sub-h">\xD8 Abstand zum Sieger</h3>${barChart([...st].filter((s) => s.gap != null).sort((a, b) => a.gap - b.gap).map((s) => ({ label: s.name, value: s.gap, icon: g2.avatar(s, "mini"), color: def.colorOf(s.id), note: "kleiner ist besser" })))}
@@ -2318,7 +2366,7 @@
     function variantTable(ms, st) {
       return `<div class="table-wrap"><table class="lb"><thead><tr><th class="l">Spieler</th>${def.variants.map(([, n]) => `<th>${esc(n)}</th>`).join("")}</tr></thead><tbody>
       ${st.map((s) => `<tr><td class="l">${g2.avatar(s, "mini")}<span class="nm">${esc(s.name)}</span></td>${def.variants.map(([v]) => {
-        const mm = ms.filter((m) => m.variant === v && m.players.includes(s.id));
+        const mm = ms.filter((m) => vOf(m) === v && m.players.includes(s.id));
         return `<td>${mm.length ? `${mm.filter((m) => m.winners.includes(s.id)).length}<small> / ${mm.length}</small>` : "\u2013"}</td>`;
       }).join("")}</tr>`).join("")}</tbody></table></div>`;
     }
@@ -2405,7 +2453,7 @@
   var CATAN_URL = "https://liviuweb.github.io/kahlo-catan/";
   var ctIco = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>';
   var ctLink = (label = "Online spielen", cls = "") => `<a class="ct-online ${cls}" href="${CATAN_URL}" target="_blank" rel="noopener">${label}${ctIco}</a>`;
-  var KC_MAPS = { klassisch: "Klassisch", nebel: "Nebelinsel", europa: "Europa", afrika: "Afrika", asien: "Asien", nordamerika: "Nordamerika", suedamerika: "S\xFCdamerika", australien: "Australien", kontinent: "Zuf\xE4lliger Kontinent" };
+  var KC_MAPS = { klassisch: "Klassisch", nebel: "Nebelinsel", inseln: "Vier Inseln", weltall: "Weltall", tiefraum: "Tiefraum", europa: "Europa", afrika: "Afrika", asien: "Asien", nordamerika: "Nordamerika", suedamerika: "S\xFCdamerika", australien: "Australien", kontinent: "Zuf\xE4lliger Kontinent" };
   var KC_DRACHE = { glut: "Glutzone", flug: "Drachenflug", gier: "Gier" };
   var isKC = (m) => !!(m?.kahlo || m?.tags?.includes("Kahlo-Catan"));
   var kcMap = (m) => KC_MAPS[m.kahlo?.karte] || m.kahlo?.karte || "";
@@ -2428,7 +2476,7 @@
     <p class="hint">Balken: so oft fiel die Zahl. Strich: so oft f\xE4llt sie im Schnitt. Die 7 kam ${fmtPct(seven)} statt ${fmtPct(1 / 6)}.</p>`;
   }
   var KC_LEVEL = { leicht: "Leicht", mittel: "Mittel", schwer: "Schwer" };
-  var KC_ED = { seefahrer: "Seefahrer", staedte: "St\xE4dte & Ritter", haendler: "H\xE4ndler & Barbaren", piraten: "Piraten & Entdecker", raumfahrer: "Raumfahrer" };
+  var KC_ED = { seefahrer: "Seefahrer", staedte: "St\xE4dte & Ritter", haendler: "H\xE4ndler & Barbaren", piraten: "Piraten & Entdecker", raumfahrer: "Raumfahrer", tiefraum: "Raumfahrer: Tiefraum", energien: "Energien" };
   var kcLV_KEYS = [["leicht", "Leicht"], ["mittel", "Mittel"], ["schwer", "Schwer"], ["gemischt", "Gemischt"]];
   var kcIsSoloCat = (m) => m?.mode === "solo";
   var kcSoloMe = (m) => m.players?.[0];
@@ -2457,6 +2505,7 @@
       }
       Object.assign(s, { player: { id: s.id, name: s.name }, lv, fastWin: fast, hardWins: hard, avgPlace: pl.length ? kcAvg(pl) : null, avgOpp: s.games ? opp / s.games : null });
     }
+    kxAgg(st);
     return st;
   }
   function kcSoloLine(m) {
@@ -2483,14 +2532,15 @@
       T("Siege auf Schwer", "hardWins", (v) => `${v}\xD7`, { filter: (s) => s.hardWins > 0, note: "gegen schwere Computer" }),
       T("Schnellster Sieg", "fastWin", (v) => plural(v, "Runde", "Runden"), { low: true, filter: (s) => s.fastWin != null }),
       T("Bester \xD8-Platz", "avgPlace", (v) => fmtNum(v), { low: true, min: 3, note: "ab 3 Partien" }),
-      T("Meiste Partien", "games", (v) => v)
+      T("Meiste Partien", "games", (v) => v),
+      ...kxTiles(st, T, ms)
     ];
     const wins = ms.filter(kcSoloWon).length;
     const recent = [...ms].reverse().slice(0, 4);
-    el.innerHTML = `${api.bar}${rulesPanel(catan_default, "normal")}<div class="stats-grid">${tiles.join("")}</div>
+    el.innerHTML = `${api.bar}${rulesPanel(catan_default, "normal")}<div class="stats-grid">${tiles.join("")}${kwTiles(ms, { solo: true }).join("")}</div>
       <section class="panel"><div class="ct-kc-head"><h2 class="panel-title">Mensch gegen Maschine</h2>${ctLink("Online spielen", "sm")}</div>
       <p class="big-q"><b>${fmtPct(wins / ms.length)}</b> der ${plural(ms.length, "Partie", "Partien")} gegen den Computer gewonnen</p>
-      ${kcLevelTable(st, ms)}</section>
+      ${kcLevelTable(st, ms)}</section>${kxPanel(ms, st, { title: "Nach Variante" })}
       <section class="panel"><h2 class="panel-title">Zuletzt gespielt</h2>${recent.map((m) => `<div class="mini-hist"><span class="hist-date">${fmtDate(m.date)}</span>${kcSoloLine(m)}</div>`).join("")}
       <button class="btn btn-ghost wide" type="button" data-all>Alle Partien</button></section>`;
     $("[data-all]", el).onclick = () => ctx.go("verlauf");
@@ -2523,6 +2573,8 @@
       ${st.some((s) => s.fastWin != null) ? `<h3 class="sub-h">Schnellster Sieg (Runden)</h3>${bars(st.filter((s) => s.fastWin != null).sort((a, b) => a.fastWin - b.fastWin), (s) => s.fastWin, { digits: 0, note: () => "weniger ist besser" })}` : ""}
       <h3 class="sub-h">\xD8 Platz</h3>${bars(st.filter((s) => s.avgPlace != null).sort((a, b) => a.avgPlace - b.avgPlace), (s) => s.avgPlace, { note: (s) => `\xD8 ${fmtNum(s.avgOpp)} Computer` })}
       <h3 class="sub-h">L\xE4ngste Siegesserie</h3>${bars(st.filter((s) => s.streak).sort((a, b) => b.streak - a.streak), (s) => s.streak, { digits: 0, note: (s) => s.current ? `aktuell ${s.current}` : "" })}
+      ${kwMore(ms, { solo: true })}
+      ${kxMore(ms, st)}
       ${diceHist(kcDice(ms))}`;
     el.innerHTML = `${api.bar}<section class="panel"><h2 class="panel-title">Rangliste gegen den Computer</h2>${leaderboard(catan_default, st, cols)}<p class="hint">Platz = Platz unter allen Spielern der Partie, Computer eingerechnet.</p></section>
       <section class="panel">${details("Mehr Statistiken", more)}</section>`;
@@ -2539,7 +2591,197 @@
     }
     historyList(box, ctx, { matches: ms, line: kcSoloLine });
   }
+  // ---------- Catan Energie: braune (fossile) und grüne (erneuerbare) Kraftwerke ----------
+  var KW_B = "#7B4A2A", KW_G = "#2E8B57";
+  var isEnKC = (m) => !!(m?.kahlo?.energien || (m?.kahlo?.editionen || []).includes("energien"));
+  // Ältere Partien aus Kahlo-Catan kamen als „Normal“ an, obwohl Energien gespielt wurde
+  var ctVariant = (m) => m && isEnKC(m) ? "energie" : m && (m.kahlo?.editionen || []).some((e) => e === "raumfahrer" || e === "tiefraum") ? "raumfahrer" : m?.variant;
+  var kwBal = (x) => (+x?.g || 0) - (+x?.f || 0);
+  // Kraftwerke je Spieler: von Hand eingetragen (kraftwerke) oder aus Kahlo-Catan (kahlo.energien.kraftwerke)
+  function ctKW(m) {
+    const src = m?.kraftwerke || m?.kahlo?.energien?.kraftwerke;
+    if (!src) return null;
+    const out = {};
+    for (const [id, x] of Object.entries(src)) {
+      const f = kcNum(x?.f), g = kcNum(x?.g);
+      if (f != null || g != null) out[id] = { f: f || 0, g: g || 0 };
+    }
+    return Object.keys(out).length ? out : null;
+  }
+  var kwEnd = (m) => m?.ende === "beutel" || m?.kahlo?.energien?.ende === "beutel" ? "beutel" : "sp";
+  var CT_COUNTERS = {
+    field: "kraftwerke",
+    variants: ["energie"],
+    title: "Kraftwerke am Spielende",
+    keys: [["f", "Braun (fossil)", "kw-b"], ["g", "Gr\xFCn (erneuerbar)", "kw-g"]],
+    max: 15,
+    hint: "Optional. Gez\xE4hlt wird, was am Ende auf dem Brett steht. Abgerissene braune Kraftwerke z\xE4hlen nicht mit.",
+    get: (e) => ctKW(e) || {},
+    endOf: kwEnd,
+    bal: kwBal,
+    ends: [["sp", "10 Siegpunkte"], ["beutel", "Beutel leer"]],
+    endHint: (v) => v === "beutel" ? "Beutel leer: Es gewinnt, wer die beste Kraftwerks-Bilanz hat (gr\xFCn minus braun), egal wie viele Siegpunkte. Bei Gleichstand entscheiden die Siegpunkte. Hat niemand mehr gr\xFCne als braune, gewinnt keiner." : "Normales Ende: Wer zuerst 10 Siegpunkte hat, gewinnt.",
+    noWinner: "Niemand hat mehr gr\xFCne als braune Kraftwerke. Die Partie wird ohne Sieger gespeichert."
+  };
+  function kwStats(ms) {
+    const map = new Map(), win = { f: [], g: [] }, oth = { f: [], g: [] };
+    let games = 0, bag = 0;
+    for (const m of ms) {
+      const kw = ctKW(m);
+      if (!kw) continue;
+      games++;
+      if (kwEnd(m) === "beutel") bag++;
+      for (const [id, x] of Object.entries(kw)) {
+        if (!map.has(id)) map.set(id, { id, name: playerName(id, m), games: 0, f: 0, g: 0, maxG: 0, wins: 0 });
+        const s = map.get(id), w = (m.winners || []).includes(id);
+        s.games++;
+        s.f += x.f;
+        s.g += x.g;
+        s.maxG = Math.max(s.maxG, x.g);
+        if (w) s.wins++;
+        const t = w ? win : oth;
+        t.f.push(x.f);
+        t.g.push(x.g);
+      }
+    }
+    const list2 = [...map.values()].map((s) => Object.assign(s, { player: { id: s.id, name: s.name }, avgF: s.f / s.games, avgG: s.g / s.games, share: s.f + s.g ? s.g / (s.f + s.g) : null, bal: (s.g - s.f) / s.games, sum: s.f + s.g }));
+    const F = list2.reduce((a, s) => a + s.f, 0), G = list2.reduce((a, s) => a + s.g, 0), n = list2.reduce((a, s) => a + s.games, 0);
+    return { list: list2, games, bag, F, G, n, win: { f: kcAvg(win.f), g: kcAvg(win.g) }, oth: { f: kcAvg(oth.f), g: kcAvg(oth.g) } };
+  }
+  var kwChip = (cls, v) => `<span class="kw ${cls}"><i aria-hidden="true"></i>${v}</span>`;
+  function kwTiles(ms, o = {}) {
+    const K = kwStats(ms);
+    if (!K.games) return [];
+    const T = (title, key, fmt, opts = {}) => {
+      const r = top(K.list, key, opts);
+      return statTile(title, r ? fmt(r.value) : "–", r ? whoList(catan_default, r.who) : '<span class="muted">noch niemand</span>', opts.note || "", opts.cls || "");
+    };
+    return [
+      T("Meiste gr\xFCne Kraftwerke", "g", (v) => kwChip("kw-g", v), { filter: (s) => s.g > 0, note: o.solo ? "insgesamt, gegen den Computer" : "insgesamt gebaut", cls: "kw-tile g" }),
+      T("Beste Bilanz", "bal", (v) => `${v > 0 ? "+" : ""}${fmtNum(v)}`, { min: o.solo ? 1 : 2, note: `\xD8 gr\xFCn minus braun je Partie${o.solo ? "" : ", ab 2 Partien"}`, cls: "kw-tile g" }),
+      T("Gr\xF6\xDFter Klimas\xFCnder", "f", (v) => kwChip("kw-b", v), { filter: (s) => s.f > 0, note: "braune Kraftwerke insgesamt", cls: "kw-tile b" })
+    ];
+  }
+  // Doppelbalken je Spieler: braun links, grün rechts (Ø je Partie)
+  function kwBars(list2) {
+    tip();
+    if (!list2.length) return '<p class="empty">Noch keine Daten.</p>';
+    const mx = Math.max(...list2.map((s) => s.avgF + s.avgG), 1e-4);
+    return `<div class="kw-bars">${[...list2].sort((a, b) => b.bal - a.bal || b.avgG - a.avgG).map((s) => `<div class="kw-row" data-tip="<b>${esc(s.name)}</b><br>\xD8 ${fmtNum(s.avgF)} braun \xB7 \xD8 ${fmtNum(s.avgG)} gr\xFCn<br>${plural(s.games, "Partie", "Partien")}">
+      <span class="bar-label">${catan_default.avatar(s, "mini")}${esc(s.name)}</span>
+      <span class="kw-track"><span class="kw-seg b" style="width:${s.avgF / mx * 100}%"></span><span class="kw-seg g" style="width:${s.avgG / mx * 100}%"></span></span>
+      <span class="kw-val">${kwChip("kw-b", fmtNum(s.avgF))}${kwChip("kw-g", fmtNum(s.avgG))}</span></div>`).join("")}</div>
+      <div class="legend"><span><i style="background:${KW_B}"></i>braun (fossil)</span><span><i style="background:${KW_G}"></i>gr\xFCn (erneuerbar)</span><span class="muted">\xD8 je Partie, sortiert nach Bilanz</span></div>`;
+  }
+  function kwWinnerNote(K) {
+    if (K.win.g == null || K.oth.g == null) return "";
+    return `<p class="hint kw-note">Sieger hatten im Schnitt ${kwChip("kw-b", fmtNum(K.win.f))} ${kwChip("kw-g", fmtNum(K.win.g))}, alle anderen ${kwChip("kw-b", fmtNum(K.oth.f))} ${kwChip("kw-g", fmtNum(K.oth.g))}.</p>`;
+  }
+  function kwDash(ms) {
+    const K = kwStats(ms);
+    if (!K.games) return "";
+    const fact = (l, v) => `<div class="ct-fact"><small>${l}</small><b>${v}</b></div>`;
+    return `<section class="panel kw-panel"><h2 class="panel-title">Kraftwerke <small class="muted">\xB7 Catan Energie</small></h2>
+      <div class="ct-facts">${fact("Partien", K.games)}${fact("\xD8 braun", kwChip("kw-b", fmtNum(K.F / K.n)))}${fact("\xD8 gr\xFCn", kwChip("kw-g", fmtNum(K.G / K.n)))}${fact("Gr\xFCn-Anteil", K.F + K.G ? fmtPct(K.G / (K.F + K.G)) : "–")}</div>
+      ${stackBar([{ label: "Braune Kraftwerke", value: K.F, color: KW_B }, { label: "Gr\xFCne Kraftwerke", value: K.G, color: KW_G }], { label: "Alle Kraftwerke" })}
+      <h3 class="sub-h">Je Spieler</h3>${kwBars(K.list)}${kwWinnerNote(K)}</section>`;
+  }
+  function kwMore(ms, o = {}) {
+    const K = kwStats(ms);
+    if (!K.games) return "";
+    const kwm = ms.filter((m) => ctKW(m));
+    const bars = (list2, val, opt = {}) => barChart(list2.map((s) => ({ label: s.name, value: val(s), icon: catan_default.avatar(s, "mini"), color: opt.color || catan_default.colorOf(s.id), note: opt.note ? opt.note(s) : "" })), { digits: opt.digits ?? 1, unit: opt.unit || "", max: opt.max });
+    const sg = (v) => v == null ? "–" : `${v > 0 ? "+" : ""}${fmtNum(v)}`;
+    const withShare = K.list.filter((s) => s.share != null);
+    return `<h3 class="sub-h">Kraftwerke${o.solo ? "" : " (Catan Energie)"} <small class="muted">\xB7 ${plural(K.games, "Partie", "Partien")}${K.bag ? `, ${K.bag}\xD7 Beutel leer` : ""}</small></h3>
+      <div class="table-wrap"><table class="lb kw-tab"><thead><tr><th class="l">Spieler</th><th>Partien</th><th class="kwh b">Braun</th><th class="kwh g">Gr\xFCn</th><th>\xD8 braun</th><th>\xD8 gr\xFCn</th><th>Gr\xFCn-Anteil</th><th>\xD8 Bilanz</th><th>Max. gr\xFCn</th></tr></thead><tbody>
+      ${[...K.list].sort((a, b) => b.bal - a.bal).map((s) => `<tr><td class="l">${catan_default.avatar(s, "mini")}<span class="nm">${esc(s.name)}</span></td><td>${s.games}</td><td>${s.f}</td><td>${s.g}</td><td>${fmtNum(s.avgF)}</td><td>${fmtNum(s.avgG)}</td><td>${s.share == null ? "–" : fmtPct(s.share)}</td><td>${sg(s.bal)}</td><td>${s.maxG}</td></tr>`).join("")}</tbody></table></div>
+      <p class="hint">Gez\xE4hlt wird, was am Spielende auf dem Brett steht. Bilanz = gr\xFCn minus braun.</p>
+      <h3 class="sub-h">\xD8 Kraftwerke je Partie</h3>${kwBars(K.list)}
+      ${withShare.length ? `<h3 class="sub-h">Gr\xFCn-Anteil</h3>${bars(withShare.sort((a, b) => b.share - a.share), (s) => s.share * 100, { unit: " %", digits: 0, max: 100, color: KW_G, note: (s) => `${s.g} von ${s.sum}` })}` : ""}
+      ${kwWinnerNote(K)}
+      ${kwm.length > 1 ? `<h3 class="sub-h">Gr\xFCne Kraftwerke im Verlauf</h3>${trendChart(catan_default, kwm, (m, id) => ctKW(m)?.[id]?.g ?? null, { colors: (id) => catan_default.colorOf(id), label: "Gr\xFCne Kraftwerke" })}<h3 class="sub-h">Braune Kraftwerke im Verlauf</h3>${trendChart(catan_default, kwm, (m, id) => ctKW(m)?.[id]?.f ?? null, { colors: (id) => catan_default.colorOf(id), label: "Braune Kraftwerke" })}` : ""}`;
+  }
+  // Zeile im Verlauf: je Spieler braun/grün, bei Kahlo-Catan auch die Computer
+  function kwLine(m) {
+    const kw = ctKW(m), bots = (m.kahlo?.mitspieler || []).filter((x) => x.computer && x.kw);
+    if (!kw && !bots.length) return "";
+    const ids = [...m.players].filter((id) => kw?.[id]).sort((a, b) => (m.places?.[a] ?? 9) - (m.places?.[b] ?? 9));
+    const one = (nm, x) => `<span class="kw-p"><b>${esc(nm)}</b>${kwChip("kw-b", x.f || 0)}${kwChip("kw-g", x.g || 0)}</span>`;
+    return `<p class="others kw-line"><span class="kw-lab">Kraftwerke</span>${ids.map((id) => one(playerName(id, m), kw[id])).join("")}${bots.map((x) => one(`\u{1F916} ${x.name}`, x.kw)).join("")}${kwEnd(m) === "beutel" ? '<span class="kw-end">Beutel leer</span>' : ""}</p>`;
+  }
+  // ---------- Statistik je Variante: Werte, die Kahlo-Catan je Platz mitschickt (kahlo.mitspieler[].x) ----------
+  var kxEd = (m) => m?.kahlo?.editionen || [];
+  var KX = [
+    { k: "seefahrer", n: "Seefahrer", test: (m) => kxEd(m).includes("seefahrer"), f: [["inseln", "Neue Inseln", "Inselentdecker"], ["schiffe", "Schiffe gebaut", "Reeder"]] },
+    { k: "staedte", n: "St\xE4dte & Ritter", test: (m) => kxEd(m).includes("staedte"), f: [["verteidiger", "Verteidiger von Catan", "Bester Verteidiger"], ["metropolen", "Metropolen", "Metropolen-Baumeister"], ["ritter", "Ritter aufgestellt", "Gr\xF6\xDFter Ritterorden"], ["ritterStufe", "Ritterst\xE4rke am Ende"], ["ausbau", "Stadtausbau-Stufen"], ["fortschritt", "Fortschrittskarten gespielt"]] },
+    { k: "piraten", n: "Piraten & Entdecker", test: (m) => kxEd(m).includes("piraten"), f: [["fisch", "Fisch abgeliefert", "Fischk\xF6nig"], ["gewuerz", "Gew\xFCrz", "Gew\xFCrzh\xE4ndler"], ["nester", "Piratennester"], ["gold", "Gold am Ende"]] },
+    { k: "haendler", n: "H\xE4ndler & Barbaren", test: (m) => kxEd(m).includes("haendler"), f: [["lieferungen", "Lieferungen", "Fuhrunternehmer"], ["gefangen", "Gefangene Barbaren", "Barbarenj\xE4ger"], ["gold", "Gold am Ende"], ["fische", "Fische"], ["bruecken", "Br\xFCcken"]] },
+    { k: "raumfahrer", n: "Raumfahrer", test: (m) => kxEd(m).includes("raumfahrer") || kxEd(m).includes("tiefraum"), f: [["medaillen", "Medaillen", "Ordensbrust"], ["stationen", "Handelsstationen", "Diplomat der Sterne"], ["aufsteller", "Freundschafts-Aufsteller"], ["halbe", "Halbe Medaillen"], ["begegnungen", "Begegnungen"], ["piratenbasen", "Piratenbasen erobert"], ["eisplaneten", "Eisplaneten"], ["antrieb", "Antriebe"], ["kanone", "Bordkanonen"], ["fracht", "Frachtmodule"]] },
+    { k: "tiefraum", n: "Tiefraum", test: (m) => kxEd(m).includes("tiefraum"), f: [["entdecker", "Entdeckerpunkte", "Sternenkartograf"], ["ufos", "UFOs vertrieben", "UFO-J\xE4ger"], ["groessterEntdecker", "Gr\xF6\xDFter Entdecker"], ["ruinen", "Ruinen erforscht"], ["wurmloecher", "Wurml\xF6cher"]] },
+    { k: "energien", n: "Catan Energie", test: (m) => kxEd(m).includes("energien") || !!m?.kahlo?.energien, f: [["entgiftet", "Umweltsch\xE4den entfernt", "Umweltputzer"], ["verschmutzung", "Verschmutzung am Ende"], ["abgerissen", "Kraftwerke abgerissen"], ["umweltschutz", "Aktivster Umweltsch\xFCtzer"]] },
+    { k: "drache", n: "Vulkan & Drache", test: (m) => !!m?.kahlo?.drache, f: [["drachenJagd", "Drachen gejagt", "Drachenj\xE4ger"], ["reparaturen", "Reparaturen"]] },
+    { k: "alle", n: "Handel & Gl\xFCck", test: (m) => isKC(m) && (m.kahlo?.mitspieler || []).some((x) => x.x), f: [["handel", "Handel mit Spielern", "Handelsprofi"], ["bank", "Tausch mit der Bank"], ["geklaut", "Karten geklaut", "Langfinger"], ["verloren", "Karten verloren"], ["ertrag", "Rohstoffe bekommen"]] }
+  ];
+  var kxOf = (m, id) => (m?.kahlo?.mitspieler || []).find((x) => x.kg === id)?.x || null;
+  // Summen je Spieler in die Statistik schreiben: x_<feld> (Summe), xa_<feld> (Schnitt), xg_<gruppe> (Partien)
+  function kxAgg(st) {
+    for (const s of st) {
+      for (const G of KX) {
+        let g = 0;
+        const sum = {};
+        for (const { m } of s.results) {
+          if (!G.test(m)) continue;
+          const x = kxOf(m, s.id);
+          if (!x) continue;
+          g++;
+          for (const [f] of G.f) sum[f] = (sum[f] || 0) + (+x[f] || 0);
+        }
+        s["xg_" + G.k] = g;
+        for (const [f] of G.f) if (g) {
+          s["x_" + G.k + "_" + f] = sum[f] || 0;
+          s["xa_" + G.k + "_" + f] = (sum[f] || 0) / g;
+        }
+      }
+    }
+  }
+  var kxGroups = (ms) => KX.filter((G) => ms.some((m) => G.test(m) && (m.kahlo?.mitspieler || []).some((x) => x.x)));
+  function kxTiles(st, T, ms) {
+    const out = [];
+    for (const G of kxGroups(ms)) for (const [f, l, title] of G.f) {
+      if (!title) continue;
+      const key = "x_" + G.k + "_" + f;
+      if (!st.some((s) => s[key] > 0)) continue;
+      out.push(T(title, key, (v) => fmtNum(v, 0), { filter: (s) => s[key] > 0, note: `${l} insgesamt \xB7 ${G.n}` }));
+    }
+    return out.slice(0, 9);
+  }
+  function kxTable(G, st, avg) {
+    const rows = st.filter((s) => s["xg_" + G.k]);
+    if (!rows.length) return "";
+    const cols = G.f.filter(([f]) => rows.some((s) => s["x_" + G.k + "_" + f]));
+    if (!cols.length) return "";
+    const v = (s, f) => avg ? fmtNum(s["xa_" + G.k + "_" + f]) : fmtNum(s["x_" + G.k + "_" + f], 0);
+    return `<h3 class="sub-h">${esc(G.n)} <small class="muted">\xB7 ${avg ? "\xD8 je Partie" : "insgesamt"}</small></h3><div class="table-wrap"><table class="lb kx-tab"><thead><tr><th class="l">Spieler</th><th>Partien</th>${cols.map(([, l]) => `<th>${esc(l)}</th>`).join("")}</tr></thead><tbody>
+      ${rows.sort((a, b) => (b["xa_" + G.k + "_" + cols[0][0]] || 0) - (a["xa_" + G.k + "_" + cols[0][0]] || 0)).map((s) => `<tr><td class="l">${catan_default.avatar(s, "mini")}<span class="nm">${esc(s.name)}</span></td><td>${s["xg_" + G.k]}</td>${cols.map(([f]) => `<td>${v(s, f)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
+  }
+  function kxPanel(ms, st, o = {}) {
+    const gs = kxGroups(ms).filter((G) => G.k !== "alle");
+    if (!gs.length) return "";
+    return `<section class="panel kx-panel"><h2 class="panel-title">${o.title || "Aus der gespielten Variante"}</h2>${gs.map((G) => kxTable(G, st, true)).join("")}<p class="hint">Nur Partien aus Kahlo-Catan, gez\xE4hlt je Spieler. Computer werden nicht gewertet.</p></section>`;
+  }
+  function kxMore(ms, st) {
+    const gs = kxGroups(ms);
+    if (!gs.length) return "";
+    const bars = (G, f, l) => {
+      const key = "x_" + G.k + "_" + f, rows = st.filter((s) => s[key] > 0).sort((a, b) => b[key] - a[key]);
+      return rows.length ? `<h3 class="sub-h">${esc(l)} <small class="muted">\xB7 ${esc(G.n)}</small></h3>${barChart(rows.map((s) => ({ label: s.name, value: s["xa_" + G.k + "_" + f], icon: catan_default.avatar(s, "mini"), color: catan_default.colorOf(s.id), note: `${fmtNum(s[key], 0)} in ${plural(s["xg_" + G.k], "Partie", "Partien")}` })))}` : "";
+    };
+    return gs.map((G) => kxTable(G, st, false) + G.f.filter(([, , t]) => t).map(([f, l]) => bars(G, f, `\xD8 ${l} je Partie`)).join("")).join("") + (ms.some((m) => m.kahlo?.barbaren != null) ? `<p class="hint">Barbarenangriffe: \xD8 ${fmtNum(kcAvg(ms.filter((m) => m.kahlo?.barbaren != null).map((m) => +m.kahlo.barbaren)))} je Partie (St\xE4dte & Ritter).</p>` : "") + (ms.some((m) => m.kahlo?.raum) ? `<p class="hint">Xorr-Angriffe: \xD8 ${fmtNum(kcAvg(ms.filter((m) => m.kahlo?.raum?.tief).map((m) => +m.kahlo.raum.angriffe || 0)))} je Tiefraum-Partie.</p>` : "");
+  }
   var CATAN_HOOKS = {
+    variantOf: ctVariant,
+    counters: CT_COUNTERS,
     modes: [["multi", "Mehrspieler"], ["solo", "Einzelspieler"]],
     isSolo: kcIsSoloCat,
     solo: { dashboard: kcSoloDash, statistik: kcSoloStat, verlauf: kcSoloHist },
@@ -2561,15 +2803,16 @@
         }
         Object.assign(s, { kcGames: kc, fastWin: fast, ritter, ritterAvg: rg ? ritter / rg : null, hort, player: s.player || { id: s.id, name: s.name } });
       }
+      kxAgg(st);
     },
-    extraTiles: (st, T, ms) => ms.some(isKC) ? [
+    extraTiles: (st, T, ms) => [...kwTiles(ms), ...ms.some(isKC) ? [
       T("Schnellster Sieg", "fastWin", (v) => plural(v, "Runde", "Runden"), { low: true, filter: (s) => s.fastWin != null, note: "in Kahlo-Catan" }),
-      T("Meiste Ritter", "ritter", (v) => v, { filter: (s) => s.ritter > 0, note: "ausgespielt in Kahlo-Catan" })
-    ] : [],
+      ...st.some((s) => s.ritter > 0) ? [T("Meiste Ritter", "ritter", (v) => v, { filter: (s) => s.ritter > 0, note: ms.some((m) => kxEd(m).includes("staedte")) ? "Ritterkarten bzw. Ritter auf dem Brett (St\xE4dte & Ritter)" : "ausgespielt in Kahlo-Catan" })] : []
+    ] : [], ...kxTiles(st, T, ms)],
     emptyExtra: () => `<section class="panel ct-onl"><div><h2 class="panel-title">Kahlo-Catan</h2><p>Partien aus dem Online-Spiel landen automatisch hier.</p></div>${ctLink("Zum Online-Spiel")}</section>`,
-    dashExtra(ms) {
+    dashExtra(ms, st = []) {
       const kc = ms.filter(isKC);
-      if (!kc.length) return `<section class="panel ct-onl"><div><h2 class="panel-title">Kahlo-Catan</h2><p>Partien aus dem Online-Spiel landen automatisch hier, mit Karte, Runden, Dauer und W\xFCrfelverteilung.</p></div>${ctLink("Zum Online-Spiel")}</section>`;
+      if (!kc.length) return kwDash(ms) + `<section class="panel ct-onl"><div><h2 class="panel-title">Kahlo-Catan</h2><p>Partien aus dem Online-Spiel landen automatisch hier, mit Karte, Runden, Dauer und W\xFCrfelverteilung.</p></div>${ctLink("Zum Online-Spiel")}</section>`;
       const rounds = kc.map((m) => kcNum(m.kahlo?.runden)).filter((v) => v != null), mins = kc.map((m) => kcNum(m.kahlo?.minuten)).filter((v) => v != null);
       const maps = {};
       kc.forEach((m) => {
@@ -2578,7 +2821,7 @@
       });
       const fav = Object.entries(maps).sort((a, b) => b[1] - a[1])[0];
       const fact = (l, v) => `<div class="ct-fact"><small>${l}</small><b>${v}</b></div>`;
-      return `<section class="panel ct-kc"><div class="ct-kc-head"><h2 class="panel-title">Kahlo-Catan</h2>${ctLink("Online spielen", "sm")}</div>
+      return kwDash(ms) + kxPanel(ms, st) + `<section class="panel ct-kc"><div class="ct-kc-head"><h2 class="panel-title">Kahlo-Catan</h2>${ctLink("Online spielen", "sm")}</div>
       <div class="ct-facts">${fact("Partien", kc.length)}${fact("\xD8 Runden", rounds.length ? fmtNum(kcAvg(rounds), 0) : "–")}${fact("\xD8 Dauer", mins.length ? `${fmtNum(kcAvg(mins), 0)} Min` : "–")}${fact("Lieblingskarte", fav ? esc(fav[0]) : "–")}</div>
       ${diceHist(kcDice(kc))}</section>`;
     },
@@ -2587,7 +2830,7 @@
       return kc ? `<p class="hint ct-split">${kc} aus Kahlo-Catan \xB7 ${ms.length - kc} am Brett</p>` : "";
     },
     lineExtra(m) {
-      if (!isKC(m)) return "";
+      if (!isKC(m)) return kwLine(m);
       const k = m.kahlo || {}, bits = [];
       (k.editionen || []).forEach((e) => bits.push(esc(KC_ED[e] || e)));
       if (kcMap(m)) bits.push(esc(kcMap(m)));
@@ -2598,14 +2841,15 @@
       if (k.drache) bits.push(`\u{1F409} ${KC_DRACHE[k.drache.art] || "Drache"}`);
       bits.push(m.online ? "online" : "ein Ger\xE4t");
       const bots = (k.mitspieler || []).filter((x) => x.computer);
-      return `<p class="others ct-meta"><span class="ct-tag">Kahlo-Catan</span>${bits.join(" \xB7 ")}</p>${bots.length ? `<p class="others ct-bots">\u{1F916} ${bots.map((x) => `${esc(x.name)} <small>(${esc(KC_LEVEL[x.computer] || x.computer)})</small> ${x.sp ?? "\u2013"}`).join(" \xB7 ")}</p>` : ""}${k.drache?.hort ? `<p class="others">Drachenhort: <b>${k.drache.hort === "computer" ? "ein Computer" : esc(playerName(k.drache.hort, m))}</b></p>` : ""}`;
+      if (k.energien?.verschmutzung != null) bits.push(`Verschmutzung ${k.energien.verschmutzung}`);
+      return `${kwLine(m)}<p class="others ct-meta"><span class="ct-tag">Kahlo-Catan</span>${bits.join(" \xB7 ")}</p>${bots.length ? `<p class="others ct-bots">\u{1F916} ${bots.map((x) => `${esc(x.name)} <small>(${esc(KC_LEVEL[x.computer] || x.computer)})</small> ${x.sp ?? "\u2013"}`).join(" \xB7 ")}</p>` : ""}${k.drache?.hort ? `<p class="others">Drachenhort: <b>${k.drache.hort === "computer" ? "ein Computer" : esc(playerName(k.drache.hort, m))}</b></p>` : ""}`;
     },
     neuNote: (e) => e && isKC(e) ? '<p class="notice ct-note">Diese Partie kommt aus Kahlo-Catan. \xC4nderungen hier \xFCberschreiben das Ergebnis aus der App.</p>' : e ? "" : `<section class="panel ct-onl sm"><p>Partien aus <b>Kahlo-Catan</b> tr\xE4gt die App selbst ein. Hier nur Partien am echten Spielbrett eintragen.</p>${ctLink("Online spielen")}</section>`,
     keep: (e) => e && isKC(e) ? { ...e.online != null ? { online: e.online } : {}, ...e.kahlo ? { kahlo: e.kahlo } : {} } : {},
-    keepTags: (e) => e && isKC(e) ? (e.tags || []).filter((t) => !/^\d+ Spieler$/.test(t) && !["Normal", "Catan Energie", "Raumfahrer"].includes(t)) : [],
+    keepTags: (e) => e && isKC(e) ? (e.tags || []).filter((t) => !/^\d+ Spieler$/.test(t) && !["Normal", "Catan Energie", "Raumfahrer", "Energien"].includes(t)) : [],
     moreExtra(ms, st) {
       const kc = ms.filter(isKC);
-      if (!kc.length) return "";
+      if (!kc.length) return kwMore(ms);
       const byMap = {};
       kc.forEach((m) => {
         const n = kcMap(m) || "–", o = byMap[n] || (byMap[n] = { n: 0, r: [], t: [] });
@@ -2617,7 +2861,7 @@
       const bars = (list2, val, o = {}) => barChart(list2.map((s) => ({ label: s.name, value: val(s), icon: catan_default.avatar(s, "mini"), color: col(s.id), note: o.note ? o.note(s) : "" })), { digits: o.digits ?? 1 });
       const kcSt = st.filter((s) => s.kcGames);
       const brett = ms.length - kc.length, onl = kc.filter((m) => m.online).length;
-      return `<h3 class="sub-h">Wo gespielt?</h3>${stackBar([{ label: "Kahlo-Catan online", value: onl, color: "#B5371F" }, { label: "Kahlo-Catan auf einem Ger\xE4t", value: kc.length - onl, color: "#E9B824" }, { label: "Am Brett", value: brett, color: "#2C64B5" }], { label: "Herkunft" })}
+      return `${kwMore(ms)}${kxMore(ms, st)}<h3 class="sub-h">Wo gespielt?</h3>${stackBar([{ label: "Kahlo-Catan online", value: onl, color: "#B5371F" }, { label: "Kahlo-Catan auf einem Ger\xE4t", value: kc.length - onl, color: "#E9B824" }, { label: "Am Brett", value: brett, color: "#2C64B5" }], { label: "Herkunft" })}
       <div class="legend"><span><i style="background:#B5371F"></i>online (${onl})</span><span><i style="background:#E9B824"></i>ein Ger\xE4t (${kc.length - onl})</span><span><i style="background:#2C64B5"></i>am Brett (${brett})</span></div>
       ${diceHist(kcDice(kc))}
       <h3 class="sub-h">Karten in Kahlo-Catan</h3><div class="table-wrap"><table class="lb"><thead><tr><th class="l">Karte</th><th>Partien</th><th>\xD8 Runden</th><th>\xD8 Dauer</th></tr></thead><tbody>${Object.entries(byMap).sort((a, b) => b[1].n - a[1].n).map(([n, o]) => `<tr><td class="l">${esc(n)}</td><td>${o.n}</td><td>${o.r.length ? fmtNum(kcAvg(o.r), 0) : "–"}</td><td>${o.t.length ? `${fmtNum(kcAvg(o.t), 0)} Min` : "–"}</td></tr>`).join("")}</tbody></table></div>
@@ -2636,9 +2880,9 @@
     max: 6,
     unit: "Siegpunkte",
     variants: [["normal", "Normal"], ["energie", "Catan Energie"], ["raumfahrer", "Raumfahrer"]],
-    awards: { normal: ["L\xE4ngste Handelsstra\xDFe", "Gr\xF6\xDFte Rittermacht"] },
+    awards: { normal: ["L\xE4ngste Handelsstra\xDFe", "Gr\xF6\xDFte Rittermacht"], energie: ["L\xE4ngste Handelsstra\xDFe", "Aktivster Umweltsch\xFCtzer"] },
     ...CATAN_HOOKS,
-    hint: (v) => v === "normal" ? "Siegpunkte am Ende inkl. Siegpunktkarten. Unten optional: wer die Handelsstra\xDFe und die Rittermacht hatte." : "Siegpunkte am Spielende eintragen.",
+    hint: (v) => v === "normal" ? "Siegpunkte am Ende inkl. Siegpunktkarten. Unten optional: wer die Handelsstra\xDFe und die Rittermacht hatte." : v === "energie" ? "Siegpunkte am Spielende eintragen. Darunter die Kraftwerke, die am Ende auf dem Brett stehen." : "Siegpunkte am Spielende eintragen.",
     avatar: (p, size = "dot") => `<span class="av av-${size}" aria-hidden="true">${house(pickFor("catan", PAL8, p.id).c)}</span>`,
     icons: { pal: PAL8, current: (p) => pickFor("catan", PAL8, p.id), render: (x) => house(x.c) },
     colorOf: (id) => {
@@ -4690,8 +4934,564 @@
   lgg.tabs = { dashboard: lDash, neu: lNeu, statistik: lStat, verlauf: lHist };
   var ligretto_default = lgg;
 
+  // js/games/carcassonne.js
+  // Meeple in Spielerfarben
+  var MEEPLE_PATH = "M20 2.5c3.6 0 6.3 2.7 6.3 6.1 0 1.5-.5 2.8-1.3 3.9 5 .9 10.6 2.8 11.6 5.4.7 1.9-.6 3.6-2.6 3.6-2 0-4.2-.3-6.2-.6.8 4.3 3.1 8.6 5.2 11.6 1 1.5.2 3.2-1.7 3.2h-6.4c-1.2 0-1.9-.5-2.4-1.6L20 29.2l-2.5 4.8c-.5 1.1-1.2 1.6-2.4 1.6H8.7c-1.9 0-2.7-1.7-1.7-3.2 2.1-3 4.4-7.3 5.2-11.6-2 .3-4.2.6-6.2.6-2 0-3.3-1.7-2.6-3.6 1-2.6 6.6-4.5 11.6-5.4-.8-1.1-1.3-2.4-1.3-3.9 0-3.4 2.7-6.1 6.3-6.1z";
+  var meeple = (c, cls = "") => `<svg class="cc-meeple ${cls}" viewBox="0 0 40 40" aria-hidden="true"><path d="${MEEPLE_PATH}" fill="${c}" stroke="rgba(0,0,0,.45)" stroke-width="1.6" stroke-linejoin="round"/><path d="M16.2 6.4c.9-1.3 2.2-1.9 3.6-1.9" fill="none" stroke="rgba(255,255,255,.5)" stroke-width="1.6" stroke-linecap="round"/></svg>`;
+  var CCPAL = [
+    { c: "#F2C200", n: "Gelb" },
+    { c: "#D7262E", n: "Rot" },
+    { c: "#2E8B3A", n: "Gr\xFCn" },
+    { c: "#1F5FAF", n: "Blau" },
+    { c: "#2B2B2B", n: "Schwarz" },
+    { c: "#9A9A9A", n: "Grau" },
+    { c: "#E77FB3", n: "Rosa" },
+    { c: "#7E4FA8", n: "Lila" },
+    { c: "#E8792B", n: "Orange" },
+    { c: "#17A2A0", n: "T\xFCrkis" },
+    { c: "#F3EFE3", n: "Wei\xDF" },
+    { c: "#7B4A2A", n: "Braun" }
+  ];
+  // Plättchen-Grafik: Wiese, Straße, Stadt (eigene Zeichnung)
+  var ccTile = (kind, cls = "") => {
+    const base = `<rect width="40" height="40" fill="#7FAF4E"/><path d="M0 0h40v40H0z" fill="none" stroke="#5E8A36" stroke-width="1.4"/>`;
+    const road = '<path d="M0 22 H40" stroke="#E9DDB6" stroke-width="5"/><path d="M0 22 H40" stroke="#C9B98A" stroke-width="1" stroke-dasharray="3 3"/>';
+    const roadV = '<path d="M20 40 V22" stroke="#E9DDB6" stroke-width="5"/>';
+    const city = '<path d="M0 0 H40 Q20 18 0 0Z" fill="#C88B4A"/><path d="M0 0 H40 Q20 18 0 0Z" fill="none" stroke="#8A5A2B" stroke-width="1.6"/><path d="M14 3h4v3h-4zM22 3h4v3h-4z" fill="#B5432A"/>';
+    const cityL = '<path d="M0 0 V40 Q18 20 0 0Z" fill="#C88B4A" stroke="#8A5A2B" stroke-width="1.6"/><path d="M3 15h3v4H3zM3 22h3v4H3z" fill="#B5432A"/><path d="M5 18l2.6 2.2L5 22.4z" fill="#1F5FAF"/>';
+    const kloster = '<path d="M14 26 V17 L20 12 L26 17 V26Z" fill="#E8DCC0" stroke="#7A5A33" stroke-width="1.4"/><path d="M12.5 18 L20 11 L27.5 18" fill="none" stroke="#B5432A" stroke-width="2.4"/><path d="M18.5 26v-5h3v5" fill="#7A5A33"/>';
+    const body = kind === "road" ? road : kind === "cross" ? road + roadV + '<circle cx="20" cy="22" r="3.6" fill="#8A6B3F"/>' : kind === "city" ? city + roadV : kind === "cityL" ? cityL + road.replace(/M0 22/g, "M9 22") : kind === "kloster" ? '<path d="M20 40 V26" stroke="#E9DDB6" stroke-width="5"/>' + kloster : "";
+    return `<svg class="cc-tile ${cls}" viewBox="0 0 40 40" aria-hidden="true">${base}${body}</svg>`;
+  };
+  var ccChip = (laps, cls = "") => laps ? `<span class="cc-chip ${cls}" title="${laps * 50} Punkte aus der Wertungstafel"><b>${laps * 50}</b></span>` : "";
+  var CC_EXP = [
+    ["fluss", "Der Fluss"],
+    ["abt", "Der Abt"],
+    ["wk", "Wirtsh\xE4user & Kathedralen"],
+    ["hb", "H\xE4ndler & Baumeister"],
+    ["bd", "Burgfr\xE4ulein & Drache"],
+    ["turm", "Der Turm"],
+    ["ab", "Abtei & B\xFCrgermeister"],
+    ["andere", "Andere"]
+  ];
+  var ccExpName = (k) => CC_EXP.find(([x]) => x === k)?.[1] || k;
+  var CC_EXP_KEY = "kg.carcassonne.exp";
+  var ccLastExp = () => {
+    try {
+      const v = JSON.parse(localStorage.getItem(CC_EXP_KEY));
+      if (Array.isArray(v)) return v;
+    } catch {
+    }
+    return [];
+  };
+  var ccg = {
+    id: "carcassonne",
+    name: "Carcassonne",
+    theme: "theme-carcassonne",
+    themeColor: "#DCE6C2",
+    dot: "#2E8B3A",
+    avatar: (p, size = "dot") => `<span class="av av-${size}" aria-hidden="true">${meeple(pickFor("carcassonne", CCPAL, p.id).c)}</span>`,
+    icons: { pal: CCPAL, current: (p) => pickFor("carcassonne", CCPAL, p.id), render: (x) => meeple(x.c) },
+    colorOf: (id) => {
+      const c = pickFor("carcassonne", CCPAL, id).c;
+      return c === "#F3EFE3" ? "#A8A29E" : c === "#F2C200" ? "#D9A800" : c;
+    },
+    winIcon: () => meeple("#F2C200", "toast-ic"),
+    logo: () => `<div class="lg-carcassonne"><span class="t t1">${ccTile("city")}</span><span class="t t2">${ccTile("cross")}</span><span class="t t3">${ccTile("kloster")}</span><span class="m">${meeple("#D7262E")}</span><span class="nm">Carcassonne</span></div>`,
+    header: () => `<div class="cc-map" aria-hidden="true">${[["cityL", 0, 0], ["city", 1, 0], ["road", 2, 0], ["road", 0, 1], ["cross", 1, 1], ["kloster", 2, 1]].map(([k, x, y]) => `<span class="t" style="left:${x * 33.3}%;top:${y * 50}%">${ccTile(k)}</span>`).join("")}<span class="m m1">${meeple("#1F5FAF")}</span><span class="m m2">${meeple("#D7262E")}</span><span class="m m3">${meeple("#F2C200")}</span></div><h1 class="g-title">Carcassonne</h1><p class="g-sub">Pl\xE4ttchen legen, Meeple setzen, punkten</p>`
+  };
+  var ccnm = (p, m) => playerName(p, m);
+  var ccav = (p, m, size = "dot") => ccg.avatar({ id: p, name: ccnm(p, m) }, size);
+  var ccPos = (v) => {
+    const n = parseInt(v, 10);
+    return Number.isFinite(n) && n >= 0 && n <= 49 ? n : null;
+  };
+  var ccTotal = (d, p) => (d.laps[p] || 0) * 50 + (ccPos(d.pos[p]) ?? 0);
+  // Wer ist als Erster über 50 gezogen? (erster +50-Druck in der Partie)
+  var ccFirst = (m) => (m.log || [])[0] || null;
+  function ccNeu(el, ctx) {
+    const K = "carcassonne";
+    let d = draft.get(K);
+    if (!d) {
+      const sel = /* @__PURE__ */ new Set(), exp = new Set(ccLastExp());
+      el.innerHTML = `${rulesPanel(ccg)}<section class="panel">
+        <div class="setup-grid"><label class="field"><span>Gespielt am</span><input type="date" id="cDate" value="${today()}"></label></div>
+        <div id="cPick" class="kpick"></div>
+        <span class="field-label cc-l">Mit Erweiterungen?</span>
+        <div class="chips cc-exp" data-exp>${CC_EXP.map(([k, n]) => `<button type="button" class="chip" data-x="${k}" aria-pressed="${exp.has(k)}"><span>${esc(n)}</span></button>`).join("")}</div>
+        <p class="hint">Nichts angetippt = Grundspiel.</p>
+        <button class="btn btn-primary wide" type="button" id="cStart" disabled>Spiel starten</button>
+        <p class="hint">W\xE4hrend des Spiels z\xE4hlt ihr wie gewohnt auf der Wertungstafel. Zieht jemand \xFCber die 49 hinaus, dr\xFCckt ihr bei ihm <b>+50</b>, so wie man sonst das 50/100-Pl\xE4ttchen nimmt. Am Ende tragt ihr das Feld ein, auf dem jeder steht, und die App rechnet den Endstand.</p>
+      </section>`;
+      const btn = $("#cStart", el);
+      playerPicker($("#cPick", el), { game: ccg, selected: sel, min: 2, max: 6, onChange: () => btn.disabled = sel.size < 2 });
+      $("[data-exp]", el).addEventListener("click", (ev) => {
+        const b = ev.target.closest("[data-x]");
+        if (!b) return;
+        const k = b.dataset.x;
+        exp.has(k) ? exp.delete(k) : exp.add(k);
+        b.setAttribute("aria-pressed", exp.has(k));
+      });
+      btn.onclick = () => {
+        const ex = CC_EXP.map(([k]) => k).filter((k) => exp.has(k));
+        try {
+          localStorage.setItem(CC_EXP_KEY, JSON.stringify(ex));
+        } catch {
+        }
+        draft.set(K, { date: $("#cDate", el).value || today(), players: kSort(sel), exp: ex, laps: {}, pos: {}, farm: {}, log: [] });
+        ctx.rerender();
+      };
+      return;
+    }
+    const P = d.players;
+    d.laps ||= {};
+    d.pos ||= {};
+    d.farm ||= {};
+    d.log ||= [];
+    const all = () => P.every((p) => ccPos(d.pos[p]) != null);
+    const standings = () => {
+      const t = Object.fromEntries(P.map((p) => [p, ccTotal(d, p)])), pl = places(t), order = [...P].sort((a, b) => pl[a] - pl[b]);
+      const any = P.some((p) => t[p] > 0);
+      return `<ol class="standings cc-stand">${order.map((p) => `<li class="${any && pl[p] === 1 ? "lead" : ""}"><span class="st-place">${pl[p]}.</span>${ccav(p)}<span class="nm">${esc(ccnm(p))}${ccChip(d.laps[p], "sm")}</span><b>${fmtNum(t[p], 0)}${ccPos(d.pos[p]) == null ? '<small class="cc-q">+?</small>' : ""}</b></li>`).join("")}</ol>`;
+    };
+    const first = d.log[0];
+    el.innerHTML = `${rulesPanel(ccg)}
+      <section class="panel score-head"><div class="sh-top"><span>${fmtDate(d.date)}${d.id ? " \xB7 wird bearbeitet" : ""}</span><span>${d.exp.length ? d.exp.map(ccExpName).map(esc).join(", ") : "Grundspiel"}</span></div>
+      <div data-stand>${standings()}</div>
+      ${first ? `<p class="hint cc-first">Als Erste:r \xFCber 50: <b>${esc(ccnm(first))}</b></p>` : ""}</section>
+      <section class="panel cc-live"><h2 class="panel-title">Wertungstafel</h2>
+      <div class="cc-rows">${P.map((p) => `<div class="cc-row" data-p="${p}">
+        <span class="rin-name">${ccav(p)}${esc(ccnm(p))}</span>
+        <span class="cc-laps"><button type="button" class="cc-minus" data-m50="${p}" aria-label="50 abziehen bei ${esc(ccnm(p))}" ${d.laps[p] ? "" : "disabled"}>−</button>${d.laps[p] ? ccChip(d.laps[p]) : '<span class="cc-chip none"><b>0</b></span>'}<button type="button" class="cc-plus" data-p50="${p}">+50</button></span>
+        <label class="cc-pos"><small>Feld (0–49)</small><input type="number" inputmode="numeric" min="0" max="49" data-pos="${p}" value="${d.pos[p] ?? ""}" placeholder="–" aria-label="Feld auf der Wertungstafel ${esc(ccnm(p))}"></label>
+        <b class="cc-sum" data-sum="${p}">${fmtNum(ccTotal(d, p), 0)}</b>
+      </div>`).join("")}</div>
+      <p class="hint"><b>+50</b> dr\xFCcken, sobald jemand \xFCber die 49 hinaus zieht. Am Ende das Feld eintragen, auf dem sein Meeple steht. Endstand = 50er + Feld.</p>
+      ${details("Schlusswertung im Detail (optional)", `<p class="hint">Wie viele Punkte gab es in der Schlusswertung f\xFCr die Wiesen (Bauern, 3 je fertiger Stadt)? Das flie\xDFt nur in die Statistik ein, der Endstand bleibt das Feld auf der Tafel.</p>
+        <div class="cc-farm">${P.map((p) => `<label class="cc-farm-in"><span class="rin-name">${ccav(p)}${esc(ccnm(p))}</span><input type="number" inputmode="numeric" min="0" max="200" data-farm="${p}" value="${d.farm[p] ?? ""}" placeholder="0" aria-label="Wiesenpunkte ${esc(ccnm(p))}"></label>`).join("")}</div>`, P.some((p) => d.farm[p] != null && d.farm[p] !== ""))}
+      </section>
+      <div class="live-actions">${d.log.length ? '<button class="btn btn-ghost" type="button" data-undo>Letztes +50 zur\xFCcknehmen</button>' : ""}<button class="btn btn-ghost" type="button" data-cancel>${d.id ? "Bearbeiten abbrechen" : "Abbrechen"}</button><button class="btn btn-primary" type="button" data-finish>${d.id ? "\xC4nderungen speichern" : "Spiel beenden & speichern"}</button></div>`;
+    const save = () => draft.set(K, d);
+    const refresh = () => {
+      $("[data-stand]", el).innerHTML = standings();
+      P.forEach((p) => $(`[data-sum="${p}"]`, el).textContent = fmtNum(ccTotal(d, p), 0));
+    };
+    $$("[data-p50]", el).forEach((b) => b.addEventListener("click", () => {
+      const p = b.dataset.p50, before = d.log.length;
+      d.laps[p] = (d.laps[p] || 0) + 1;
+      d.log.push(p);
+      save();
+      ccNeu(el, ctx);
+      if (!before) toast(`<b>${esc(ccnm(p))}</b> ist als Erste:r \xFCber 50!`, { icon: ccav(p) });
+      else if (d.laps[p] >= 2) toast(`<b>${esc(ccnm(p))}</b> hat jetzt ${d.laps[p] * 50} auf dem Konto.`, { icon: ccav(p) });
+    }));
+    $$("[data-m50]", el).forEach((b) => b.addEventListener("click", () => {
+      const p = b.dataset.m50;
+      if (!d.laps[p]) return;
+      d.laps[p]--;
+      const i = d.log.lastIndexOf(p);
+      if (i >= 0) d.log.splice(i, 1);
+      save();
+      ccNeu(el, ctx);
+    }));
+    $$("[data-pos]", el).forEach((i) => i.addEventListener("input", () => {
+      const v = i.value.trim();
+      if (v !== "" && ccPos(v) == null) {
+        i.classList.add("bad");
+        return;
+      }
+      i.classList.remove("bad");
+      if (v === "") delete d.pos[i.dataset.pos];
+      else d.pos[i.dataset.pos] = ccPos(v);
+      save();
+      refresh();
+    }));
+    $$("[data-farm]", el).forEach((i) => i.addEventListener("input", () => {
+      const v = parseInt(i.value, 10);
+      if (Number.isFinite(v) && v >= 0) d.farm[i.dataset.farm] = v;
+      else delete d.farm[i.dataset.farm];
+      save();
+    }));
+    $("[data-undo]", el)?.addEventListener("click", () => {
+      const p = d.log.pop();
+      if (p && d.laps[p]) d.laps[p]--;
+      save();
+      ccNeu(el, ctx);
+    });
+    $("[data-cancel]", el).onclick = async () => {
+      if (await confirmBox(d.id ? "Bearbeiten abbrechen? Die gespeicherte Partie bleibt, wie sie war." : "Laufendes Spiel verwerfen? Die Eintr\xE4ge gehen verloren.", { ok: d.id ? "Abbrechen" : "Verwerfen", danger: !d.id })) {
+        draft.clear(K);
+        ctx.rerender();
+      }
+    };
+    $("[data-finish]", el).onclick = async () => {
+      const miss = P.filter((p) => ccPos(d.pos[p]) == null);
+      if (miss.length) {
+        toast(`Trag noch das Feld auf der Wertungstafel ein: ${esc(miss.map((p) => ccnm(p)).join(", "))}.`);
+        $(`[data-pos="${miss[0]}"]`, el)?.focus();
+        return;
+      }
+      const totals = Object.fromEntries(P.map((p) => [p, ccTotal(d, p)]));
+      const pl = places(totals), winners = P.filter((p) => pl[p] === 1);
+      const farm = Object.fromEntries(P.filter((p) => Number.isFinite(d.farm[p])).map((p) => [p, d.farm[p]]));
+      const m = {
+        ...d.id ? { id: d.id, created: d.created } : {},
+        game: "carcassonne",
+        date: d.date,
+        players: P,
+        totals,
+        places: pl,
+        winners,
+        laps: Object.fromEntries(P.map((p) => [p, d.laps[p] || 0])),
+        pos: Object.fromEntries(P.map((p) => [p, ccPos(d.pos[p])])),
+        log: d.log,
+        exp: d.exp,
+        ...Object.keys(farm).length ? { farm } : {},
+        tags: [...d.exp.length ? d.exp.map(ccExpName) : ["Grundspiel"], plural(P.length, "Spieler", "Spieler")]
+      };
+      try {
+        await saveMatch(m);
+        draft.clear(K);
+        toast(`<b>${d.id ? "Gespeichert." : "Carcassonne!"}</b> ${esc(winners.map((p) => ccnm(p)).join(" & "))} ${winners.length > 1 ? "gewinnen" : "gewinnt"} mit ${fmtNum(totals[winners[0]], 0)} Punkten.`, { icon: ccg.winIcon() });
+        ctx.go("verlauf");
+      } catch (err) {
+        toast(esc(err.message));
+      }
+    };
+  }
+  function ccStats(ms) {
+    const st = perPlayer(ms);
+    for (const s of st) {
+      let laps = 0, first = 0, firstWin = 0, farmSum = 0, farmN = 0, farmTot = 0, c100 = 0, lead = [];
+      for (const { m, won, total } of s.results) {
+        laps += m.laps?.[s.id] || 0;
+        if (ccFirst(m) === s.id) {
+          first++;
+          if (won) firstWin++;
+        }
+        if (m.farm?.[s.id] != null) {
+          farmSum += +m.farm[s.id];
+          farmN++;
+          farmTot += total || 0;
+        }
+        if ((total || 0) >= 100) c100++;
+        if (won) {
+          const others = m.players.filter((q) => q !== s.id).map((q) => m.totals?.[q] ?? 0);
+          if (others.length) lead.push(total - Math.max(...others));
+        }
+      }
+      const gaps = s.results.filter((r) => r.total != null).map((r) => Math.max(...Object.values(r.m.totals)) - r.total);
+      Object.assign(s, {
+        player: { id: s.id, name: s.name },
+        laps,
+        first,
+        firstWin,
+        farmAvg: farmN ? farmSum / farmN : null,
+        farmShare: farmTot ? farmSum / farmTot : null,
+        farmN,
+        c100,
+        bigWin: lead.length ? Math.max(...lead) : null,
+        gap: gaps.length ? gaps.reduce((a, b) => a + b, 0) / gaps.length : null
+      });
+    }
+    return st;
+  }
+  function ccDash(el, ctx) {
+    const ms = matchesOf("carcassonne"), d = draft.get("carcassonne");
+    const head = `${rulesPanel(ccg)}${d ? `<section class="panel kv-running"><h2 class="panel-title">${d.id ? "Wird gerade bearbeitet" : "L\xE4uft gerade"}</h2><p class="hint">${esc(d.players.map((p) => ccnm(p)).join(", "))}</p><button class="btn btn-primary" type="button" data-new>${d.id ? "Weiter bearbeiten" : "Spiel fortsetzen"}</button></section>` : ""}`;
+    if (!ms.length) {
+      el.innerHTML = `${head}<div class="empty-state panel"><p>Noch keine Partie gespielt.</p>${d ? "" : '<button class="btn btn-primary" type="button" data-new>Spiel starten</button>'}</div>`;
+      $$("[data-new]", el).forEach((b) => b.onclick = () => ctx.go("neu"));
+      return;
+    }
+    const st = ccStats(ms);
+    const T = (title, key, fmt, opts = {}) => {
+      const r = top(st, key, opts);
+      return statTile(title, r ? fmt(r.value) : "–", r ? whoList(ccg, r.who) : '<span class="muted">noch niemand</span>', opts.note || "");
+    };
+    const tiles = [
+      T("Meiste Siege", "wins", (v) => v),
+      T("Beste Siegquote", "rate", fmtPct, { min: 3, note: "ab 3 Partien" }),
+      T("Rekord", "best", (v) => fmtNum(v, 0), { note: "Punkte in einer Partie" }),
+      T("Bester \xD8", "avg", (v) => fmtNum(v), { min: 2, note: "Punkte, ab 2 Partien" }),
+      T("Schnellster Start", "first", (v) => `${v}\xD7`, { filter: (s) => s.first > 0, note: "als Erste:r \xFCber 50" }),
+      T("100er-Club", "c100", (v) => `${v}\xD7`, { filter: (s) => s.c100 > 0, note: "Partien mit 100+ Punkten" }),
+      ...st.some((s) => s.farmAvg != null) ? [T("Bester Bauer", "farmAvg", (v) => `\xD8 ${fmtNum(v)}`, { filter: (s) => s.farmAvg != null, note: "Wiesenpunkte je Partie" })] : [],
+      T("H\xF6chster Sieg", "bigWin", (v) => `+${fmtNum(v, 0)}`, { filter: (s) => s.bigWin != null, note: "Vorsprung auf Platz 2" })
+    ];
+    const recent = [...ms].reverse().slice(0, 3);
+    const fm = ms.filter((m) => ccFirst(m)), fw = fm.filter((m) => m.winners.includes(ccFirst(m))).length;
+    el.innerHTML = `${head}<div class="stats-grid">${tiles.join("")}</div>
+      ${fm.length >= 2 ? `<section class="panel"><p class="big-q"><b>${fmtPct(fw / fm.length)}</b> – so oft hat gewonnen, wer als Erste:r \xFCber 50 war <small class="muted">(${fw} von ${fm.length})</small></p></section>` : ""}
+      <section class="panel"><h2 class="panel-title">Zuletzt gespielt</h2>${recent.map((m) => `<div class="mini-hist"><span class="hist-date">${fmtDate(m.date)}${m.exp?.length ? ` \xB7 ${esc(m.exp.map(ccExpName).join(", "))}` : ""}</span>${ccLine(m)}</div>`).join("")}
+      <button class="btn btn-ghost wide" type="button" data-all>Alle Partien</button></section>`;
+    $$("[data-new]", el).forEach((b) => b.onclick = () => ctx.go("neu"));
+    $("[data-all]", el).onclick = () => ctx.go("verlauf");
+  }
+  function ccStat(el, ctx) {
+    const ms = matchesOf("carcassonne");
+    if (!ms.length) {
+      el.innerHTML = '<div class="empty-state panel"><p>Noch keine Partien – hier erscheinen bald Ranglisten.</p></div>';
+      return;
+    }
+    const st = ccStats(ms);
+    const num = (v) => v == null ? "–" : fmtNum(v);
+    const cols = [{ key: "games", label: "Partien" }, { key: "wins", label: "Siege" }, { key: "rate", label: "Quote", fmt: fmtPct }, { key: "avg", label: "\xD8 Punkte", fmt: num }, { key: "best", label: "Rekord", fmt: num }, { key: "first", label: "Erste:r \xFCber 50" }];
+    const bar = (list2, val, o = {}) => barChart(list2.map((s) => ({ label: s.name, value: val(s), icon: ccg.avatar(s, "mini"), color: o.color || ccg.colorOf(s.id), note: o.note ? o.note(s) : "" })), { unit: o.unit || "", digits: o.digits ?? 1, max: o.max });
+    const groups = {};
+    ms.forEach((m) => (groups[m.players.length] ||= []).push(...Object.values(m.totals || {})));
+    const expRows = [["", "Grundspiel"], ...CC_EXP].map(([k, n]) => {
+      const mm = ms.filter((m) => k ? (m.exp || []).includes(k) : !(m.exp || []).length);
+      if (!mm.length) return "";
+      const wins = {};
+      mm.forEach((m) => m.winners.forEach((p) => wins[p] = (wins[p] || 0) + 1));
+      const best = Object.entries(wins).sort((a, b) => b[1] - a[1]);
+      const topW = best.length ? best.filter(([, v]) => v === best[0][1]).map(([p]) => ccnm(p)).join(", ") : "–";
+      const wp = mm.map((m) => m.totals[m.winners[0]] ?? 0);
+      return `<tr><td class="l">${esc(n)}</td><td>${mm.length}</td><td>${fmtNum(kcAvg(wp), 0)}</td><td class="l">${esc(topW)}</td></tr>`;
+    }).join("");
+    const firsts = st.filter((s) => s.first);
+    const farmers = st.filter((s) => s.farmAvg != null);
+    const more = `
+      <h3 class="sub-h">Punkte im Verlauf</h3>${trendChart(ccg, ms, (m, id) => m.totals?.[id], { colors: (id) => ccg.colorOf(id), label: "Punkte" })}
+      ${firsts.length ? `<h3 class="sub-h">Als Erste:r \xFCber 50</h3>${bar([...firsts].sort((a, b) => b.first - a.first), (s) => s.first, { digits: 0, note: (s) => `${s.firstWin} davon gewonnen` })}` : ""}
+      <h3 class="sub-h">50er-Pl\xE4ttchen je Partie</h3>${bar([...st].sort((a, b) => b.laps / b.games - a.laps / a.games), (s) => s.laps / s.games, { note: (s) => `${s.laps} insgesamt` })}
+      ${farmers.length ? `<h3 class="sub-h">\xD8 Wiesenpunkte (Bauern)</h3>${bar([...farmers].sort((a, b) => b.farmAvg - a.farmAvg), (s) => s.farmAvg, { color: "#5E8A36", note: (s) => `${plural(s.farmN, "Partie", "Partien")} \xB7 ${fmtPct(s.farmShare || 0)} der Punkte` })}` : ""}
+      <h3 class="sub-h">\xD8 Abstand zum Sieger</h3>${bar([...st].filter((s) => s.gap != null).sort((a, b) => a.gap - b.gap), (s) => s.gap, { note: () => "kleiner ist besser" })}
+      <h3 class="sub-h">\xD8 Punkte nach Spielerzahl</h3>${barChart(Object.entries(groups).sort((a, b) => a[0] - b[0]).map(([n, v]) => ({ label: `${n} Spieler`, value: v.reduce((a, b) => a + b, 0) / v.length, color: "#2E8B3A" })))}
+      ${expRows ? `<h3 class="sub-h">Mit welchen Erweiterungen?</h3><div class="table-wrap"><table class="lb"><thead><tr><th class="l">Erweiterung</th><th>Partien</th><th>\xD8 Siegerpunkte</th><th class="l">Meiste Siege</th></tr></thead><tbody>${expRows}</tbody></table></div><p class="hint">Eine Partie mit mehreren Erweiterungen z\xE4hlt bei jeder mit.</p>` : ""}
+      <h3 class="sub-h">L\xE4ngste Siegesserie</h3>${bar([...st].filter((s) => s.streak).sort((a, b) => b.streak - a.streak), (s) => s.streak, { digits: 0, note: (s) => s.current ? `aktuell ${s.current}` : "" })}
+      <h3 class="sub-h">Kopf an Kopf</h3><div id="h2h"></div>`;
+    el.innerHTML = `<section class="panel"><h2 class="panel-title">Rangliste</h2>${leaderboard(ccg, st, cols)}<p class="hint">Sortiert nach Siegen. Bei Gleichstand gewinnen alle mit den meisten Punkten.</p></section>
+      <section class="panel"><h2 class="panel-title">\xD8 Punkte</h2>${bar([...st].sort((a, b) => b.avg - a.avg), (s) => s.avg, { note: (s) => `Rekord ${s.best}` })}</section>
+      <section class="panel">${details("Mehr Statistiken", more)}</section>`;
+    h2hBlock($("#h2h", el), ccg, ms);
+  }
+  function ccLine(m) {
+    const f = ccFirst(m), withLaps = m.players.filter((p) => m.laps?.[p]);
+    const bits = [];
+    if (withLaps.length) bits.push(`<span class="cc-lapline">${withLaps.sort((a, b) => (m.places?.[a] ?? 9) - (m.places?.[b] ?? 9)).map((p) => `${esc(ccnm(p, m))} ${ccChip(m.laps[p], "sm")}<small>+ Feld ${m.pos?.[p] ?? "?"}</small>`).join(" \xB7 ")}</span>`);
+    return rankedLine(ccg, m) + (bits.length ? `<p class="others">${bits.join("")}</p>` : "") + (f ? `<p class="others">Als Erste:r \xFCber 50: <b>${esc(ccnm(f, m))}</b></p>` : "") + (m.farm ? `<p class="others">Wiesen: ${Object.entries(m.farm).sort((a, b) => b[1] - a[1]).map(([p, v]) => `${esc(ccnm(p, m))} ${v}`).join(" \xB7 ")}</p>` : "");
+  }
+  function ccHist(el, ctx) {
+    historyList(el, ctx, { matches: matchesOf("carcassonne"), line: ccLine, onEdit: async (m) => {
+      const cur = draft.get("carcassonne");
+      if (cur && !await confirmBox(cur.id ? "Es wird schon eine andere Partie bearbeitet. Verwerfen und diese bearbeiten?" : "Es l\xE4uft gerade ein Spiel. Verwerfen und diese Partie bearbeiten?", { ok: "Verwerfen", danger: true })) return;
+      // Ältere oder von Hand gespeicherte Partien ohne Feld: Feld aus dem Endstand ableiten
+      const laps = {}, pos = {};
+      m.players.forEach((p) => {
+        const t = +m.totals?.[p] || 0;
+        laps[p] = m.laps?.[p] ?? Math.floor(t / 50);
+        pos[p] = m.pos?.[p] ?? t - laps[p] * 50;
+      });
+      draft.set("carcassonne", { id: m.id, created: m.created, date: m.date, players: m.players, exp: m.exp || [], laps, pos, farm: { ...m.farm || {} }, log: [...m.log || []] });
+      ctx.go("neu");
+    } });
+  }
+  ccg.tabs = { dashboard: ccDash, neu: ccNeu, statistik: ccStat, verlauf: ccHist };
+  var carcassonne_default = ccg;
+
+  // js/games/sudoku.js
+  // Sudoku läuft in einer eigenen App (auch offline). Ergebnisse kommen von dort, hier wird nur ausgewertet.
+  var SD_URL = "https://liviuweb.github.io/kahlo-sudoku/";
+  var SD_LV = [["leicht", "Leicht"], ["mittel", "Mittel"], ["schwer", "Schwer"], ["experte", "Experte"]];
+  var sdLvName = (k) => (SD_LV.find(([x]) => x === k) || [k, k])[1];
+  var SD_PAL = [
+    { n: 1, c: "#C8553D", t: "Terrakotta" }, { n: 2, c: "#2F6F73", t: "Petrol" }, { n: 3, c: "#E3A33B", t: "Senf" }, { n: 4, c: "#1E2533", t: "Tinte" },
+    { n: 5, c: "#7A5BA6", t: "Lila" }, { n: 6, c: "#3E8E5A", t: "Gr\xFCn" }, { n: 7, c: "#D9628A", t: "Rosa" }, { n: 8, c: "#2C64B5", t: "Blau" },
+    { n: 9, c: "#8C5A3C", t: "Braun" }, { n: 3, c: "#5D6D7E", t: "Grau" }, { n: 7, c: "#B8860B", t: "Gold" }, { n: 5, c: "#14708C", t: "T\xFCrkis" }
+  ];
+  var sdTile = (n, c, cls = "") => `<span class="sd-t ${cls}" style="--c:${c}"><b>${n}</b></span>`;
+  var sdIco = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>';
+  var sdLink = (label = "Sudoku spielen", cls = "") => `<a class="sd-online ${cls}" href="${SD_URL}" target="_blank" rel="noopener">${label}${sdIco}</a>`;
+  var sdTime = (s) => {
+    s = Math.max(0, Math.round(+s || 0));
+    const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = String(s % 60).padStart(2, "0");
+    return h ? `${h}:${String(m).padStart(2, "0")}:${x}` : `${m}:${x}`;
+  };
+  var sdGrid = (cls = "") => `<div class="sd-mini ${cls}" aria-hidden="true">${[5, 0, 3, 0, 9, 0, 1, 0, 7].map((n, i) => `<i class="${i % 2 ? "" : "f"}">${n || ""}</i>`).join("")}</div>`;
+  var sdg = {
+    id: "sudoku",
+    name: "Sudoku",
+    theme: "theme-sudoku",
+    themeColor: "#F4EFE6",
+    dot: "#C8553D",
+    avatar: (p, size = "dot") => {
+      const x = pickFor("sudoku", SD_PAL, p.id);
+      return `<span class="av av-${size}" aria-hidden="true">${sdTile(x.n, x.c)}</span>`;
+    },
+    icons: { pal: SD_PAL, current: (p) => pickFor("sudoku", SD_PAL, p.id), render: (x) => sdTile(x.n, x.c) },
+    colorOf: (id) => pickFor("sudoku", SD_PAL, id).c,
+    winIcon: () => sdTile(9, "#C8553D", "toast-sd"),
+    logo: () => `<div class="lg-sudoku">${sdGrid()}<span class="nm">Sudoku</span></div>`,
+    header: () => `${sdGrid("hd")}<h1 class="g-title">Sudoku</h1><p class="g-sub">Neun mal neun. Auch im Funkloch.</p>${sdLink("Sudoku spielen")}`
+  };
+  var sdAll = () => matchesOf("sudoku");
+  var sdOk = (m) => m.solved !== false && (m.winners || []).length > 0;
+  var sdSec = (m) => +m.seconds || +m.totals?.[m.players?.[0]] || 0;
+  var sdLevel = (m) => m.level || m.variant || "mittel";
+  var sdPerfect = (m) => sdOk(m) && !+m.mistakes && !+m.hints;
+  var sdView = { f: "all" };
+  var SD_FILTERS = [["all", "Alle"], ["daily", "Tagesr\xE4tsel"], ...SD_LV];
+  var sdList = () => sdAll().filter((m) => sdView.f === "all" || (sdView.f === "daily" ? !!m.daily : !m.daily && sdLevel(m) === sdView.f));
+  // Tagesrätsel: je Tag der Schnellste unter allen, die es gelöst haben
+  function sdDays(ms) {
+    const by = /* @__PURE__ */ new Map();
+    for (const m of ms) {
+      if (!m.daily) continue;
+      const pid = m.players?.[0], rows = by.get(m.daily) || [];
+      const r = { pid, name: playerName(pid, m), sec: sdSec(m), ok: sdOk(m), perfect: sdPerfect(m), m };
+      const ex = rows.find((x) => x.pid === pid);
+      if (!ex) rows.push(r);
+      else if (r.ok && (!ex.ok || r.sec < ex.sec)) Object.assign(ex, r);
+      by.set(m.daily, rows);
+    }
+    return [...by.entries()].sort((a, b) => b[0].localeCompare(a[0])).map(([date, rows]) => {
+      rows.sort((a, b) => (b.ok - a.ok) || a.sec - b.sec);
+      rows.forEach((r, i) => { r.win = r.ok && i === 0 && rows.length > 1; });
+      return { date, rows };
+    });
+  }
+  function sdStats(ms) {
+    const map = /* @__PURE__ */ new Map();
+    for (const m of ms) {
+      const pid = m.players?.[0];
+      if (!pid) continue;
+      if (!map.has(pid)) map.set(pid, { id: pid, name: playerName(pid, m), games: 0, wins: 0, solved: 0, perfect: 0, hints: 0, mistakes: 0, offline: 0, dailyG: 0, dailyWins: 0, lv: Object.fromEntries(SD_LV.map(([k]) => [k, { g: 0, s: 0, best: null, times: [] }])), dates: /* @__PURE__ */ new Set(), all: [] });
+      const s = map.get(pid), ok = sdOk(m), sec = sdSec(m);
+      s.games++;
+      s.dates.add(String(m.date).slice(0, 10));
+      s.hints += +m.hints || 0;
+      s.mistakes += +m.mistakes || 0;
+      if (m.offline) s.offline++;
+      if (ok) { s.solved++; s.wins++; s.all.push(sec); }
+      if (sdPerfect(m)) s.perfect++;
+      if (m.daily) s.dailyG++;
+      else {
+        const l = s.lv[sdLevel(m)] || s.lv.mittel;
+        l.g++;
+        if (ok) { l.s++; l.times.push(sec); l.best = l.best == null ? sec : Math.min(l.best, sec); }
+      }
+    }
+    for (const d of sdDays(ms)) for (const r of d.rows) if (r.win && map.has(r.pid)) map.get(r.pid).dailyWins++;
+    for (const s of map.values()) {
+      Object.assign(s, { player: { id: s.id, name: s.name }, rate: s.games ? s.solved / s.games : null, perfRate: s.solved ? s.perfect / s.solved : null, avgMist: s.games ? s.mistakes / s.games : null, days: s.dates.size, fastest: s.all.length ? Math.min(...s.all) : null });
+      for (const [k] of SD_LV) {
+        const l = s.lv[k];
+        s["best_" + k] = l.best;
+        s["avg_" + k] = l.times.length ? l.times.reduce((a, b) => a + b, 0) / l.times.length : null;
+      }
+      // Längste Serie: an wie vielen Tagen am Stück gespielt
+      const ds = [...s.dates].sort();
+      let run = 0, bestRun = 0, prev = null;
+      for (const d of ds) {
+        const t = day(d).getTime();
+        run = prev != null && Math.round((t - prev) / 864e5) === 1 ? run + 1 : 1;
+        bestRun = Math.max(bestRun, run);
+        prev = t;
+      }
+      s.streak = bestRun;
+    }
+    return [...map.values()];
+  }
+  var sdBar = () => `<div class="filters">${seg("sdf", SD_FILTERS, sdView.f)}</div>`;
+  function sdFiltered(el, ctx, body) {
+    el.innerHTML = `${sdBar()}<div data-body></div>`;
+    $$('[data-seg="sdf"]', el).forEach((s) => s.addEventListener("click", (e) => {
+      const b = e.target.closest("button");
+      if (!b) return;
+      sdView.f = b.dataset.v;
+      sdFiltered(el, ctx, body);
+    }));
+    body($("[data-body]", el), ctx);
+  }
+  var sdEmpty = (msg) => `<div class="empty-state panel"><p>${msg}</p><p class="hint">Sudoku spielt man in der eigenen App. Sie l\xE4uft auch offline, die Ergebnisse kommen von selbst hierher, sobald das Handy wieder Internet hat.</p>${sdLink("Zur Sudoku-App")}</div>`;
+  function sdLine(m) {
+    const pid = m.players?.[0], nm = playerName(pid, m), ok = sdOk(m);
+    const head = m.daily ? (m.daily === m.date ? "Tagesr\xE4tsel" : `Tagesr\xE4tsel vom ${fmtDate(m.daily)}`) : sdLvName(sdLevel(m));
+    const bits = [ok ? (sdPerfect(m) ? "★ perfekt" : [m.mistakes ? plural(+m.mistakes, "Fehler", "Fehler") : "", m.hints ? plural(+m.hints, "Hinweis", "Hinweise") : ""].filter(Boolean).join(" \xB7 ")) : "", m.offline ? "offline gespielt" : ""].filter(Boolean).join(" \xB7 ");
+    return `<div class="sd-line"><span class="who">${sdg.avatar({ id: pid, name: nm }, "mini")}${esc(nm)}</span><span class="sd-head">${esc(head)}</span><b class="${ok ? "" : "sd-x"}">${ok ? sdTime(sdSec(m)) : "aufgegeben"}</b></div>${bits ? `<p class="others">${esc(bits)}</p>` : ""}`;
+  }
+  var sdT = (st) => (title, key, fmt, opts = {}) => {
+    const r = top(st, key, opts);
+    return statTile(title, r ? fmt(r.value) : "–", r ? whoList(sdg, r.who) : '<span class="muted">noch niemand</span>', opts.note || "");
+  };
+  function sdDaily(ms, max = 7) {
+    const days = sdDays(ms).slice(0, max);
+    if (!days.length) return '<p class="empty">Noch kein Tagesr\xE4tsel gespielt.</p>';
+    return `<ul class="sd-days">${days.map((d) => `<li><span class="sd-day">${fmtDate(d.date)}</span><span class="sd-dayrows">${d.rows.map((r) => `<span class="sd-dr ${r.win ? "best" : ""}">${sdg.avatar({ id: r.pid, name: r.name }, "mini")}<span class="nm">${esc(r.name)}</span><b>${r.ok ? sdTime(r.sec) : "–"}</b>${r.perfect ? '<i title="ohne Fehler und Hinweise">★</i>' : ""}</span>`).join("")}</span></li>`).join("")}</ul>
+    <p class="hint">Alle spielen am selben Tag dasselbe R\xE4tsel (Stufe Mittel). Schnellste gel\xF6ste Zeit gewinnt den Tag.</p>`;
+  }
+  function sdLevelTable(st) {
+    const rows = st.filter((s) => SD_LV.some(([k]) => s.lv[k].g));
+    if (!rows.length) return '<p class="empty">Noch keine R\xE4tsel au\xDFer Tagesr\xE4tseln.</p>';
+    return `<div class="table-wrap"><table class="lb"><thead><tr><th class="l">Spieler</th>${SD_LV.map(([, n]) => `<th>${n}</th>`).join("")}</tr></thead><tbody>
+      ${rows.map((s) => `<tr><td class="l">${sdg.avatar(s.player, "mini")}<span class="nm">${esc(s.name)}</span></td>${SD_LV.map(([k]) => `<td>${s.lv[k].best != null ? `${sdTime(s.lv[k].best)}<small class="muted"> \xB7 ${s.lv[k].s}/${s.lv[k].g}</small>` : s.lv[k].g ? `<small class="muted">0/${s.lv[k].g}</small>` : "–"}</td>`).join("")}</tr>`).join("")}</tbody></table></div>
+    <p class="hint">Bestzeit \xB7 gel\xF6st / gespielt, ohne Tagesr\xE4tsel.</p>`;
+  }
+  function sdDashboard(el, ctx) {
+    if (!sdAll().length) {
+      el.innerHTML = `${rulesPanel(sdg)}${sdEmpty("Noch kein Sudoku gel\xF6st.")}`;
+      return;
+    }
+    sdFiltered(el, ctx, (b) => {
+      const ms = sdList(), st = sdStats(ms);
+      if (!ms.length) { b.innerHTML = sdEmpty("Keine R\xE4tsel in dieser Auswahl."); return; }
+      const T = sdT(st);
+      const lvKey = SD_LV.find(([k]) => k === sdView.f)?.[0];
+      const tiles = [
+        T("Meiste gel\xF6st", "solved", (v) => v),
+        T("Schnellste Zeit", lvKey ? "best_" + lvKey : "fastest", sdTime, { low: true, filter: (s) => s[lvKey ? "best_" + lvKey : "fastest"] != null, note: lvKey ? sdLvName(lvKey) : sdView.f === "daily" ? "Tagesr\xE4tsel" : "egal welche Stufe" }),
+        T("Tagesr\xE4tsel gewonnen", "dailyWins", (v) => `${v}\xD7`, { filter: (s) => s.dailyWins > 0, note: "schnellster am Tag" }),
+        T("Perfekt gel\xF6st", "perfect", (v) => v, { filter: (s) => s.perfect > 0, note: "ohne Fehler und Hinweise" }),
+        T("L\xE4ngste Serie", "streak", (v) => plural(v, "Tag", "Tage"), { filter: (s) => s.streak > 1, note: "an Tagen am St\xFCck gespielt" }),
+        T("Experte geknackt", "best_experte", sdTime, { low: true, filter: (s) => s.best_experte != null, note: "Bestzeit auf Experte" })
+      ];
+      const recent = [...ms].reverse().slice(0, 5);
+      b.innerHTML = `${rulesPanel(sdg)}<div class="stats-grid">${tiles.join("")}</div>
+        <section class="panel"><div class="sd-head-row"><h2 class="panel-title">Tagesr\xE4tsel</h2>${sdLink("Heute spielen", "sm")}</div>${sdDaily(sdAll(), 5)}</section>
+        <section class="panel"><h2 class="panel-title">Bestzeiten je Stufe</h2>${sdLevelTable(sdStats(sdAll()))}</section>
+        <section class="panel"><h2 class="panel-title">Zuletzt gespielt</h2>${recent.map((m) => `<div class="mini-hist"><span class="hist-date">${fmtDate(m.date)}</span>${sdLine(m)}</div>`).join("")}
+        <button class="btn btn-ghost wide" type="button" data-all>Alle R\xE4tsel</button></section>`;
+      $("[data-all]", b).onclick = () => ctx.go("verlauf");
+    });
+  }
+  function sdNeu(el) {
+    el.innerHTML = `<section class="panel sd-app">${sdGrid("big")}<div><h2 class="panel-title">Sudoku spielt man in der App</h2>
+      <p>Die Sudoku-App l\xE4uft auch ohne Internet, zum Beispiel im Flugzeug oder in der U-Bahn. Gel\xF6ste R\xE4tsel warten auf dem Handy und landen von selbst hier, sobald wieder Internet da ist. Daf\xFCr reicht es, die App kurz zu \xF6ffnen.</p>
+      <ul class="rules-list"><li>Einmal \xF6ffnen und mit dem KahloGames-Passwort entsperren.</li><li>Unter „Ich bin“ dich ausw\xE4hlen.</li><li>Zum Home-Bildschirm hinzuf\xFCgen: iPhone \xFCber „Teilen“, Android \xFCber „App installieren“.</li></ul>
+      ${sdLink("Zur Sudoku-App")}</div></section>`;
+  }
+  function sdStatistik(el, ctx) {
+    if (!sdAll().length) { el.innerHTML = sdEmpty("Noch keine R\xE4tsel."); return; }
+    sdFiltered(el, ctx, (b) => {
+      const ms = sdList(), st = sdStats(ms);
+      if (!ms.length) { b.innerHTML = sdEmpty("Keine R\xE4tsel in dieser Auswahl."); return; }
+      const num = (v) => v == null ? "–" : fmtNum(v);
+      const cols = [{ key: "games", label: "Gespielt" }, { key: "solved", label: "Gel\xF6st" }, { key: "rate", label: "Quote", fmt: fmtPct }, { key: "perfect", label: "Perfekt" }, { key: "fastest", label: "Best", fmt: (v) => v == null ? "–" : sdTime(v) }, { key: "avgMist", label: "\xD8 Fehler", fmt: num }];
+      const bars = (rows, val, o = {}) => barChart(rows.map((s) => ({ label: s.name, value: val(s), icon: sdg.avatar(s.player, "mini"), color: sdg.colorOf(s.id), note: o.note ? o.note(s) : "" })), { digits: o.digits ?? 1, unit: o.unit || "", max: o.max });
+      const avgRows = SD_LV.map(([k, n]) => { const xs = st.filter((s) => s["avg_" + k] != null); return xs.length ? `<h3 class="sub-h">\xD8 Zeit ${n} <small class="muted">\xB7 Minuten</small></h3>${bars(xs.sort((a, b) => a["avg_" + k] - b["avg_" + k]), (s) => s["avg_" + k] / 60, { note: (s) => `Best ${sdTime(s["best_" + k])} \xB7 ${s.lv[k].s} gel\xF6st` })}` : ""; }).join("");
+      const timed = ms.filter((m) => sdOk(m) && !m.daily);
+      const more = `
+        <h3 class="sub-h">Tagesr\xE4tsel der letzten 14 Tage</h3>${sdDaily(sdAll(), 14)}
+        ${avgRows}
+        ${st.some((s) => s.perfRate != null) ? `<h3 class="sub-h">Anteil perfekt gel\xF6st</h3>${bars(st.filter((s) => s.perfRate != null).sort((a, b) => b.perfRate - a.perfRate), (s) => s.perfRate * 100, { unit: " %", digits: 0, max: 100, note: (s) => `${s.perfect} von ${s.solved}` })}` : ""}
+        <h3 class="sub-h">Hinweise insgesamt</h3>${bars([...st].sort((a, b) => a.hints - b.hints), (s) => s.hints, { digits: 0, note: () => "weniger ist besser" })}
+        ${timed.length > 1 ? `<h3 class="sub-h">Zeiten im Verlauf <small class="muted">\xB7 Minuten</small></h3>${trendChart(sdg, timed, (m, id) => m.players?.[0] === id ? sdSec(m) / 60 : null, { colors: (id) => sdg.colorOf(id), label: "Minuten" })}` : ""}
+        ${st.some((s) => s.offline) ? `<h3 class="sub-h">Offline gespielt</h3>${bars(st.filter((s) => s.offline).sort((a, b) => b.offline - a.offline), (s) => s.offline, { digits: 0, note: (s) => `von ${s.games}` })}` : ""}`;
+      b.innerHTML = `<section class="panel"><h2 class="panel-title">Rangliste</h2>${leaderboard(sdg, st, cols, { sort: "solved" })}<p class="hint">Perfekt = ohne Fehler und ohne Hinweise.</p></section>
+        <section class="panel"><h2 class="panel-title">Bestzeiten je Stufe</h2>${sdLevelTable(st)}</section>
+        <section class="panel">${details("Mehr Statistiken", more)}</section>`;
+    });
+  }
+  function sdVerlauf(el, ctx) {
+    sdFiltered(el, ctx, (b) => historyList(b, ctx, { matches: sdList(), line: sdLine, empty: sdEmpty("Noch keine R\xE4tsel.") }));
+  }
+  sdg.tabs = { dashboard: sdDashboard, neu: sdNeu, statistik: sdStatistik, verlauf: sdVerlauf };
+  var sudoku_default = sdg;
+
   // js/games/registry.js
-  var GAMES = [floriferous_default, skyjo_default, flip7_default, feuilles_default, virus_default, dog_default, wizard_default, dominion_default, catan_default, schiffe_default, karten_default, ligretto_default];
+  var GAMES = [floriferous_default, skyjo_default, flip7_default, feuilles_default, virus_default, dog_default, wizard_default, dominion_default, catan_default, schiffe_default, karten_default, ligretto_default, carcassonne_default, sudoku_default];
   var gameById = (id) => GAMES.find((g2) => g2.id === id);
 
   // js/global.js
@@ -4716,7 +5516,9 @@
     const P = /* @__PURE__ */ new Map();
     for (const m of ms) for (const pid of m.players || []) {
       if (!P.has(pid)) P.set(pid, { id: pid, name: playerName(pid, m), games: 0, decided: 0, wins: 0, byGame: {}, dates: /* @__PURE__ */ new Set(), mates: {} });
-      const s = P.get(pid), won = (m.winners || []).includes(pid), hasWinner = (m.winners || []).length > 0;
+      // Sudoku hat keinen Gegner: zählt als gespielt, aber nicht als Sieg oder Niederlage
+      const solo1 = m.game === "sudoku";
+      const s = P.get(pid), won = !solo1 && (m.winners || []).includes(pid), hasWinner = !solo1 && (m.winners || []).length > 0;
       s.games++;
       if (hasWinner) s.decided++;
       if (won) s.wins++;
@@ -4851,7 +5653,7 @@
 
   // js/app.js
   var app;
-  var APP_VERSION = "2.5";
+  var APP_VERSION = "2.8";
   var TABS = [["dashboard", "Dashboard"], ["neu", "Neues Spiel"], ["statistik", "Statistik"], ["verlauf", "Verlauf"]];
   var current = null;
   function parse() {
