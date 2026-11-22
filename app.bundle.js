@@ -5505,7 +5505,7 @@
 
   // js/games/tagesquiz.js
   // Quiz des Tages und Wordle laufen in der eigenen App Kahlo-Quiz (auch offline). Hier wird nur ausgewertet.
-  var TQ_URL = "https://liviuweb.github.io/quiz/";
+  var TQ_URL = "https://liviuweb.github.io/kahlo-quiz/";
   var tqIco = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>';
   var tqLink = (label, cls = "") => `<a class="tq-online ${cls}" href="${TQ_URL}" target="_blank" rel="noopener">${label}${tqIco}</a>`;
   var TQ_PAL = [
