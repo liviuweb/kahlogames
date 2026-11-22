@@ -877,3 +877,46 @@ body.theme-sudoku {
 .theme-sudoku .filters .seg { max-width: 100%; overflow-x: auto; scrollbar-width: none; }
 .theme-sudoku .filters .seg::-webkit-scrollbar { display: none; }
 .theme-sudoku .filters .seg button { flex: none; }
+
+/* ---------------- Quiz des Tages & Wordle (App Kahlo-Quiz) ---------------- */
+body.theme-tq {
+  --bg: #F2EEE6; --ink: #1D2433; --muted: #6C675E; --line: rgba(29, 36, 51, .13); --card: #FFFAF2; --field: #FFFFFF;
+  --accent: #2B5EA7; --accent-ink: #FFFFFF; --accent-soft: #DCE7F6; --font: Rubik, system-ui, sans-serif; --display: Fraunces, Georgia, serif;
+  --label: Rubik, system-ui, sans-serif; --num: Rubik, system-ui, sans-serif; --radius: 16px;
+  --shadow: 0 2px 0 rgba(29, 36, 51, .05), 0 10px 22px -14px rgba(29, 36, 51, .35);
+  background: radial-gradient(70% 40% at 100% 0, #DFE8F5, transparent 70%), radial-gradient(60% 40% at 0 100%, #F7E2CF, transparent 70%), #F2EEE6;
+  background-attachment: fixed !important;
+}
+body.theme-wordle { --accent: #4D9A5F; --accent-soft: #DFF0E3; background: radial-gradient(70% 40% at 100% 0, #E0EFE2, transparent 70%), radial-gradient(60% 40% at 0 100%, #F6E9C9, transparent 70%), #F2EEE6; }
+.theme-tq .g-title { font-weight: 800; letter-spacing: -.02em; font-size: clamp(40px, 11vw, 64px); }
+.theme-tq .panel-title, .theme-tq details.more > summary { font-family: Fraunces, Georgia, serif; font-weight: 700; }
+.theme-tq .stat-val { font-weight: 800; font-variant-numeric: tabular-nums; }
+.theme-tq .bar-fill { background: var(--accent); }
+.tile-quiz .tile-logo { background: linear-gradient(150deg, #DCE7F6, #F7E2CF); }
+.tile-wordle .tile-logo { background: linear-gradient(150deg, #E0EFE2, #F6E9C9); }
+.tq-bubble { display: inline-grid; place-items: center; width: 64px; height: 64px; border: 3px solid #1D2433; border-radius: 16px 16px 16px 4px; background: #2B5EA7; color: #fff; font: 800 38px/1 Fraunces, Georgia, serif; box-shadow: 0 4px 0 #1D2433; transform: rotate(-5deg); }
+.tq-bubble.hd { position: absolute; right: 18px; top: 22px; width: 100px; height: 100px; font-size: 60px; z-index: 1; transform: rotate(6deg); }
+.wd-mini { display: inline-grid; grid-template-columns: repeat(2, 1fr); gap: 4px; transform: rotate(-4deg); }
+.wd-mini i { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 6px; background: #8B8A86; color: #fff; font: 800 17px/1 Rubik, system-ui, sans-serif; font-style: normal; box-shadow: 0 2px 0 #1D2433; }
+.wd-mini i.g { background: #4D9A5F; } .wd-mini i.y { background: #D9A93A; }
+.wd-mini.hd { position: absolute; right: 18px; top: 22px; z-index: 1; transform: rotate(6deg); }
+.wd-mini.hd i { width: 46px; height: 46px; font-size: 24px; }
+@media (max-width: 420px) { .tq-bubble.hd { width: 74px; height: 74px; font-size: 44px; right: 10px; } .wd-mini.hd { right: 10px; } .wd-mini.hd i { width: 34px; height: 34px; font-size: 18px; } }
+.lg-tq { position: relative; width: 100%; height: 100%; display: grid; place-items: center; align-content: center; gap: 10px; text-align: center; }
+.lg-tq .tq-bubble { width: 40%; height: auto; aspect-ratio: 1; font-size: clamp(26px, 7vw, 44px); }
+.lg-tq .wd-mini i { width: clamp(22px, 6vw, 32px); height: clamp(22px, 6vw, 32px); font-size: clamp(13px, 3.6vw, 18px); }
+.lg-tq .nm { font: 800 clamp(18px, 5vw, 26px)/1.05 Fraunces, Georgia, serif; color: #1D2433; padding: 0 6px; }
+.tq-big .tq-bubble { width: 88px; height: 88px; font-size: 52px; }
+.tq-big .wd-mini i { width: 40px; height: 40px; font-size: 21px; }
+.tq-t { --c: #2B5EA7; display: inline-grid; place-items: center; width: 100%; aspect-ratio: 1; border-radius: 30% 30% 30% 8%; background: var(--c); color: #fff; box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .35); }
+.tq-t b { font: 800 13px/1 Fraunces, Georgia, serif; }
+.av-mini .tq-t b { font-size: 10px; } .av-big .tq-t b { font-size: 22px; }
+.icon-opt .tq-t { width: 40px; } .icon-opt .tq-t b { font-size: 20px; }
+.toast .tq-t { width: 28px; } .toast .tq-t b { font-size: 15px; }
+.tq-online { display: inline-flex; align-items: center; gap: 6px; background: var(--accent); color: #fff; text-decoration: none; font-weight: 700; padding: 10px 16px; border-radius: 12px; box-shadow: 0 3px 0 #1D2433; }
+.tq-online.sm { padding: 6px 12px; font-size: 13px; }
+.sd-dr b small { font-weight: 500; }
+.wd-rows { display: inline-flex; gap: 3px; vertical-align: middle; margin-right: 8px; }
+.wd-rows span { display: grid; grid-template-columns: repeat(5, 6px); gap: 1px; }
+.wd-rows i { width: 6px; height: 6px; border-radius: 1px; background: #CFCBC2; }
+.wd-rows i.g { background: #4D9A5F; } .wd-rows i.y { background: #D9A93A; }

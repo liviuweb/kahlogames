@@ -797,6 +797,19 @@
 
   // js/games/rules.js
   var RULES = {
+    quiz: { goal: "Jeden Tag 10 Fragen zu den Nachrichten der letzten Tage. Meiste richtige Antworten gewinnt den Tag.", items: [
+      "Gespielt wird in der App Kahlo-Quiz. Sie l\xE4uft nach dem ersten \xD6ffnen auch ohne Internet.",
+      "Jeden Morgen gibt es ein neues Quiz. Alle bekommen dieselben Fragen in derselben Reihenfolge.",
+      "Vier Antworten pro Frage, eine stimmt. Nach jeder Antwort gibt es eine kurze Erkl\xE4rung.",
+      "Bei Gleichstand gewinnt die schnellere Zeit. Die Uhr l\xE4uft nur, solange eine Frage offen ist.",
+      "Jeder spielt das Quiz eines Tages einmal. Fehlen an einem Tag die Nachrichtenfragen, kommt ein Ersatzquiz mit Allgemeinwissen."
+    ] },
+    wordle: { goal: "Ein Wort mit f\xFCnf Buchstaben in h\xF6chstens sechs Versuchen erraten.", items: [
+      "Gespielt wird in der App Kahlo-Quiz, jeden Tag ein neues Wort, f\xFCr alle dasselbe.",
+      "Gr\xFCn: Buchstabe stimmt und steht richtig. Gelb: kommt vor, aber an anderer Stelle. Grau: kommt nicht vor.",
+      "Jeder Versuch muss ein echtes Wort sein. \xC4, \xD6 und \xDC sind eigene Buchstaben.",
+      "Wenigste Versuche gewinnt den Tag, bei Gleichstand die schnellere Zeit ab dem ersten Buchstaben."
+    ] },
     sudoku: { goal: "Das 9\xD79-Feld so f\xFCllen, dass in jeder Zeile, jeder Spalte und jedem 3\xD73-Block jede Zahl von 1 bis 9 genau einmal steht.", items: [
       "Gespielt wird in der Sudoku-App. Sie l\xE4uft nach dem ersten \xD6ffnen auch ohne Internet.",
       "Stufen: Leicht (etwa 40 vorgegebene Zahlen), Mittel (32), Schwer (27), Experte (23, braucht mehr als die einfachen Techniken).",
@@ -5490,8 +5503,220 @@
   sdg.tabs = { dashboard: sdDashboard, neu: sdNeu, statistik: sdStatistik, verlauf: sdVerlauf };
   var sudoku_default = sdg;
 
+  // js/games/tagesquiz.js
+  // Quiz des Tages und Wordle laufen in der eigenen App Kahlo-Quiz (auch offline). Hier wird nur ausgewertet.
+  var TQ_URL = "https://liviuweb.github.io/quiz/";
+  var tqIco = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>';
+  var tqLink = (label, cls = "") => `<a class="tq-online ${cls}" href="${TQ_URL}" target="_blank" rel="noopener">${label}${tqIco}</a>`;
+  var TQ_PAL = [
+    { c: "#2B5EA7", t: "Blau" }, { c: "#C8553D", t: "Terrakotta" }, { c: "#3E8E5A", t: "Gr\xFCn" }, { c: "#E3A33B", t: "Senf" },
+    { c: "#7A5BA6", t: "Lila" }, { c: "#1D2433", t: "Tinte" }, { c: "#D9628A", t: "Rosa" }, { c: "#14708C", t: "T\xFCrkis" },
+    { c: "#8C5A3C", t: "Braun" }, { c: "#5D6D7E", t: "Grau" }, { c: "#B8860B", t: "Gold" }, { c: "#2F6F73", t: "Petrol" }
+  ];
+  var tqTile = (ch, c, cls = "") => `<span class="tq-t ${cls}" style="--c:${c}"><b>${ch}</b></span>`;
+  var tqSec = (m) => +m.seconds || 0;
+  var tqToday = () => { const d = /* @__PURE__ */ new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
+  // Tagessieger je Tag: rank(a,b) < 0 heißt a ist besser
+  function tqDays(ms, rank, ok) {
+    const by = /* @__PURE__ */ new Map();
+    for (const m of ms) {
+      if (!m.daily) continue;
+      const pid = m.players?.[0], rows = by.get(m.daily) || [];
+      if (!rows.some((x) => x.pid === pid)) rows.push({ pid, name: playerName(pid, m), m });
+      by.set(m.daily, rows);
+    }
+    return [...by.entries()].sort((a, b) => b[0].localeCompare(a[0])).map(([date, rows]) => {
+      rows.sort((a, b) => rank(a.m, b.m));
+      rows.forEach((r, i) => { r.win = ok(r.m) && rows.length > 1 && (i === 0 || rank(r.m, rows[0].m) === 0); });
+      return { date, rows };
+    });
+  }
+  function tqStreak(dates) {
+    const ds = [...dates].sort();
+    let run = 0, best = 0, prev = null;
+    for (const d of ds) {
+      const t = day(d).getTime();
+      run = prev != null && Math.round((t - prev) / 864e5) === 1 ? run + 1 : 1;
+      best = Math.max(best, run);
+      prev = t;
+    }
+    return best;
+  }
+  function tqDaysHtml(g, days, val, hint) {
+    if (!days.length) return '<p class="empty">Noch nichts gespielt.</p>';
+    return `<ul class="sd-days">${days.map((d) => `<li><span class="sd-day">${fmtDate(d.date)}</span><span class="sd-dayrows">${d.rows.map((r) => `<span class="sd-dr ${r.win ? "best" : ""}">${g.avatar({ id: r.pid, name: r.name }, "mini")}<span class="nm">${esc(r.name)}</span><b>${val(r.m)}</b></span>`).join("")}</span></li>`).join("")}</ul><p class="hint">${hint}</p>`;
+  }
+  var tqEmpty = (msg, what) => `<div class="empty-state panel"><p>${msg}</p><p class="hint">${what} spielt man in der App Kahlo-Quiz. Sie l\xE4uft auch offline, die Ergebnisse kommen von selbst hierher.</p>${tqLink("Zur Quiz-App")}</div>`;
+  function tqNeu(el, g) {
+    el.innerHTML = `<section class="panel sd-app"><div class="tq-big">${g.logoMark()}</div><div><h2 class="panel-title">${g.name} spielt man in der App</h2>
+      <p>In der App Kahlo-Quiz gibt es jeden Tag ein neues Quiz mit 10 Fragen zu den Nachrichten und ein neues Wordle. Alle spielen dasselbe. Die Ergebnisse landen von selbst hier, auch wenn offline gespielt wurde.</p>
+      <ul class="rules-list"><li>Einmal \xF6ffnen und mit dem KahloGames-Passwort entsperren.</li><li>Unter „Ich bin“ dich ausw\xE4hlen.</li><li>Zum Home-Bildschirm hinzuf\xFCgen: iPhone \xFCber „Teilen“, Android \xFCber „App installieren“.</li></ul>
+      ${tqLink("Zur Quiz-App")}</div></section>`;
+  }
+
+  /* ---- Quiz des Tages ---- */
+  var qzg = {
+    id: "quiz",
+    name: "Quiz des Tages",
+    theme: "theme-tq",
+    themeColor: "#F2EEE6",
+    dot: "#2B5EA7",
+    avatar: (p, size = "dot") => {
+      const x = pickFor("quiz", TQ_PAL, p.id);
+      return `<span class="av av-${size}" aria-hidden="true">${tqTile("?", x.c)}</span>`;
+    },
+    icons: { pal: TQ_PAL, current: (p) => pickFor("quiz", TQ_PAL, p.id), render: (x) => tqTile("?", x.c) },
+    colorOf: (id) => pickFor("quiz", TQ_PAL, id).c,
+    winIcon: () => tqTile("?", "#2B5EA7", "toast-tq"),
+    logoMark: () => '<span class="tq-bubble">?</span>',
+    logo: () => `<div class="lg-tq"><span class="tq-bubble">?</span><span class="nm">Quiz des Tages</span></div>`,
+    header: () => `<span class="tq-bubble hd">?</span><h1 class="g-title">Quiz des Tages</h1><p class="g-sub">Zehn Fragen zu den Nachrichten. Jeden Tag.</p>${tqLink("Quiz spielen")}`
+  };
+  var qzAll = () => matchesOf("quiz");
+  var qzScore = (m) => +m.score || +m.totals?.[m.players?.[0]] || 0;
+  var qzRank = (a, b) => qzScore(b) - qzScore(a) || tqSec(a) - tqSec(b);
+  var qzDays = (ms) => tqDays(ms, qzRank, () => true);
+  function qzStats(ms) {
+    const map = /* @__PURE__ */ new Map();
+    for (const m of ms) {
+      const pid = m.players?.[0];
+      if (!pid) continue;
+      if (!map.has(pid)) map.set(pid, { id: pid, name: playerName(pid, m), games: 0, wins: 0, pts: 0, best: 0, perfect: 0, fastPerfect: null, secs: 0, dates: /* @__PURE__ */ new Set(), q: Array(10).fill(0) });
+      const s = map.get(pid), sc = qzScore(m);
+      s.games++; s.pts += sc; s.best = Math.max(s.best, sc); s.secs += tqSec(m);
+      s.dates.add(String(m.daily || m.date).slice(0, 10));
+      if (sc >= (+m.of || 10)) { s.perfect++; s.fastPerfect = s.fastPerfect == null ? tqSec(m) : Math.min(s.fastPerfect, tqSec(m)); }
+      (m.answers || []).forEach((a, i) => { if (a) s.q[i]++; });
+    }
+    for (const d of qzDays(ms)) for (const r of d.rows) if (r.win && map.has(r.pid)) map.get(r.pid).wins++;
+    for (const s of map.values()) Object.assign(s, { player: { id: s.id, name: s.name }, avg: s.games ? s.pts / s.games : null, rate: s.games ? s.pts / (s.games * 10) : null, avgSec: s.games ? s.secs / s.games : null, streak: tqStreak(s.dates) });
+    return [...map.values()];
+  }
+  var qzVal = (m) => `${qzScore(m)}/10 <small class="muted">${sdTime(tqSec(m))}</small>`;
+  function qzLine(m) {
+    const pid = m.players?.[0], nm = playerName(pid, m);
+    return `<div class="sd-line"><span class="who">${qzg.avatar({ id: pid, name: nm }, "mini")}${esc(nm)}</span><span class="sd-head">${esc(m.titel || (m.set === "vorrat" ? "Allgemeinwissen" : "Nachrichten"))}</span><b>${qzScore(m)}/10</b></div><p class="others">${sdTime(tqSec(m))}${m.offline ? " \xB7 offline gespielt" : ""}</p>`;
+  }
+  var tqT = (g, st) => (title, key, fmt, opts = {}) => {
+    const r = top(st, key, opts);
+    return statTile(title, r ? fmt(r.value) : "–", r ? whoList(g, r.who) : '<span class="muted">noch niemand</span>', opts.note || "");
+  };
+  function qzDashboard(el, ctx) {
+    const ms = qzAll();
+    if (!ms.length) { el.innerHTML = `${rulesPanel(qzg)}${tqEmpty("Noch kein Quiz gespielt.", "Das Quiz")}`; return; }
+    const st = qzStats(ms), T = tqT(qzg, st);
+    const tiles = [
+      T("Meiste Tagessiege", "wins", (v) => `${v}\xD7`, { filter: (s) => s.wins > 0, note: "meiste richtig, dann schnellste Zeit" }),
+      T("Bester Schnitt", "avg", (v) => `${fmtNum(v)} / 10`, { min: 3, note: "ab 3 Quizzen" }),
+      T("Alles richtig", "perfect", (v) => `${v}\xD7`, { filter: (s) => s.perfect > 0, note: "10 von 10" }),
+      T("Schnellstes 10/10", "fastPerfect", sdTime, { low: true, filter: (s) => s.fastPerfect != null }),
+      T("L\xE4ngste Serie", "streak", (v) => plural(v, "Tag", "Tage"), { filter: (s) => s.streak > 1, note: "an Tagen am St\xFCck gespielt" }),
+      T("Meiste Quizze", "games", (v) => v)
+    ];
+    const recent = [...ms].reverse().slice(0, 5);
+    el.innerHTML = `${rulesPanel(qzg)}<div class="stats-grid">${tiles.join("")}</div>
+      <section class="panel"><div class="sd-head-row"><h2 class="panel-title">Tageswertung</h2>${tqLink("Heute spielen", "sm")}</div>${tqDaysHtml(qzg, qzDays(ms).slice(0, 5), qzVal, "Alle bekommen am selben Tag dieselben 10 Fragen. Meiste richtige Antworten gewinnt, bei Gleichstand die schnellere Zeit.")}</section>
+      <section class="panel"><h2 class="panel-title">Zuletzt gespielt</h2>${recent.map((m) => `<div class="mini-hist"><span class="hist-date">${fmtDate(m.daily || m.date)}</span>${qzLine(m)}</div>`).join("")}
+      <button class="btn btn-ghost wide" type="button" data-all>Alle Quizze</button></section>`;
+    $("[data-all]", el).onclick = () => ctx.go("verlauf");
+  }
+  function qzStatistik(el) {
+    const ms = qzAll();
+    if (!ms.length) { el.innerHTML = tqEmpty("Noch keine Quizze.", "Das Quiz"); return; }
+    const st = qzStats(ms);
+    const cols = [{ key: "games", label: "Gespielt" }, { key: "wins", label: "Siege" }, { key: "avg", label: "\xD8 richtig", fmt: (v) => fmtNum(v) }, { key: "best", label: "Best" }, { key: "perfect", label: "10/10" }, { key: "avgSec", label: "\xD8 Zeit", fmt: (v) => v == null ? "–" : sdTime(v) }];
+    const bars = (rows, val, o = {}) => barChart(rows.map((s) => ({ label: s.name, value: val(s), icon: qzg.avatar(s.player, "mini"), color: qzg.colorOf(s.id), note: o.note ? o.note(s) : "" })), { digits: o.digits ?? 1, unit: o.unit || "", max: o.max });
+    const more = `<h3 class="sub-h">Tageswertung der letzten 14 Tage</h3>${tqDaysHtml(qzg, qzDays(ms).slice(0, 14), qzVal, "")}
+      <h3 class="sub-h">Trefferquote</h3>${bars([...st].sort((a, b) => b.rate - a.rate), (s) => s.rate * 100, { unit: " %", digits: 0, max: 100, note: (s) => `${s.pts} von ${s.games * 10}` })}
+      <h3 class="sub-h">\xD8 Zeit <small class="muted">\xB7 Minuten</small></h3>${bars([...st].sort((a, b) => a.avgSec - b.avgSec), (s) => s.avgSec / 60, { note: () => "weniger ist schneller" })}
+      ${ms.length > 1 ? `<h3 class="sub-h">Richtige im Verlauf</h3>${trendChart(qzg, ms, (m, id) => m.players?.[0] === id ? qzScore(m) : null, { colors: (id) => qzg.colorOf(id), label: "richtig" })}` : ""}`;
+    el.innerHTML = `<section class="panel"><h2 class="panel-title">Rangliste</h2>${leaderboard(qzg, st, cols, { sort: "wins" })}<p class="hint">Sieg = Tagessieger unter allen, die an dem Tag gespielt haben.</p></section>
+      <section class="panel">${details("Mehr Statistiken", more)}</section>`;
+  }
+  function qzVerlauf(el, ctx) { historyList(el, ctx, { matches: qzAll(), line: qzLine, empty: tqEmpty("Noch keine Quizze.", "Das Quiz") }); }
+  qzg.tabs = { dashboard: qzDashboard, neu: (el) => tqNeu(el, qzg), statistik: qzStatistik, verlauf: qzVerlauf };
+  var quiz_default = qzg;
+
+  /* ---- Wordle ---- */
+  var wdg = {
+    id: "wordle",
+    name: "Wordle",
+    theme: "theme-tq theme-wordle",
+    themeColor: "#F2EEE6",
+    dot: "#4D9A5F",
+    avatar: (p, size = "dot") => {
+      const x = pickFor("wordle", TQ_PAL, p.id);
+      return `<span class="av av-${size}" aria-hidden="true">${tqTile("W", x.c)}</span>`;
+    },
+    icons: { pal: TQ_PAL, current: (p) => pickFor("wordle", TQ_PAL, p.id), render: (x) => tqTile("W", x.c) },
+    colorOf: (id) => pickFor("wordle", TQ_PAL, id).c,
+    winIcon: () => tqTile("W", "#4D9A5F", "toast-tq"),
+    logoMark: () => '<span class="wd-mini"><i class="g">W</i><i class="y">O</i><i>R</i><i class="g">T</i></span>',
+    logo: () => `<div class="lg-tq"><span class="wd-mini"><i class="g">W</i><i class="y">O</i><i>R</i><i class="g">T</i></span><span class="nm">Wordle</span></div>`,
+    header: () => `<span class="wd-mini hd"><i class="g">W</i><i class="y">O</i><i>R</i><i class="g">T</i></span><h1 class="g-title">Wordle</h1><p class="g-sub">F\xFCnf Buchstaben, sechs Versuche. Jeden Tag ein neues Wort.</p>${tqLink("Wordle spielen")}`
+  };
+  var wdAll = () => matchesOf("wordle");
+  var wdOk = (m) => m.solved !== false && +m.guesses > 0;
+  var wdRank = (a, b) => (wdOk(b) - wdOk(a)) || ((+a.guesses || 9) - (+b.guesses || 9)) || tqSec(a) - tqSec(b);
+  var wdDays = (ms) => tqDays(ms, wdRank, wdOk);
+  function wdStats(ms) {
+    const map = /* @__PURE__ */ new Map();
+    for (const m of ms) {
+      const pid = m.players?.[0];
+      if (!pid) continue;
+      if (!map.has(pid)) map.set(pid, { id: pid, name: playerName(pid, m), games: 0, wins: 0, solved: 0, tries: 0, dist: [0, 0, 0, 0, 0, 0], fastest: null, dates: /* @__PURE__ */ new Set(), solvedDates: /* @__PURE__ */ new Set() });
+      const s = map.get(pid), d = String(m.daily || m.date).slice(0, 10);
+      s.games++; s.dates.add(d);
+      if (wdOk(m)) { s.solved++; s.tries += +m.guesses; s.dist[Math.min(6, +m.guesses) - 1]++; s.solvedDates.add(d); s.fastest = s.fastest == null ? tqSec(m) : Math.min(s.fastest, tqSec(m)); }
+    }
+    for (const d of wdDays(ms)) for (const r of d.rows) if (r.win && map.has(r.pid)) map.get(r.pid).wins++;
+    for (const s of map.values()) Object.assign(s, { player: { id: s.id, name: s.name }, rate: s.games ? s.solved / s.games : null, avg: s.solved ? s.tries / s.solved : null, quick: s.dist[0] + s.dist[1], streak: tqStreak(s.solvedDates) });
+    return [...map.values()];
+  }
+  var wdVal = (m) => wdOk(m) ? `${m.guesses}/6 <small class="muted">${sdTime(tqSec(m))}</small>` : "–";
+  var wdRows = (m) => (m.rows || []).length ? `<span class="wd-rows">${m.rows.map((r) => `<span>${[...r].map((c) => `<i class="${c}"></i>`).join("")}</span>`).join("")}</span>` : "";
+  function wdLine(m) {
+    const pid = m.players?.[0], nm = playerName(pid, m);
+    return `<div class="sd-line"><span class="who">${wdg.avatar({ id: pid, name: nm }, "mini")}${esc(nm)}</span><span class="sd-head">${m.word && String(m.daily) < tqToday() ? esc(String(m.word).toUpperCase()) : ""}</span><b class="${wdOk(m) ? "" : "sd-x"}">${wdOk(m) ? `${m.guesses}/6` : "nicht gel\xF6st"}</b></div><p class="others">${wdRows(m)}${wdOk(m) ? sdTime(tqSec(m)) : ""}${m.offline ? " \xB7 offline gespielt" : ""}</p>`;
+  }
+  function wdDashboard(el, ctx) {
+    const ms = wdAll();
+    if (!ms.length) { el.innerHTML = `${rulesPanel(wdg)}${tqEmpty("Noch kein Wordle gespielt.", "Wordle")}`; return; }
+    const st = wdStats(ms), T = tqT(wdg, st);
+    const tiles = [
+      T("Meiste Tagessiege", "wins", (v) => `${v}\xD7`, { filter: (s) => s.wins > 0, note: "wenigste Versuche, dann schnellste Zeit" }),
+      T("Wenigste Versuche", "avg", (v) => `\xD8 ${fmtNum(v)}`, { low: true, min: 3, note: "ab 3 Wordles, nur gel\xF6ste" }),
+      T("Beste L\xF6sequote", "rate", fmtPct, { min: 3, note: "ab 3 Wordles" }),
+      T("Volltreffer", "quick", (v) => `${v}\xD7`, { filter: (s) => s.quick > 0, note: "im 1. oder 2. Versuch" }),
+      T("L\xE4ngste Serie", "streak", (v) => plural(v, "Tag", "Tage"), { filter: (s) => s.streak > 1, note: "an Tagen am St\xFCck gel\xF6st" }),
+      T("Schnellste L\xF6sung", "fastest", sdTime, { low: true, filter: (s) => s.fastest != null })
+    ];
+    const recent = [...ms].reverse().slice(0, 5);
+    el.innerHTML = `${rulesPanel(wdg)}<div class="stats-grid">${tiles.join("")}</div>
+      <section class="panel"><div class="sd-head-row"><h2 class="panel-title">Tageswertung</h2>${tqLink("Heute spielen", "sm")}</div>${tqDaysHtml(wdg, wdDays(ms).slice(0, 5), wdVal, "Alle raten am selben Tag dasselbe Wort. Wenigste Versuche gewinnt, bei Gleichstand die schnellere Zeit.")}</section>
+      <section class="panel"><h2 class="panel-title">Zuletzt gespielt</h2>${recent.map((m) => `<div class="mini-hist"><span class="hist-date">${fmtDate(m.daily || m.date)}</span>${wdLine(m)}</div>`).join("")}
+      <button class="btn btn-ghost wide" type="button" data-all>Alle Wordles</button></section>`;
+    $("[data-all]", el).onclick = () => ctx.go("verlauf");
+  }
+  function wdStatistik(el) {
+    const ms = wdAll();
+    if (!ms.length) { el.innerHTML = tqEmpty("Noch keine Wordles.", "Wordle"); return; }
+    const st = wdStats(ms);
+    const cols = [{ key: "games", label: "Gespielt" }, { key: "wins", label: "Siege" }, { key: "rate", label: "Gel\xF6st", fmt: fmtPct }, { key: "avg", label: "\xD8 Versuche", fmt: (v) => fmtNum(v) }, { key: "streak", label: "Serie" }];
+    const dist = `<div class="table-wrap"><table class="lb"><thead><tr><th class="l">Spieler</th>${[1, 2, 3, 4, 5, 6].map((n) => `<th>${n}</th>`).join("")}<th>✕</th></tr></thead><tbody>
+      ${st.map((s) => `<tr><td class="l">${wdg.avatar(s.player, "mini")}<span class="nm">${esc(s.name)}</span></td>${s.dist.map((n) => `<td>${n || '<span class="muted">\xB7</span>'}</td>`).join("")}<td>${s.games - s.solved || '<span class="muted">\xB7</span>'}</td></tr>`).join("")}</tbody></table></div>`;
+    const more = `<h3 class="sub-h">Tageswertung der letzten 14 Tage</h3>${tqDaysHtml(wdg, wdDays(ms).slice(0, 14), wdVal, "")}
+      ${ms.filter(wdOk).length > 1 ? `<h3 class="sub-h">Versuche im Verlauf</h3>${trendChart(wdg, ms, (m, id) => m.players?.[0] === id && wdOk(m) ? +m.guesses : null, { colors: (id) => wdg.colorOf(id), label: "Versuche" })}` : ""}`;
+    el.innerHTML = `<section class="panel"><h2 class="panel-title">Rangliste</h2>${leaderboard(wdg, st, cols, { sort: "wins" })}</section>
+      <section class="panel"><h2 class="panel-title">Gel\xF6st im wievielten Versuch</h2>${dist}</section>
+      <section class="panel">${details("Mehr Statistiken", more)}</section>`;
+  }
+  function wdVerlauf(el, ctx) { historyList(el, ctx, { matches: wdAll(), line: wdLine, empty: tqEmpty("Noch keine Wordles.", "Wordle") }); }
+  wdg.tabs = { dashboard: wdDashboard, neu: (el) => tqNeu(el, wdg), statistik: wdStatistik, verlauf: wdVerlauf };
+  var wordle_default = wdg;
+
   // js/games/registry.js
-  var GAMES = [floriferous_default, skyjo_default, flip7_default, feuilles_default, virus_default, dog_default, wizard_default, dominion_default, catan_default, schiffe_default, karten_default, ligretto_default, carcassonne_default, sudoku_default];
+  var GAMES = [floriferous_default, skyjo_default, flip7_default, feuilles_default, virus_default, dog_default, wizard_default, dominion_default, catan_default, schiffe_default, karten_default, ligretto_default, carcassonne_default, sudoku_default, quiz_default, wordle_default];
   var gameById = (id) => GAMES.find((g2) => g2.id === id);
 
   // js/global.js
@@ -5516,8 +5741,8 @@
     const P = /* @__PURE__ */ new Map();
     for (const m of ms) for (const pid of m.players || []) {
       if (!P.has(pid)) P.set(pid, { id: pid, name: playerName(pid, m), games: 0, decided: 0, wins: 0, byGame: {}, dates: /* @__PURE__ */ new Set(), mates: {} });
-      // Sudoku hat keinen Gegner: zählt als gespielt, aber nicht als Sieg oder Niederlage
-      const solo1 = m.game === "sudoku";
+      // Sudoku, Quiz und Wordle haben keinen Gegner: zählen als gespielt, aber nicht als Sieg oder Niederlage
+      const solo1 = m.game === "sudoku" || m.game === "quiz" || m.game === "wordle";
       const s = P.get(pid), won = !solo1 && (m.winners || []).includes(pid), hasWinner = !solo1 && (m.winners || []).length > 0;
       s.games++;
       if (hasWinner) s.decided++;
@@ -5653,7 +5878,7 @@
 
   // js/app.js
   var app;
-  var APP_VERSION = "2.9";
+  var APP_VERSION = "3.0";
   var TABS = [["dashboard", "Dashboard"], ["neu", "Neues Spiel"], ["statistik", "Statistik"], ["verlauf", "Verlauf"]];
   var current = null;
   function parse() {
