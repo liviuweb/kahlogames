@@ -5293,7 +5293,7 @@
 
   // js/games/sudoku.js
   // Sudoku läuft in einer eigenen App (auch offline). Ergebnisse kommen von dort, hier wird nur ausgewertet.
-  var SD_URL = "https://liviuweb.github.io/kahlo-sudoku/";
+  var SD_URL = "https://liviuweb.github.io/sudoku/";
   var SD_LV = [["leicht", "Leicht"], ["mittel", "Mittel"], ["schwer", "Schwer"], ["experte", "Experte"]];
   var sdLvName = (k) => (SD_LV.find(([x]) => x === k) || [k, k])[1];
   var SD_PAL = [
@@ -5653,7 +5653,7 @@
 
   // js/app.js
   var app;
-  var APP_VERSION = "2.8";
+  var APP_VERSION = "2.9";
   var TABS = [["dashboard", "Dashboard"], ["neu", "Neues Spiel"], ["statistik", "Statistik"], ["verlauf", "Verlauf"]];
   var current = null;
   function parse() {
