@@ -797,15 +797,16 @@
 
   // js/games/rules.js
   var RULES = {
-    quiz: { goal: "Jeden Tag 10 Fragen zu den Nachrichten der letzten Tage. Meiste richtige Antworten gewinnt den Tag.", items: [
+    quiz: { goal: "Jeden Tag zwei Quizze: 10 Fragen zu den Nachrichten und 10 zum Allgemeinwissen. Meiste richtige Antworten gewinnt.", items: [
       "Gespielt wird in der App Kahlo-Quiz. Sie l\xE4uft nach dem ersten \xD6ffnen auch ohne Internet.",
-      "Jeden Morgen gibt es ein neues Quiz. Alle bekommen dieselben Fragen in derselben Reihenfolge.",
+      "Jeden Morgen um 6 Uhr gibt es zwei neue Quizze. Alle bekommen dieselben Fragen in derselben Reihenfolge, keine Frage kommt zweimal.",
       "Vier Antworten pro Frage, eine stimmt. Nach jeder Antwort gibt es eine kurze Erkl\xE4rung.",
       "Bei Gleichstand gewinnt die schnellere Zeit. Die Uhr l\xE4uft nur, solange eine Frage offen ist.",
-      "Jeder spielt das Quiz eines Tages einmal. Fehlen an einem Tag die Nachrichtenfragen, kommt ein Ersatzquiz mit Allgemeinwissen."
+      "Jeder spielt jedes Quiz einmal. Die letzten 30 Tage kann man nachspielen. Das z\xE4hlt f\xFCr den jeweiligen Tag und wird als nachgespielt markiert.",
+      "Nachrichten und Allgemeinwissen werden je Tag getrennt gewertet."
     ] },
     wordle: { goal: "Ein Wort mit f\xFCnf Buchstaben in h\xF6chstens sechs Versuchen erraten.", items: [
-      "Gespielt wird in der App Kahlo-Quiz, jeden Tag ein neues Wort, f\xFCr alle dasselbe.",
+      "Gespielt wird in der App Kahlo-Quiz, jeden Morgen um 6 Uhr ein neues Wort, f\xFCr alle dasselbe. Verpasste Tage lassen sich nachspielen.",
       "Gr\xFCn: Buchstabe stimmt und steht richtig. Gelb: kommt vor, aber an anderer Stelle. Grau: kommt nicht vor.",
       "Jeder Versuch muss ein echtes Wort sein. \xC4, \xD6 und \xDC sind eigene Buchstaben.",
       "Wenigste Versuche gewinnt den Tag, bei Gleichstand die schnellere Zeit ab dem ersten Buchstaben."
@@ -5515,20 +5516,24 @@
   ];
   var tqTile = (ch, c, cls = "") => `<span class="tq-t ${cls}" style="--c:${c}"><b>${ch}</b></span>`;
   var tqSec = (m) => +m.seconds || 0;
-  var tqToday = () => { const d = /* @__PURE__ */ new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
+  // Ein Quiz-/Wordle-Tag beginnt um 6 Uhr deutscher Zeit (wie in der App Kahlo-Quiz).
+  var tqToday = () => { const t = new Date(Date.now() - 6 * 36e5); try { return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Berlin", year: "numeric", month: "2-digit", day: "2-digit" }).format(t); } catch (e) { return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}`; } };
+  // Quizart: Nachrichten oder Allgemeinwissen (ältere Ersatzquizze "vorrat" zählen als Allgemeinwissen)
+  var tqKind = (m) => m.set === "news" ? "news" : "wissen";
+  var TQ_KIND = { news: "Nachrichten", wissen: "Allgemeinwissen" };
   // Tagessieger je Tag: rank(a,b) < 0 heißt a ist besser
-  function tqDays(ms, rank, ok) {
+  function tqDays(ms, rank, ok, kindOf) {
     const by = /* @__PURE__ */ new Map();
     for (const m of ms) {
       if (!m.daily) continue;
-      const pid = m.players?.[0], rows = by.get(m.daily) || [];
+      const kind = kindOf ? kindOf(m) : "", key = m.daily + "|" + (kind === "news" ? "a" : kind === "wissen" ? "b" : ""), pid = m.players?.[0], rows = by.get(key) || [];
       if (!rows.some((x) => x.pid === pid)) rows.push({ pid, name: playerName(pid, m), m });
-      by.set(m.daily, rows);
+      by.set(key, rows);
     }
-    return [...by.entries()].sort((a, b) => b[0].localeCompare(a[0])).map(([date, rows]) => {
+    return [...by.entries()].sort((a, b) => b[0].slice(0, 10).localeCompare(a[0].slice(0, 10)) || a[0].localeCompare(b[0])).map(([key, rows]) => {
       rows.sort((a, b) => rank(a.m, b.m));
       rows.forEach((r, i) => { r.win = ok(r.m) && rows.length > 1 && (i === 0 || rank(r.m, rows[0].m) === 0); });
-      return { date, rows };
+      return { date: key.slice(0, 10), label: kindOf ? TQ_KIND[kindOf(rows[0].m)] : "", rows };
     });
   }
   function tqStreak(dates) {
@@ -5544,12 +5549,12 @@
   }
   function tqDaysHtml(g, days, val, hint) {
     if (!days.length) return '<p class="empty">Noch nichts gespielt.</p>';
-    return `<ul class="sd-days">${days.map((d) => `<li><span class="sd-day">${fmtDate(d.date)}</span><span class="sd-dayrows">${d.rows.map((r) => `<span class="sd-dr ${r.win ? "best" : ""}">${g.avatar({ id: r.pid, name: r.name }, "mini")}<span class="nm">${esc(r.name)}</span><b>${val(r.m)}</b></span>`).join("")}</span></li>`).join("")}</ul><p class="hint">${hint}</p>`;
+    return `<ul class="sd-days">${days.map((d) => `<li><span class="sd-day">${fmtDate(d.date)}${d.label ? `<small class="muted" style="display:block">${d.label}</small>` : ""}</span><span class="sd-dayrows">${d.rows.map((r) => `<span class="sd-dr ${r.win ? "best" : ""}">${g.avatar({ id: r.pid, name: r.name }, "mini")}<span class="nm">${esc(r.name)}${r.m.late ? ' <small class="muted">nachgespielt</small>' : ""}</span><b>${val(r.m)}</b></span>`).join("")}</span></li>`).join("")}</ul><p class="hint">${hint}</p>`;
   }
   var tqEmpty = (msg, what) => `<div class="empty-state panel"><p>${msg}</p><p class="hint">${what} spielt man in der App Kahlo-Quiz. Sie l\xE4uft auch offline, die Ergebnisse kommen von selbst hierher.</p>${tqLink("Zur Quiz-App")}</div>`;
   function tqNeu(el, g) {
     el.innerHTML = `<section class="panel sd-app"><div class="tq-big">${g.logoMark()}</div><div><h2 class="panel-title">${g.name} spielt man in der App</h2>
-      <p>In der App Kahlo-Quiz gibt es jeden Tag ein neues Quiz mit 10 Fragen zu den Nachrichten und ein neues Wordle. Alle spielen dasselbe. Die Ergebnisse landen von selbst hier, auch wenn offline gespielt wurde.</p>
+      <p>In der App Kahlo-Quiz gibt es jeden Morgen um 6 Uhr zwei neue Quizze (Nachrichten und Allgemeinwissen) und ein neues Wordle. Alle spielen dasselbe, verpasste Tage lassen sich nachspielen. Die Ergebnisse landen von selbst hier, auch wenn offline gespielt wurde.</p>
       <ul class="rules-list"><li>Einmal \xF6ffnen und mit dem KahloGames-Passwort entsperren.</li><li>Unter „Ich bin“ dich ausw\xE4hlen.</li><li>Zum Home-Bildschirm hinzuf\xFCgen: iPhone \xFCber „Teilen“, Android \xFCber „App installieren“.</li></ul>
       ${tqLink("Zur Quiz-App")}</div></section>`;
   }
@@ -5570,12 +5575,12 @@
     winIcon: () => tqTile("?", "#2B5EA7", "toast-tq"),
     logoMark: () => '<span class="tq-bubble">?</span>',
     logo: () => `<div class="lg-tq"><span class="tq-bubble">?</span><span class="nm">Quiz des Tages</span></div>`,
-    header: () => `<span class="tq-bubble hd">?</span><h1 class="g-title">Quiz des Tages</h1><p class="g-sub">Zehn Fragen zu den Nachrichten. Jeden Tag.</p>${tqLink("Quiz spielen")}`
+    header: () => `<span class="tq-bubble hd">?</span><h1 class="g-title">Quiz des Tages</h1><p class="g-sub">Nachrichten und Allgemeinwissen. Jeden Tag ab 6 Uhr.</p>${tqLink("Quiz spielen")}`
   };
   var qzAll = () => matchesOf("quiz");
   var qzScore = (m) => +m.score || +m.totals?.[m.players?.[0]] || 0;
   var qzRank = (a, b) => qzScore(b) - qzScore(a) || tqSec(a) - tqSec(b);
-  var qzDays = (ms) => tqDays(ms, qzRank, () => true);
+  var qzDays = (ms) => tqDays(ms, qzRank, () => true, tqKind);
   function qzStats(ms) {
     const map = /* @__PURE__ */ new Map();
     for (const m of ms) {
@@ -5595,7 +5600,7 @@
   var qzVal = (m) => `${qzScore(m)}/10 <small class="muted">${sdTime(tqSec(m))}</small>`;
   function qzLine(m) {
     const pid = m.players?.[0], nm = playerName(pid, m);
-    return `<div class="sd-line"><span class="who">${qzg.avatar({ id: pid, name: nm }, "mini")}${esc(nm)}</span><span class="sd-head">${esc(m.titel || (m.set === "vorrat" ? "Allgemeinwissen" : "Nachrichten"))}</span><b>${qzScore(m)}/10</b></div><p class="others">${sdTime(tqSec(m))}${m.offline ? " \xB7 offline gespielt" : ""}</p>`;
+    return `<div class="sd-line"><span class="who">${qzg.avatar({ id: pid, name: nm }, "mini")}${esc(nm)}</span><span class="sd-head">${esc(m.titel || TQ_KIND[tqKind(m)])}</span><b>${qzScore(m)}/10</b></div><p class="others">${TQ_KIND[tqKind(m)]} \xB7 ${sdTime(tqSec(m))}${m.late ? " \xB7 nachgespielt" : ""}${m.offline ? " \xB7 offline gespielt" : ""}</p>`;
   }
   var tqT = (g, st) => (title, key, fmt, opts = {}) => {
     const r = top(st, key, opts);
@@ -5615,7 +5620,7 @@
     ];
     const recent = [...ms].reverse().slice(0, 5);
     el.innerHTML = `${rulesPanel(qzg)}<div class="stats-grid">${tiles.join("")}</div>
-      <section class="panel"><div class="sd-head-row"><h2 class="panel-title">Tageswertung</h2>${tqLink("Heute spielen", "sm")}</div>${tqDaysHtml(qzg, qzDays(ms).slice(0, 5), qzVal, "Alle bekommen am selben Tag dieselben 10 Fragen. Meiste richtige Antworten gewinnt, bei Gleichstand die schnellere Zeit.")}</section>
+      <section class="panel"><div class="sd-head-row"><h2 class="panel-title">Tageswertung</h2>${tqLink("Heute spielen", "sm")}</div>${tqDaysHtml(qzg, qzDays(ms).slice(0, 6), qzVal, "Jeden Tag gibt es zwei Quizze, Nachrichten und Allgemeinwissen. Jedes wird f\xFCr sich gewertet: meiste richtige Antworten, bei Gleichstand die schnellere Zeit. Nachgespielte Quizze z\xE4hlen f\xFCr ihren Tag.")}</section>
       <section class="panel"><h2 class="panel-title">Zuletzt gespielt</h2>${recent.map((m) => `<div class="mini-hist"><span class="hist-date">${fmtDate(m.daily || m.date)}</span>${qzLine(m)}</div>`).join("")}
       <button class="btn btn-ghost wide" type="button" data-all>Alle Quizze</button></section>`;
     $("[data-all]", el).onclick = () => ctx.go("verlauf");
@@ -5626,7 +5631,7 @@
     const st = qzStats(ms);
     const cols = [{ key: "games", label: "Gespielt" }, { key: "wins", label: "Siege" }, { key: "avg", label: "\xD8 richtig", fmt: (v) => fmtNum(v) }, { key: "best", label: "Best" }, { key: "perfect", label: "10/10" }, { key: "avgSec", label: "\xD8 Zeit", fmt: (v) => v == null ? "–" : sdTime(v) }];
     const bars = (rows, val, o = {}) => barChart(rows.map((s) => ({ label: s.name, value: val(s), icon: qzg.avatar(s.player, "mini"), color: qzg.colorOf(s.id), note: o.note ? o.note(s) : "" })), { digits: o.digits ?? 1, unit: o.unit || "", max: o.max });
-    const more = `<h3 class="sub-h">Tageswertung der letzten 14 Tage</h3>${tqDaysHtml(qzg, qzDays(ms).slice(0, 14), qzVal, "")}
+    const more = `<h3 class="sub-h">Tageswertung der letzten 14 Tage</h3>${tqDaysHtml(qzg, qzDays(ms).slice(0, 28), qzVal, "")}
       <h3 class="sub-h">Trefferquote</h3>${bars([...st].sort((a, b) => b.rate - a.rate), (s) => s.rate * 100, { unit: " %", digits: 0, max: 100, note: (s) => `${s.pts} von ${s.games * 10}` })}
       <h3 class="sub-h">\xD8 Zeit <small class="muted">\xB7 Minuten</small></h3>${bars([...st].sort((a, b) => a.avgSec - b.avgSec), (s) => s.avgSec / 60, { note: () => "weniger ist schneller" })}
       ${ms.length > 1 ? `<h3 class="sub-h">Richtige im Verlauf</h3>${trendChart(qzg, ms, (m, id) => m.players?.[0] === id ? qzScore(m) : null, { colors: (id) => qzg.colorOf(id), label: "richtig" })}` : ""}`;
@@ -5677,7 +5682,7 @@
   var wdRows = (m) => (m.rows || []).length ? `<span class="wd-rows">${m.rows.map((r) => `<span>${[...r].map((c) => `<i class="${c}"></i>`).join("")}</span>`).join("")}</span>` : "";
   function wdLine(m) {
     const pid = m.players?.[0], nm = playerName(pid, m);
-    return `<div class="sd-line"><span class="who">${wdg.avatar({ id: pid, name: nm }, "mini")}${esc(nm)}</span><span class="sd-head">${m.word && String(m.daily) < tqToday() ? esc(String(m.word).toUpperCase()) : ""}</span><b class="${wdOk(m) ? "" : "sd-x"}">${wdOk(m) ? `${m.guesses}/6` : "nicht gel\xF6st"}</b></div><p class="others">${wdRows(m)}${wdOk(m) ? sdTime(tqSec(m)) : ""}${m.offline ? " \xB7 offline gespielt" : ""}</p>`;
+    return `<div class="sd-line"><span class="who">${wdg.avatar({ id: pid, name: nm }, "mini")}${esc(nm)}</span><span class="sd-head">${m.word && String(m.daily) < tqToday() ? esc(String(m.word).toUpperCase()) : ""}</span><b class="${wdOk(m) ? "" : "sd-x"}">${wdOk(m) ? `${m.guesses}/6` : "nicht gel\xF6st"}</b></div><p class="others">${wdRows(m)}${wdOk(m) ? sdTime(tqSec(m)) : ""}${m.late ? " \xB7 nachgespielt" : ""}${m.offline ? " \xB7 offline gespielt" : ""}</p>`;
   }
   function wdDashboard(el, ctx) {
     const ms = wdAll();
@@ -5878,7 +5883,7 @@
 
   // js/app.js
   var app;
-  var APP_VERSION = "3.0";
+  var APP_VERSION = "3.1";
   var TABS = [["dashboard", "Dashboard"], ["neu", "Neues Spiel"], ["statistik", "Statistik"], ["verlauf", "Verlauf"]];
   var current = null;
   function parse() {
